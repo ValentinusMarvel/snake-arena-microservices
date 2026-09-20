@@ -1,18 +1,20 @@
 package com.snake.arenaservice.service;
 
+import com.snake.arenaservice.client.PlayerServiceClient;
 import com.snake.arenaservice.domain.*;
 import com.snake.arenaservice.exception.ResourceNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class ArenaManager {
+
+    private static final Logger log = LoggerFactory.getLogger(ArenaManager.class);
 
     private final int gridWidth = 30;
     private final int gridHeight = 30;
@@ -20,8 +22,11 @@ public class ArenaManager {
     private final Map<String, Snake> snakes = new ConcurrentHashMap<>();
     private final Map<String, Apple> apples = new ConcurrentHashMap<>();
     private final Random random = new Random();
+    private final PlayerServiceClient playerServiceClient;
 
-    public ArenaManager() {
+    public ArenaManager(PlayerServiceClient playerServiceClient) {
+        this.playerServiceClient = playerServiceClient;
+
         // Inisialisasi apel awal
         spawnApple("APL-1", "NORMAL", 10);
         spawnApple("APL-2", "NORMAL", 10);
@@ -97,7 +102,6 @@ public class ArenaManager {
         String current = snake.getDirection();
         if (newDir != null) {
             newDir = newDir.toUpperCase();
-            // Cegah langsung memutar 180 derajat ke badan sendiri
             boolean opposite = ("UP".equals(current) && "DOWN".equals(newDir)) ||
                                ("DOWN".equals(current) && "UP".equals(newDir)) ||
                                ("LEFT".equals(current) && "RIGHT".equals(newDir)) ||
@@ -168,17 +172,20 @@ public class ArenaManager {
 
     /**
      * Engine loop server-side: Dijalankan setiap 120ms.
-     * Menggerakkan semua ular (player & bot) secara terus menerus sehingga game tidak berhenti
-     * meskipun tab browser sedang berada di background / ganti tab.
+     * Mengkalkulasi pergerakan, deteksi tabrakan PvP (kepala menabrak badan musuh),
+     * eliminasi ular, konversi badan menjadi apel loot, dan auto-sync skor.
      */
     @Scheduled(fixedRate = 120)
     public synchronized void serverTick() {
         if (snakes.isEmpty()) return;
 
+        Map<String, Point> nextHeads = new HashMap<>();
+
+        // 1. Hitung koordinat kepala berikutnya untuk semua ular yang hidup
         for (Snake snake : snakes.values()) {
             if (!snake.isAlive() || snake.getSegments().isEmpty()) continue;
 
-            // AI sederhana untuk Bot agar berbelok secara dinamis
+            // AI bot sederhana: belok acak sesekali
             if (snake.getId().startsWith("BOT") && random.nextInt(10) > 7) {
                 String[] dirs = {"UP", "DOWN", "LEFT", "RIGHT"};
                 changeDirection(snake.getId(), dirs[random.nextInt(dirs.length)]);
@@ -196,24 +203,109 @@ public class ArenaManager {
 
             int nextX = (head.x() + dx + gridWidth) % gridWidth;
             int nextY = (head.y() + dy + gridHeight) % gridHeight;
-            Point newHead = new Point(nextX, nextY);
+            nextHeads.put(snake.getId(), new Point(nextX, nextY));
+        }
 
-            // Cek makan apel
+        // 2. Deteksi tabrakan (PvP Collision Detection)
+        Set<String> eliminatedIds = new HashSet<>();
+
+        for (Snake snake : snakes.values()) {
+            if (!snake.isAlive()) continue;
+
+            Point nextHead = nextHeads.get(snake.getId());
+            if (nextHead == null) continue;
+
+            // Jika kelas Python sedang mengaktifkan skill aktif (Constrict Armor Shield), kebal dari tabrakan!
+            boolean isShieldActive = "PYTHON".equalsIgnoreCase(snake.getSnakeType()) && snake.isSkillActive();
+            if (isShieldActive) {
+                continue;
+            }
+
+            // Periksa tabrakan dengan ular lain atau diri sendiri
+            for (Snake other : snakes.values()) {
+                if (!other.isAlive()) continue;
+
+                if (other.getId().equals(snake.getId())) {
+                    // Tabrakan dengan badan sendiri (mulai segmen ke-3)
+                    for (int i = 3; i < snake.getSegments().size(); i++) {
+                        Point seg = snake.getSegments().get(i);
+                        if (seg.x() == nextHead.x() && seg.y() == nextHead.y()) {
+                            eliminatedIds.add(snake.getId());
+                            log.info("Self-collision: Ular {} menabrak badannya sendiri", snake.getPlayerName());
+                            break;
+                        }
+                    }
+                } else {
+                    // Tabrakan dengan segmen ular lain (PvP Collision)
+                    for (Point otherSeg : other.getSegments()) {
+                        if (otherSeg.x() == nextHead.x() && otherSeg.y() == nextHead.y()) {
+                            eliminatedIds.add(snake.getId());
+                            // Ular lain yang badannya ditabrak mendapat reward skor pembunuhan (+50 poin)
+                            other.setScore(other.getScore() + 50);
+                            log.info("PvP Collision: Kepala {} menabrak badan {}, {} tereliminasi!",
+                                    snake.getPlayerName(), other.getPlayerName(), snake.getPlayerName());
+                            break;
+                        }
+                    }
+                }
+
+                if (eliminatedIds.contains(snake.getId())) {
+                    break;
+                }
+            }
+        }
+
+        // 3. Proses ular-ular yang tereliminasi
+        for (String id : eliminatedIds) {
+            Snake deadSnake = snakes.remove(id);
+            if (deadSnake != null) {
+                deadSnake.setAlive(false);
+
+                // Ubah badan ular yang gugur menjadi apel emas di arena (Loot drops)
+                for (int i = 0; i < deadSnake.getSegments().size(); i += 2) {
+                    Point seg = deadSnake.getSegments().get(i);
+                    String lootId = "LOOT-" + (System.currentTimeMillis() % 100000) + "-" + i;
+                    apples.put(lootId, new Apple(lootId, seg.x(), seg.y(), "GOLDEN", 25));
+                }
+
+                // Sinkronisasi otomatis ke Player Service
+                try {
+                    playerServiceClient.syncPlayerScore(deadSnake.getPlayerId(), deadSnake.getScore(), true);
+                } catch (Exception e) {
+                    log.warn("Sinkronisasi skor gagal untuk {}", deadSnake.getPlayerName());
+                }
+
+                // Jika bot gugur, respawn bot baru agar arena tetap hidup
+                if (deadSnake.getId().startsWith("BOT")) {
+                    String botName = deadSnake.getPlayerName();
+                    String botType = deadSnake.getSnakeType();
+                    int sx = random.nextInt(gridWidth - 10) + 5;
+                    int sy = random.nextInt(gridHeight - 10) + 5;
+                    joinArena("BOT-" + (System.currentTimeMillis() % 1000), botName, botType, null, sx, sy);
+                }
+            }
+        }
+
+        // 4. Majukan posisi ular yang selamat & proses apel
+        for (Snake snake : snakes.values()) {
+            if (!snake.isAlive()) continue;
+
+            Point nextHead = nextHeads.get(snake.getId());
+            if (nextHead == null) continue;
+
             String eatenAppleId = null;
             for (Apple apple : apples.values()) {
-                if (apple.x() == nextX && apple.y() == nextY) {
+                if (apple.x() == nextHead.x() && apple.y() == nextHead.y()) {
                     eatenAppleId = apple.id();
                     break;
                 }
             }
 
-            // Tambahkan kepala baru
-            snake.getSegments().add(0, newHead);
+            snake.getSegments().add(0, nextHead);
 
             if (eatenAppleId != null) {
                 eatApple(snake.getId(), eatenAppleId);
             } else {
-                // Buang buntut jika tidak makan
                 if (snake.getSegments().size() > 3) {
                     snake.getSegments().remove(snake.getSegments().size() - 1);
                 }

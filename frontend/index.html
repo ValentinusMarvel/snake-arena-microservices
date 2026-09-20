@@ -978,10 +978,13 @@
                 arenaSnakes = res.data.snakes || [];
                 arenaApples = res.data.apples || [];
 
-                // Update my score and HUD
-                if (snakeId) {
+                // Update my score, HUD, and check elimination
+                if (snakeId && gameRunning) {
                     const mySnake = arenaSnakes.find(s => s.id === snakeId);
-                    if (mySnake) {
+                    if (!mySnake || !mySnake.alive) {
+                        endGame("Ular Anda TERELIMINASI karena menabrak badan ular lain!");
+                        return;
+                    } else {
                         score = mySnake.score;
                         document.getElementById("hudScore").innerText = score;
                     }
@@ -1106,8 +1109,18 @@
 
         function endGame(reason) {
             gameRunning = false;
+            snakeId = null;
             document.getElementById("gameOverlay").classList.remove("hidden");
-            document.getElementById("overlayTitle").innerText = "GAME OVER";
+            document.getElementById("overlayTitle").innerText = "💥 TERELIMINASI!";
+            document.getElementById("overlayTitle").style.color = "var(--neon-red)";
+            const desc = document.querySelector("#gameOverlay p");
+            if (desc) {
+                desc.innerHTML = `<span style="color:var(--neon-red); font-weight:700;">${reason || "Ular Anda gugur di arena!"}</span><br><br>Badan ular Anda hancur menjadi Golden Apple.<br>Skor akhir: <b>${score} pts</b>. Klik tombol di bawah untuk respawn!`;
+            }
+            const startBtn = document.querySelector(".btn-start");
+            if (startBtn) {
+                startBtn.innerText = "MASUK LAGI KE ARENA";
+            }
         }
 
         // Input Handling
