@@ -67,7 +67,17 @@ public class ArenaManager {
         return false;
     }
 
-    public synchronized Snake joinArena(String playerId, String playerName, String snakeType, String color, int startX, int startY) {
+        private boolean isBot(Snake snake) {
+        if (snake == null) return false;
+        return (snake.getPlayerId() != null && snake.getPlayerId().startsWith("BOT")) ||
+               (snake.getPlayerName() != null && snake.getPlayerName().toLowerCase().startsWith("bot"));
+    }
+
+public synchronized Snake joinArena(String playerId, String playerName, String snakeType, String color, int startX, int startY) {
+        // Bersihkan ular aktif sebelumnya dari player ini jika ada (misal akibat refresh window)
+        snakes.values().removeIf(s -> !isBot(s) &&
+                (s.getPlayerId().equalsIgnoreCase(playerId) || s.getPlayerName().equalsIgnoreCase(playerName)));
+
         if (snakes.size() >= maxPlayers) {
             throw new IllegalStateException("Arena penuh! Maksimum " + maxPlayers + " pemain telah tercapai.");
         }
@@ -119,6 +129,7 @@ public class ArenaManager {
 
     public synchronized Snake changeDirection(String snakeId, String newDir) {
         Snake snake = getSnake(snakeId);
+        snake.updateHeartbeat();
         String current = snake.getDirection();
         if (newDir != null) {
             newDir = newDir.toUpperCase();
@@ -183,7 +194,14 @@ public class ArenaManager {
 
     public synchronized Snake toggleSkill(String snakeId, boolean active) {
         Snake snake = getSnake(snakeId);
+        snake.updateHeartbeat();
         snake.setSkillActive(active);
+        return snake;
+    }
+
+    public synchronized Snake heartbeat(String snakeId) {
+        Snake snake = getSnake(snakeId);
+        snake.updateHeartbeat();
         return snake;
     }
 
@@ -215,12 +233,25 @@ public class ArenaManager {
         }
 
         Map<String, Point> nextHeads = new HashMap<>();
+        Set<String> eliminatedIds = new HashSet<>();
+        long now = System.currentTimeMillis();
+
+        // 0. Deteksi ular yatim (ghost snake) yang terputus / ditinggal refresh (> 4 detik tanpa heartbeat)
+        for (Snake snake : snakes.values()) {
+            if (isBot(snake)) {
+                snake.updateHeartbeat();
+            } else if (now - snake.getLastHeartbeatTime() > 4000) {
+                log.info("Client timeout: Ular {} ({}) terputus/refresh window, otomatis dibersihkan",
+                        snake.getPlayerName(), snake.getId());
+                eliminatedIds.add(snake.getId());
+            }
+        }
 
         // 1. Hitung koordinat kepala berikutnya untuk semua ular yang hidup
         for (Snake snake : snakes.values()) {
             if (!snake.isAlive() || snake.getSegments().isEmpty()) continue;
 
-            if (snake.getId().startsWith("BOT") && random.nextInt(10) > 7) {
+            if (isBot(snake) && random.nextInt(10) > 7) {
                 String[] dirs = {"UP", "DOWN", "LEFT", "RIGHT"};
                 changeDirection(snake.getId(), dirs[random.nextInt(dirs.length)]);
             }
@@ -241,7 +272,6 @@ public class ArenaManager {
         }
 
         // 2. Deteksi tabrakan (PvP Collision Detection)
-        Set<String> eliminatedIds = new HashSet<>();
 
         for (Snake snake : snakes.values()) {
             if (!snake.isAlive()) continue;
@@ -302,7 +332,7 @@ public class ArenaManager {
                 }
 
                 // Jika bot gugur, respawn bot baru dengan lokasi baru
-                if (deadSnake.getId().startsWith("BOT")) {
+                if (isBot(deadSnake)) {
                     String botName = deadSnake.getPlayerName();
                     String botType = deadSnake.getSnakeType();
                     int sx = random.nextInt(gridWidth - 10) + 5;

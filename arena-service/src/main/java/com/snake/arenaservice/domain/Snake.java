@@ -14,6 +14,7 @@ public class Snake {
     private int score;
     private boolean alive;
     private boolean skillActive;
+    private volatile long lastHeartbeatTime = System.currentTimeMillis();
 
     public Snake() {}
 
@@ -50,4 +51,7 @@ public class Snake {
     public void setAlive(boolean alive) { this.alive = alive; }
     public boolean isSkillActive() { return skillActive; }
     public void setSkillActive(boolean skillActive) { this.skillActive = skillActive; }
+    public long getLastHeartbeatTime() { return lastHeartbeatTime; }
+    public void setLastHeartbeatTime(long lastHeartbeatTime) { this.lastHeartbeatTime = lastHeartbeatTime; }
+    public void updateHeartbeat() { this.lastHeartbeatTime = System.currentTimeMillis(); }
 }

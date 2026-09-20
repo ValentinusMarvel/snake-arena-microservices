@@ -115,4 +115,20 @@ public class ArenaController {
         playerServiceClient.syncPlayerScore(eliminated.getPlayerId(), eliminated.getScore(), true);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/snakes/{id}/heartbeat")
+    @Operation(summary = "Mengirim sinyal heartbeat dari client agar ular tidak terputus (PATCH)")
+    public ResponseEntity<Snake> heartbeat(@PathVariable String id) {
+        return ResponseEntity.ok(arenaManager.heartbeat(id));
+    }
+
+    @PostMapping("/snakes/{id}/leave")
+    @Operation(summary = "Meninggalkan arena pertandingan (mendukung navigator.sendBeacon) (POST)")
+    public ResponseEntity<Void> leaveArenaPost(@PathVariable String id) {
+        try {
+            Snake eliminated = arenaManager.eliminateSnake(id);
+            playerServiceClient.syncPlayerScore(eliminated.getPlayerId(), eliminated.getScore(), true);
+        } catch (Exception ignored) {}
+        return ResponseEntity.ok().build();
+    }
 }

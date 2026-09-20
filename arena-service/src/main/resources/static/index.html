@@ -1102,12 +1102,14 @@
             const res = await makeApiCall("POST", `${ARENA_SERVICE_URL}/api/v1/arena/snakes`, joinPayload);
             if (res.data && res.data.id) {
                 snakeId = res.data.id;
+                sessionStorage.setItem("activeSnakeId", snakeId);
             }
             await fetchArenaState();
         }
 
         function endGame(reason) {
             gameRunning = false;
+            sessionStorage.removeItem("activeSnakeId");
             snakeId = null;
             lockInGameControls(false);
 
@@ -1607,6 +1609,37 @@
             status: "ARENA_READY",
             rules: ["Name & Class Locked In-Game", "No Apples on Death", "Balanced Max 6 Apples Pool", "PvP Collisions Active"]
         });
+
+        // Clean up any lingering ghost snake from a previous refreshed window
+        (function cleanupPreviousSessionSnake() {
+            const staleId = sessionStorage.getItem("activeSnakeId");
+            if (staleId) {
+                sessionStorage.removeItem("activeSnakeId");
+                fetch(`${ARENA_SERVICE_URL}/api/v1/arena/snakes/${staleId}`, { method: "DELETE" }).catch(() => {});
+            }
+        })();
+
+        // Unload listener: Immediately eliminate snake when user refreshes, closes tab, or navigates away
+        function cleanupCurrentSnake() {
+            const current = snakeId || sessionStorage.getItem("activeSnakeId");
+            if (current) {
+                sessionStorage.removeItem("activeSnakeId");
+                if (navigator.sendBeacon) {
+                    navigator.sendBeacon(`${ARENA_SERVICE_URL}/api/v1/arena/snakes/${current}/leave`);
+                }
+                fetch(`${ARENA_SERVICE_URL}/api/v1/arena/snakes/${current}`, { method: "DELETE", keepalive: true }).catch(() => {});
+            }
+        }
+        window.addEventListener("beforeunload", cleanupCurrentSnake);
+        window.addEventListener("pagehide", cleanupCurrentSnake);
+
+        // Heartbeat timer: Keep snake alive on server while active
+        setInterval(() => {
+            if (gameRunning && snakeId) {
+                fetch(`${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}/heartbeat`, { method: "PATCH" }).catch(() => {});
+            }
+        }, 1500);
+
     </script>
 </body>
 </html>
