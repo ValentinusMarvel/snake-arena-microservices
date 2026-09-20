@@ -19,6 +19,9 @@ public class ArenaManager {
     private final int gridWidth = 30;
     private final int gridHeight = 30;
     private final int maxPlayers = 16;
+    private final int maxApples = 6; // Batas maksimal apel di arena dalam satu waktu
+    private int tickCounter = 0;
+
     private final Map<String, Snake> snakes = new ConcurrentHashMap<>();
     private final Map<String, Apple> apples = new ConcurrentHashMap<>();
     private final Random random = new Random();
@@ -27,10 +30,10 @@ public class ArenaManager {
     public ArenaManager(PlayerServiceClient playerServiceClient) {
         this.playerServiceClient = playerServiceClient;
 
-        // Inisialisasi apel awal
+        // Inisialisasi apel awal dengan jumlah seimbang (4 Normal, 1 Golden)
         spawnApple("APL-1", "NORMAL", 10);
         spawnApple("APL-2", "NORMAL", 10);
-        spawnApple("APL-3", "GOLDEN", 30);
+        spawnApple("APL-3", "NORMAL", 10);
         spawnApple("APL-4", "NORMAL", 10);
         spawnApple("APL-5", "GOLDEN", 30);
 
@@ -40,11 +43,28 @@ public class ArenaManager {
     }
 
     public synchronized Apple spawnApple(String id, String type, int points) {
-        int x = random.nextInt(gridWidth - 4) + 2;
-        int y = random.nextInt(gridHeight - 4) + 2;
+        if (apples.size() >= maxApples) {
+            return null;
+        }
+
+        int x, y;
+        int attempts = 0;
+        do {
+            x = random.nextInt(gridWidth - 4) + 2;
+            y = random.nextInt(gridHeight - 4) + 2;
+            attempts++;
+        } while (isLocationOccupiedByApple(x, y) && attempts < 20);
+
         Apple apple = new Apple(id, x, y, type, points);
         apples.put(id, apple);
         return apple;
+    }
+
+    private boolean isLocationOccupiedByApple(int x, int y) {
+        for (Apple a : apples.values()) {
+            if (a.x() == x && a.y() == y) return true;
+        }
+        return false;
     }
 
     public synchronized Snake joinArena(String playerId, String playerName, String snakeType, String color, int startX, int startY) {
@@ -151,7 +171,13 @@ public class ArenaManager {
             snake.getSegments().add(new Point(tail.x(), tail.y()));
         }
 
-        spawnApple("APL-" + (System.currentTimeMillis() % 10000), random.nextInt(10) > 7 ? "GOLDEN" : "NORMAL", random.nextInt(10) > 7 ? 30 : 10);
+        // Spawn terkontrol: hanya jika total apel di arena < 4 agar map tetap seimbang dan bersih
+        if (apples.size() < 4) {
+            boolean isGolden = random.nextInt(10) > 7;
+            spawnApple("APL-" + (System.currentTimeMillis() % 10000) + "-" + random.nextInt(100),
+                    isGolden ? "GOLDEN" : "NORMAL",
+                    isGolden ? 30 : 10);
+        }
         return snake;
     }
 
@@ -172,12 +198,21 @@ public class ArenaManager {
 
     /**
      * Engine loop server-side: Dijalankan setiap 120ms.
-     * Mengkalkulasi pergerakan, deteksi tabrakan PvP (kepala menabrak badan musuh),
-     * eliminasi ular, konversi badan menjadi apel loot, dan auto-sync skor.
+     * Mengkalkulasi pergerakan dan tabrakan PvP.
+     * Ular mati TIDAK lagi menjatuhkan apel agar peta tidak banjir apel.
      */
     @Scheduled(fixedRate = 120)
     public synchronized void serverTick() {
         if (snakes.isEmpty()) return;
+
+        tickCounter++;
+        // Spawn apel berkala yang seimbang: setiap ~5 detik (40 ticks) jika apel kurang dari maxApples
+        if (tickCounter % 40 == 0 && apples.size() < maxApples) {
+            boolean isGolden = random.nextInt(10) > 7;
+            spawnApple("APL-" + (System.currentTimeMillis() % 10000) + "-" + random.nextInt(100),
+                    isGolden ? "GOLDEN" : "NORMAL",
+                    isGolden ? 30 : 10);
+        }
 
         Map<String, Point> nextHeads = new HashMap<>();
 
@@ -185,7 +220,6 @@ public class ArenaManager {
         for (Snake snake : snakes.values()) {
             if (!snake.isAlive() || snake.getSegments().isEmpty()) continue;
 
-            // AI bot sederhana: belok acak sesekali
             if (snake.getId().startsWith("BOT") && random.nextInt(10) > 7) {
                 String[] dirs = {"UP", "DOWN", "LEFT", "RIGHT"};
                 changeDirection(snake.getId(), dirs[random.nextInt(dirs.length)]);
@@ -215,7 +249,7 @@ public class ArenaManager {
             Point nextHead = nextHeads.get(snake.getId());
             if (nextHead == null) continue;
 
-            // Jika kelas Python sedang mengaktifkan skill aktif (Constrict Armor Shield), kebal dari tabrakan!
+            // Jika kelas Python mengaktifkan perisai (Armor Shield), kebal dari tabrakan
             boolean isShieldActive = "PYTHON".equalsIgnoreCase(snake.getSnakeType()) && snake.isSkillActive();
             if (isShieldActive) {
                 continue;
@@ -240,8 +274,7 @@ public class ArenaManager {
                     for (Point otherSeg : other.getSegments()) {
                         if (otherSeg.x() == nextHead.x() && otherSeg.y() == nextHead.y()) {
                             eliminatedIds.add(snake.getId());
-                            // Ular lain yang badannya ditabrak mendapat reward skor pembunuhan (+50 poin)
-                            other.setScore(other.getScore() + 50);
+                            other.setScore(other.getScore() + 50); // Kill reward
                             log.info("PvP Collision: Kepala {} menabrak badan {}, {} tereliminasi!",
                                     snake.getPlayerName(), other.getPlayerName(), snake.getPlayerName());
                             break;
@@ -255,27 +288,20 @@ public class ArenaManager {
             }
         }
 
-        // 3. Proses ular-ular yang tereliminasi
+        // 3. Proses ular-ular yang tereliminasi (TANPA DROP APEL)
         for (String id : eliminatedIds) {
             Snake deadSnake = snakes.remove(id);
             if (deadSnake != null) {
                 deadSnake.setAlive(false);
 
-                // Ubah badan ular yang gugur menjadi apel emas di arena (Loot drops)
-                for (int i = 0; i < deadSnake.getSegments().size(); i += 2) {
-                    Point seg = deadSnake.getSegments().get(i);
-                    String lootId = "LOOT-" + (System.currentTimeMillis() % 100000) + "-" + i;
-                    apples.put(lootId, new Apple(lootId, seg.x(), seg.y(), "GOLDEN", 25));
-                }
-
-                // Sinkronisasi otomatis ke Player Service
+                // Sinkronisasi skor akhir ke Player Service
                 try {
                     playerServiceClient.syncPlayerScore(deadSnake.getPlayerId(), deadSnake.getScore(), true);
                 } catch (Exception e) {
                     log.warn("Sinkronisasi skor gagal untuk {}", deadSnake.getPlayerName());
                 }
 
-                // Jika bot gugur, respawn bot baru agar arena tetap hidup
+                // Jika bot gugur, respawn bot baru dengan lokasi baru
                 if (deadSnake.getId().startsWith("BOT")) {
                     String botName = deadSnake.getPlayerName();
                     String botType = deadSnake.getSnakeType();
@@ -286,7 +312,7 @@ public class ArenaManager {
             }
         }
 
-        // 4. Majukan posisi ular yang selamat & proses apel
+        // 4. Majukan posisi ular yang selamat & proses konsumsi apel
         for (Snake snake : snakes.values()) {
             if (!snake.isAlive()) continue;
 

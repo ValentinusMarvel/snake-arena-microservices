@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Snake Arena: Clash of Serpents | Multi-Device Real-Time Arena</title>
+    <title>Snake Arena: Clash of Serpents | Enterprise Microservices Game</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -49,7 +49,6 @@
             overflow-x: hidden;
         }
 
-        /* Header */
         header {
             background: rgba(10, 13, 20, 0.85);
             backdrop-filter: blur(12px);
@@ -159,7 +158,6 @@
             transform: translateY(-1px);
         }
 
-        /* Layout Grid */
         .app-container {
             display: grid;
             grid-template-columns: 310px 1fr 380px;
@@ -171,7 +169,6 @@
             width: 100%;
         }
 
-        /* Cards & Panels */
         .panel-card {
             background: var(--bg-card);
             border: 1px solid var(--border-card);
@@ -197,7 +194,6 @@
             border-bottom: 1px solid var(--border-card);
         }
 
-        /* Nickname Input */
         .input-group {
             display: flex;
             flex-direction: column;
@@ -214,7 +210,7 @@
             background: rgba(0, 0, 0, 0.4);
             border: 1px solid var(--border-card);
             border-radius: 8px;
-            padding: 8px 12px;
+            padding: 9px 12px;
             color: #fff;
             font-family: 'Outfit', sans-serif;
             font-size: 0.85rem;
@@ -224,10 +220,16 @@
 
         .input-text:focus {
             border-color: var(--neon-green);
-            box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.25);
         }
 
-        /* Class Selector */
+        .input-text:disabled {
+            background: rgba(0, 0, 0, 0.6);
+            border-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
         .class-selector {
             display: flex;
             flex-direction: column;
@@ -241,6 +243,7 @@
             padding: 10px;
             cursor: pointer;
             transition: all 0.2s ease;
+            position: relative;
         }
 
         .class-card:hover {
@@ -251,6 +254,12 @@
             border-color: var(--card-accent, var(--neon-green));
             background: rgba(255, 255, 255, 0.05);
             box-shadow: 0 0 14px rgba(0, 255, 136, 0.15);
+        }
+
+        .class-card.locked {
+            opacity: 0.55;
+            cursor: not-allowed;
+            filter: grayscale(0.2);
         }
 
         .class-header {
@@ -291,7 +300,6 @@
         .class-cobra { --card-accent: var(--neon-gold); }
         .class-cobra .class-badge { background: rgba(255, 215, 0, 0.15); color: var(--neon-gold); }
 
-        /* API Actions */
         .api-actions {
             display: flex;
             flex-direction: column;
@@ -314,10 +322,15 @@
             transition: all 0.2s ease;
         }
 
-        .action-btn:hover {
+        .action-btn:hover:not(:disabled) {
             background: rgba(255, 255, 255, 0.08);
             border-color: rgba(255, 255, 255, 0.2);
             transform: translateX(2px);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
         }
 
         .method-tag {
@@ -334,7 +347,6 @@
         .tag-patch { background: rgba(139, 92, 246, 0.15); color: var(--method-patch); }
         .tag-delete { background: rgba(239, 68, 68, 0.15); color: var(--method-delete); }
 
-        /* Version Switcher */
         .version-switcher {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 10px;
@@ -395,7 +407,6 @@
             background: rgba(239, 68, 68, 0.25);
         }
 
-        /* Arena Canvas */
         .arena-container {
             display: flex;
             flex-direction: column;
@@ -452,18 +463,20 @@
             display: block;
         }
 
+        /* Overlay Modal */
         .game-overlay {
             position: absolute;
             inset: 0;
-            background: rgba(6, 9, 14, 0.88);
-            backdrop-filter: blur(8px);
+            background: rgba(6, 9, 14, 0.92);
+            backdrop-filter: blur(10px);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 14px;
+            gap: 12px;
             z-index: 10;
-            padding: 20px;
+            padding: 24px;
+            text-align: center;
         }
 
         .game-overlay.hidden {
@@ -471,10 +484,94 @@
         }
 
         .game-overlay h2 {
-            font-size: 1.6rem;
+            font-size: 1.5rem;
             font-weight: 800;
             letter-spacing: -0.5px;
+        }
+
+        .overlay-form {
+            width: 100%;
+            max-width: 360px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            text-align: left;
+        }
+
+        .overlay-input-label {
+            font-size: 0.75rem;
+            color: var(--neon-cyan);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .overlay-input {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .overlay-input:focus {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 12px rgba(0, 255, 136, 0.3);
+        }
+
+        .overlay-input.error {
+            border-color: var(--neon-red);
+            box-shadow: 0 0 12px rgba(255, 51, 102, 0.4);
+        }
+
+        .validation-msg {
+            color: var(--neon-red);
+            font-size: 0.72rem;
+            font-weight: 600;
+            display: none;
+        }
+
+        .overlay-classes {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .overlay-class-opt {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-card);
+            border-radius: 8px;
+            padding: 8px 4px;
             text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .overlay-class-opt:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .overlay-class-opt.active {
+            border-color: var(--opt-color, var(--neon-green));
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.25);
+        }
+
+        .overlay-class-opt .opt-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #fff;
+            display: block;
+        }
+
+        .overlay-class-opt .opt-sub {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            display: block;
         }
 
         .btn-start {
@@ -488,10 +585,12 @@
             cursor: pointer;
             box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
             transition: all 0.2s ease;
+            margin-top: 4px;
+            width: 100%;
         }
 
         .btn-start:hover {
-            transform: scale(1.05);
+            transform: scale(1.02);
             box-shadow: 0 0 30px rgba(0, 255, 136, 0.7);
         }
 
@@ -543,7 +642,6 @@
             box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
         }
 
-        /* Inspector Panel */
         .inspector-panel {
             height: 100%;
             display: flex;
@@ -636,7 +734,6 @@
             overflow-y: auto;
         }
 
-        /* Leaderboard */
         .leaderboard-list {
             display: flex;
             flex-direction: column;
@@ -670,7 +767,6 @@
 </head>
 <body>
 
-    <!-- Header -->
     <header>
         <div class="brand-container">
             <div class="brand-icon">🐍</div>
@@ -695,27 +791,27 @@
         </div>
     </header>
 
-    <!-- Main Grid -->
     <div class="app-container">
 
         <!-- Left Column: Controls & API Operations -->
         <div class="panel-card">
             <div class="panel-title">
                 <span>Konfigurasi Pemain</span>
-                <span id="playerBadge" style="font-size:0.7rem; color:var(--neon-green)">ONLINE</span>
+                <span id="playerBadge" style="font-size:0.7rem; color:var(--text-muted)">LOBBY</span>
             </div>
 
             <div class="input-group">
-                <label for="inputPlayerName">Nama Pemain / Nickname:</label>
-                <input type="text" id="inputPlayerName" class="input-text" value="Marvel" placeholder="Masukkan nama..." onchange="updatePlayerName()">
+                <label for="inputPlayerName">Nama Pemain Aktif:</label>
+                <input type="text" id="inputPlayerName" class="input-text" placeholder="Wajib diisi di dialog start..." disabled>
             </div>
 
             <div class="panel-title" style="margin-top:2px;">
-                <span>Pilih Kelas Ular</span>
+                <span>Kelas Ular</span>
+                <span id="classLockNotice" style="font-size:0.65rem; color:var(--neon-cyan)">Pilih di Start Dialog</span>
             </div>
 
-            <div class="class-selector">
-                <div class="class-card class-viper selected" onclick="selectClass('VIPER', '#00ff88', this)">
+            <div class="class-selector" id="sidebarClassSelector">
+                <div class="class-card class-viper selected" data-class="VIPER">
                     <div class="class-header">
                         <span class="class-name">⚡ Viper</span>
                         <span class="class-badge">Agile</span>
@@ -723,15 +819,15 @@
                     <p class="class-desc">Passive: Poison Trail. Kecepatan dasar tinggi (+20%). Cocok untuk memotong jalur musuh secara agresif.</p>
                 </div>
 
-                <div class="class-card class-python" onclick="selectClass('PYTHON', '#00d4ff', this)">
+                <div class="class-card class-python" data-class="PYTHON">
                     <div class="class-header">
                         <span class="class-name">🛡️ Python</span>
                         <span class="class-badge">Tank</span>
                     </div>
-                    <p class="class-desc">Passive: Thick Scales. Tahan benturan tubuh sendiri saat skill aktif shield menyala.</p>
+                    <p class="class-desc">Passive: Thick Scales. Tahan benturan tubuh lawan saat skill aktif shield menyala.</p>
                 </div>
 
-                <div class="class-card class-cobra" onclick="selectClass('COBRA', '#ffd700', this)">
+                <div class="class-card class-cobra" data-class="COBRA">
                     <div class="class-header">
                         <span class="class-name">👑 Cobra</span>
                         <span class="class-badge">Specialist</span>
@@ -740,7 +836,6 @@
                 </div>
             </div>
 
-            <!-- Version Switcher -->
             <div class="version-switcher">
                 <div class="version-header">
                     <span>API Versioning Demo</span>
@@ -755,22 +850,21 @@
                 </button>
             </div>
 
-            <!-- REST CRUD Actions -->
             <div class="panel-title" style="margin-top:2px;">
                 <span>CRUD REST Operations</span>
             </div>
 
             <div class="api-actions">
-                <button class="action-btn" onclick="apiCreatePlayer()">
+                <button class="action-btn" id="btnCreatePlayer" onclick="apiCreatePlayer()">
                     <span>Daftar / Reset Player</span>
                     <span class="method-tag tag-post">POST</span>
                 </button>
-                <button class="action-btn" onclick="apiFetchPlayer()">
+                <button class="action-btn" id="btnFetchPlayer" onclick="apiFetchPlayer()">
                     <span>Ambil Profil Player</span>
                     <span class="method-tag tag-get">GET</span>
                 </button>
-                <button class="action-btn" onclick="apiUpdateLoadout()">
-                    <span>Ganti Class / Loadout</span>
+                <button class="action-btn" id="btnUpdateLoadout" onclick="apiUpdateLoadout()">
+                    <span>Ganti Loadout (Lobby Only)</span>
                     <span class="method-tag tag-put">PUT</span>
                 </button>
                 <button class="action-btn" onclick="apiConsumeAppleManual()">
@@ -789,7 +883,7 @@
             <div class="arena-hud">
                 <div class="hud-stat">
                     <span class="hud-label">Player</span>
-                    <span class="hud-val" id="hudPlayer">Marvel</span>
+                    <span class="hud-val" id="hudPlayer" style="font-size:0.95rem; color:#cbd5e1;">(Belum Join)</span>
                 </div>
                 <div class="hud-stat">
                     <span class="hud-label">Class</span>
@@ -801,22 +895,46 @@
                 </div>
                 <div class="hud-stat">
                     <span class="hud-label">Arena Players</span>
-                    <span class="hud-val" id="hudPlayersCount" style="color:var(--neon-cyan)">1 / 16</span>
+                    <span class="hud-val" id="hudPlayersCount" style="color:var(--neon-cyan)">0 / 16</span>
                 </div>
             </div>
 
             <div class="canvas-wrapper">
                 <canvas id="gameCanvas" width="600" height="600"></canvas>
+                
+                <!-- Mandatory Start / Respawn Overlay Modal -->
                 <div class="game-overlay" id="gameOverlay">
-                    <h2 id="overlayTitle">CLASH OF SERPENTS</h2>
-                    <p style="color:var(--text-muted); font-size:0.85rem; max-width:340px; text-align:center;">
-                        Bisa dimainkan di <b>PC</b> (WASD/Panah + Spasi) atau <b>HP/Tablet</b> melalui browser pada jaringan Wi-Fi lokal yang sama!
+                    <h2 id="overlayTitle">MASUK KE ARENA PERTANDINGAN</h2>
+                    <p id="overlaySubtitle" style="color:var(--text-muted); font-size:0.8rem; max-width:340px;">
+                        Lengkapi nickname dan tentukan kelas ularmu sebelum bertempur di arena!
                     </p>
-                    <button class="btn-start" onclick="startGame()">MASUK KE ARENA</button>
+
+                    <div class="overlay-form">
+                        <label class="overlay-input-label" for="overlayPlayerName">Nama / Call Sign Pemain (Wajib):</label>
+                        <input type="text" id="overlayPlayerName" class="overlay-input" placeholder="Ketik nickname (contoh: ShadowViper, Ghost, Striker)..." maxlength="16" autofocus>
+                        <div class="validation-msg" id="nameValidationMsg">⚠️ Nickname wajib diisi sebelum masuk ke arena!</div>
+
+                        <label class="overlay-input-label" style="margin-top:4px;">Pilih Tipe Kelas Ular (Wajib):</label>
+                        <div class="overlay-classes">
+                            <div class="overlay-class-opt active" style="--opt-color:var(--neon-green);" onclick="selectOverlayClass('VIPER', '#00ff88', this)">
+                                <span class="opt-title" style="color:var(--neon-green)">⚡ Viper</span>
+                                <span class="opt-sub">Agile Speed</span>
+                            </div>
+                            <div class="overlay-class-opt" style="--opt-color:var(--neon-cyan);" onclick="selectOverlayClass('PYTHON', '#00d4ff', this)">
+                                <span class="opt-title" style="color:var(--neon-cyan)">🛡️ Python</span>
+                                <span class="opt-sub">Tank Armor</span>
+                            </div>
+                            <div class="overlay-class-opt" style="--opt-color:var(--neon-gold);" onclick="selectOverlayClass('COBRA', '#ffd700', this)">
+                                <span class="opt-title" style="color:var(--neon-gold)">👑 Cobra</span>
+                                <span class="opt-sub">Gold Touch</span>
+                            </div>
+                        </div>
+
+                        <button class="btn-start" onclick="validateAndStartGame()">MASUK KE ARENA</button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Touch Controls -->
             <div class="touch-controls">
                 <div class="d-pad">
                     <div></div>
@@ -837,16 +955,14 @@
                 <span class="inspector-badge">Real-Time HTTP</span>
             </div>
 
-            <!-- Live Leaderboard -->
             <div style="background:rgba(0,0,0,0.25); border-radius:8px; padding:10px; border:1px solid var(--border-card);">
                 <div style="font-size:0.72rem; color:var(--text-muted); font-weight:700; margin-bottom:6px; display:flex; justify-content:space-between;">
                     <span>LIVE ARENA LEADERBOARD</span>
-                    <span id="lbMaxInfo" style="color:var(--neon-cyan)">Maks: 16 Pemain</span>
+                    <span style="color:var(--neon-cyan)">Maks: 16 Pemain</span>
                 </div>
                 <div class="leaderboard-list" id="leaderboardContainer">
-                    <div class="lb-item user-snake">
-                        <span>1. Marvel (You)</span>
-                        <span style="font-family:'JetBrains Mono'; font-weight:700; color:var(--neon-green)">0 pts</span>
+                    <div class="lb-item">
+                        <span>(Menunggu pertandingan dimulai...)</span>
                     </div>
                 </div>
             </div>
@@ -862,7 +978,6 @@
     </div>
 
     <script>
-        // Dynamic Host
         const currentHost = window.location.hostname || "localhost";
         const PLAYER_SERVICE_URL = `http://${currentHost}:8081`;
         const ARENA_SERVICE_URL = `http://${currentHost}:8082`;
@@ -874,33 +989,21 @@
         let selectedClass = "VIPER";
         let selectedColor = "#00ff88";
         let playerId = "PL-" + Math.floor(100 + Math.random() * 900);
-        let playerName = "Marvel";
+        let playerName = "";
         let snakeId = null;
         let score = 0;
         let skillActive = false;
         let gameRunning = false;
 
-        // Server-synchronized state
         let arenaSnakes = [];
         let arenaApples = [];
 
-        // Canvas Setup
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         const gridSize = 30;
         const tileSize = canvas.width / gridSize;
 
-        let currentDir = "UP";
-
-        function updatePlayerName() {
-            const val = document.getElementById("inputPlayerName").value.trim();
-            if (val) {
-                playerName = val;
-                document.getElementById("hudPlayer").innerText = playerName;
-            }
-        }
-
-        // Web Worker to guarantee background execution without Chrome tab throttling
+        // Web Worker ticker (anti background throttling)
         const workerBlob = new Blob([`
             let interval = setInterval(() => {
                 postMessage('tick');
@@ -912,12 +1015,98 @@
         const backgroundWorker = new Worker(URL.createObjectURL(workerBlob));
 
         backgroundWorker.onmessage = () => {
-            if (gameRunning) {
-                fetchArenaState();
-            }
+            fetchArenaState();
         };
 
-        // REST Inspector Logger
+        function selectOverlayClass(className, color, el) {
+            if (gameRunning) return; // Locked while playing
+            selectedClass = className;
+            selectedColor = color;
+            document.querySelectorAll('.overlay-class-opt').forEach(opt => opt.classList.remove('active'));
+            el.classList.add('active');
+
+            // Sync with sidebar cards
+            document.querySelectorAll('#sidebarClassSelector .class-card').forEach(c => {
+                c.classList.toggle('selected', c.dataset.class === className);
+            });
+            document.getElementById("hudClass").innerText = className;
+            document.getElementById("hudClass").style.color = color;
+        }
+
+        function validateAndStartGame() {
+            const input = document.getElementById("overlayPlayerName");
+            const val = input.value.trim();
+            const valMsg = document.getElementById("nameValidationMsg");
+
+            if (!val) {
+                input.classList.add("error");
+                valMsg.style.display = "block";
+                input.focus();
+                return;
+            }
+
+            input.classList.remove("error");
+            valMsg.style.display = "none";
+            playerName = val;
+
+            // Update HUD and sidebar
+            document.getElementById("inputPlayerName").value = playerName;
+            document.getElementById("hudPlayer").innerText = playerName;
+            document.getElementById("hudPlayer").style.color = "#ffffff";
+
+            startGame();
+        }
+
+        function lockInGameControls(locked) {
+            // Lock/Unlock name and class change
+            document.getElementById("inputPlayerName").disabled = true;
+            document.getElementById("classLockNotice").innerText = locked ? "🔒 Terkunci saat Bermain" : "Pilih di Start Dialog";
+            document.getElementById("classLockNotice").style.color = locked ? "var(--neon-red)" : "var(--neon-cyan)";
+            document.getElementById("playerBadge").innerText = locked ? "IN ARENA" : "LOBBY";
+            document.getElementById("playerBadge").style.color = locked ? "var(--neon-green)" : "var(--text-muted)";
+
+            document.querySelectorAll('#sidebarClassSelector .class-card').forEach(c => {
+                c.classList.toggle('locked', locked);
+            });
+            document.getElementById("btnUpdateLoadout").disabled = locked;
+        }
+
+        async function startGame() {
+            document.getElementById("gameOverlay").classList.add("hidden");
+            gameRunning = true;
+            score = 0;
+            document.getElementById("hudScore").innerText = "0";
+            lockInGameControls(true);
+
+            // Join Arena via REST API
+            const joinPayload = {
+                playerId: playerId,
+                playerName: playerName,
+                snakeType: selectedClass,
+                color: selectedColor
+            };
+            const res = await makeApiCall("POST", `${ARENA_SERVICE_URL}/api/v1/arena/snakes`, joinPayload);
+            if (res.data && res.data.id) {
+                snakeId = res.data.id;
+            }
+            await fetchArenaState();
+        }
+
+        function endGame(reason) {
+            gameRunning = false;
+            snakeId = null;
+            lockInGameControls(false);
+
+            document.getElementById("gameOverlay").classList.remove("hidden");
+            document.getElementById("overlayTitle").innerText = "💥 TERELIMINASI!";
+            document.getElementById("overlayTitle").style.color = "var(--neon-red)";
+            document.getElementById("overlaySubtitle").innerHTML = `
+                <span style="color:var(--neon-red); font-weight:700;">${reason || "Ular Anda gugur di arena!"}</span><br>
+                Skor akhir: <b>${score} pts</b>. Ubah nama atau kelas ular di bawah jika ingin berganti strategi!
+            `;
+            document.querySelector(".btn-start").innerText = "RESPAWN & MASUK KE ARENA";
+        }
+
         function logApi(method, endpoint, status, reqBody, resBody) {
             const container = document.getElementById("apiLogs");
             const entry = document.createElement("div");
@@ -971,18 +1160,16 @@
             }
         }
 
-        // Fetch arena state from server
         async function fetchArenaState() {
             const res = await makeApiCall("GET", `${ARENA_SERVICE_URL}/api/v1/arena/state`, null, true);
             if (res.success && res.data) {
                 arenaSnakes = res.data.snakes || [];
                 arenaApples = res.data.apples || [];
 
-                // Update my score, HUD, and check elimination
                 if (snakeId && gameRunning) {
                     const mySnake = arenaSnakes.find(s => s.id === snakeId);
                     if (!mySnake || !mySnake.alive) {
-                        endGame("Ular Anda TERELIMINASI karena menabrak badan ular lain!");
+                        endGame("Ular Anda TERELIMINASI karena menabrak badan lawan / badan sendiri!");
                         return;
                     } else {
                         score = mySnake.score;
@@ -1007,19 +1194,6 @@
             `).join("");
         }
 
-        function selectClass(className, color, element) {
-            selectedClass = className;
-            selectedColor = color;
-            document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
-            element.classList.add('selected');
-            document.getElementById("hudClass").innerText = className;
-            document.getElementById("hudClass").style.color = color;
-
-            if (snakeId) {
-                apiUpdateLoadout();
-            }
-        }
-
         function switchVersion(version) {
             currentVersion = version;
             document.getElementById("btnV1").classList.toggle("active", version === "v1");
@@ -1029,7 +1203,7 @@
 
         async function triggerBreakingChangeTest() {
             const v1Payload = {
-                username: playerName,
+                username: playerName || "TestUser",
                 snakeType: selectedClass,
                 speed: 14
             };
@@ -1038,13 +1212,13 @@
         }
 
         async function apiCreatePlayer() {
-            updatePlayerName();
+            const activeName = playerName || "Player-" + Math.floor(100 + Math.random() * 900);
             if (currentVersion === "v1") {
-                const payload = { username: playerName, snakeType: selectedClass, speed: 12 };
+                const payload = { username: activeName, snakeType: selectedClass, speed: 12 };
                 await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v1/players`, payload);
             } else {
                 const payload = {
-                    username: playerName,
+                    username: activeName,
                     classProfile: {
                         className: selectedClass,
                         passiveEffect: selectedClass === "VIPER" ? "Poison Trail" : (selectedClass === "PYTHON" ? "Thick Scales" : "Golden Touch"),
@@ -1065,6 +1239,10 @@
         }
 
         async function apiUpdateLoadout() {
+            if (gameRunning) {
+                alert("Ganti loadout hanya diperbolehkan saat berada di lobby/di luar arena.");
+                return;
+            }
             const payload = { snakeType: selectedClass, color: selectedColor };
             const url = `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId || 'SNK-101'}/loadout`;
             await makeApiCall("PUT", url, payload);
@@ -1073,57 +1251,20 @@
         async function apiConsumeAppleManual() {
             const payload = { appleId: "APL-" + Math.floor(1 + Math.random() * 3) };
             const url = `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId || 'SNK-101'}/eat`;
-            const res = await makeApiCall("PATCH", url, payload);
-            if (res.success) {
-                fetchArenaState();
-            }
+            await makeApiCall("PATCH", url, payload);
+            fetchArenaState();
         }
 
         async function apiLeaveArena() {
-            const url = `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId || 'SNK-101'}`;
+            if (!snakeId) {
+                alert("Anda belum berada di dalam arena.");
+                return;
+            }
+            const url = `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}`;
             await makeApiCall("DELETE", url);
-            endGame("Kamu meninggalkan arena pertandingan.");
+            endGame("Anda memutuskan untuk mundur dari arena pertempuran.");
         }
 
-        async function startGame() {
-            updatePlayerName();
-            document.getElementById("gameOverlay").classList.add("hidden");
-            gameRunning = true;
-            score = 0;
-            document.getElementById("hudScore").innerText = "0";
-            document.getElementById("hudPlayer").innerText = playerName;
-
-            // Join Arena via REST API
-            const joinPayload = {
-                playerId: playerId,
-                playerName: playerName,
-                snakeType: selectedClass,
-                color: selectedColor
-            };
-            const res = await makeApiCall("POST", `${ARENA_SERVICE_URL}/api/v1/arena/snakes`, joinPayload);
-            if (res.data && res.data.id) {
-                snakeId = res.data.id;
-            }
-            await fetchArenaState();
-        }
-
-        function endGame(reason) {
-            gameRunning = false;
-            snakeId = null;
-            document.getElementById("gameOverlay").classList.remove("hidden");
-            document.getElementById("overlayTitle").innerText = "💥 TERELIMINASI!";
-            document.getElementById("overlayTitle").style.color = "var(--neon-red)";
-            const desc = document.querySelector("#gameOverlay p");
-            if (desc) {
-                desc.innerHTML = `<span style="color:var(--neon-red); font-weight:700;">${reason || "Ular Anda gugur di arena!"}</span><br><br>Badan ular Anda hancur menjadi Golden Apple.<br>Skor akhir: <b>${score} pts</b>. Klik tombol di bawah untuk respawn!`;
-            }
-            const startBtn = document.querySelector(".btn-start");
-            if (startBtn) {
-                startBtn.innerText = "MASUK LAGI KE ARENA";
-            }
-        }
-
-        // Input Handling
         window.addEventListener("keydown", (e) => {
             if (!gameRunning) return;
             switch (e.key) {
@@ -1161,19 +1302,18 @@
         }
 
         async function sendDirection(dir) {
-            currentDir = dir;
-            if (snakeId) {
+            if (snakeId && gameRunning) {
                 makeApiCall("PATCH", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}/direction?dir=${dir}`, null, true);
             }
         }
 
         async function triggerSkill() {
+            if (!snakeId || !gameRunning) return;
             skillActive = !skillActive;
-            const url = `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId || 'SNK-101'}/skill?active=${skillActive}`;
+            const url = `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}/skill?active=${skillActive}`;
             await makeApiCall("PATCH", url);
         }
 
-        // Rendering Loop (Runs smoothly on requestAnimationFrame)
         function renderLoop() {
             render();
             requestAnimationFrame(renderLoop);
@@ -1198,7 +1338,7 @@
                 ctx.stroke();
             }
 
-            // Apples
+            // Apples (Controlled and capped)
             arenaApples.forEach(apple => {
                 ctx.shadowBlur = 12;
                 if (apple.type === "GOLDEN") {
@@ -1213,14 +1353,14 @@
                 ctx.fill();
             });
 
-            // Draw ALL Snakes (Local player + Remote players + Bots)
+            // Snakes
             arenaSnakes.forEach(s => {
                 if (!s.alive || !s.segments || s.segments.length === 0) return;
 
                 const isMe = (s.id === snakeId);
                 const sColor = s.color || "#00d4ff";
 
-                ctx.shadowBlur = isMe ? (skillActive ? 22 : 12) : 8;
+                ctx.shadowBlur = isMe ? (skillActive ? 24 : 12) : 8;
                 ctx.shadowColor = sColor;
 
                 s.segments.forEach((seg, sIdx) => {
@@ -1230,7 +1370,6 @@
                     ctx.fill();
                 });
 
-                // Name label above snake head
                 ctx.shadowBlur = 0;
                 ctx.fillStyle = isMe ? "var(--neon-green)" : "#cbd5e1";
                 ctx.font = isMe ? "bold 11px 'Outfit'" : "10px 'Outfit'";
@@ -1244,11 +1383,9 @@
         requestAnimationFrame(renderLoop);
         fetchArenaState();
 
-        logApi("INFO", "/system/server-loop", 200, null, {
-            status: "SERVER_AUTHORITATIVE_ACTIVE",
-            tickRate: "120ms (Server Engine)",
-            webWorker: "Active (Bypasses Chrome Tab Throttling)",
-            multiplayer: "Fully Synchronized across Tabs & Devices"
+        logApi("INFO", "/system/init", 200, null, {
+            status: "ARENA_READY",
+            rules: ["Name & Class Locked In-Game", "No Apples on Death", "Balanced Max 6 Apples Pool", "PvP Collisions Active"]
         });
     </script>
 </body>
