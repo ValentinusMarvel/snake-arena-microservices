@@ -899,6 +899,19 @@
                 </div>
             </div>
 
+            <!-- Legend Makanan Apel -->
+            <div style="display:flex; gap:16px; font-size:0.75rem; align-items:center; background:rgba(255,255,255,0.03); padding:4px 14px; border-radius:999px; border:1px solid var(--border-card);">
+                <span style="display:flex; align-items:center; gap:5px; color:#ff4d79;">
+                    <span style="width:10px; height:10px; border-radius:50%; background:#ff3366; display:inline-block; box-shadow:0 0 8px #ff3366;"></span>
+                    <b>Apel Normal:</b> +10 pts
+                </span>
+                <span style="color:rgba(255,255,255,0.15)">|</span>
+                <span style="display:flex; align-items:center; gap:5px; color:#ffd700;">
+                    <span style="width:10px; height:10px; border-radius:50%; background:#ffd700; display:inline-block; box-shadow:0 0 10px #ffd700;"></span>
+                    <b>Apel Emas (★):</b> +30 pts <span style="font-size:0.68rem; color:#fde047;">(+50 Cobra)</span>
+                </span>
+            </div>
+
             <div class="canvas-wrapper">
                 <canvas id="gameCanvas" width="600" height="600"></canvas>
                 
@@ -1338,19 +1351,86 @@
                 ctx.stroke();
             }
 
-            // Apples (Controlled and capped)
+            // Apples: Sangat berbeda secara visual antara Normal vs Golden
+            const now = Date.now();
             arenaApples.forEach(apple => {
-                ctx.shadowBlur = 12;
+                const cx = (apple.x + 0.5) * tileSize;
+                const cy = (apple.y + 0.5) * tileSize;
+
                 if (apple.type === "GOLDEN") {
-                    ctx.fillStyle = "var(--neon-gold)";
-                    ctx.shadowColor = "var(--neon-gold)";
+                    // GOLDEN APPLE (30 pts): Berdenyut (pulsing), aura emas, tanda bintang, & partikel kilau
+                    const pulse = Math.sin(now / 180) * 2.2;
+                    const r = tileSize * 0.44 + pulse;
+
+                    ctx.save();
+                    // Outer golden glowing halo
+                    ctx.shadowBlur = 24;
+                    ctx.shadowColor = "#ffd700";
+                    ctx.strokeStyle = "rgba(255, 215, 0, 0.75)";
+                    ctx.lineWidth = 1.8;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r + 3.5, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    // Shiny royal gold radial gradient
+                    const grad = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.1, cx, cy, r);
+                    grad.addColorStop(0, "#ffffff");
+                    grad.addColorStop(0.3, "#fff37a");
+                    grad.addColorStop(0.75, "#ffd700");
+                    grad.addColorStop(1, "#b8860b");
+
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Star symbol di tengah apel emas
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = "#78350f";
+                    ctx.font = `bold ${Math.round(tileSize * 0.46)}px 'Outfit'`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("★", cx, cy + 1);
+
+                    // 4 Titik kilau (sparkles) berputar mengelilingi apel emas
+                    const angle = (now / 450) % (Math.PI * 2);
+                    ctx.fillStyle = "#ffffff";
+                    for (let i = 0; i < 4; i++) {
+                        const a = angle + (i * Math.PI / 2);
+                        const sx = cx + Math.cos(a) * (r + 4.5);
+                        const sy = cy + Math.sin(a) * (r + 4.5);
+                        ctx.beginPath();
+                        ctx.arc(sx, sy, 1.8, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.restore();
+
                 } else {
-                    ctx.fillStyle = "var(--neon-red)";
-                    ctx.shadowColor = "var(--neon-red)";
+                    // NORMAL APPLE (10 pts): Merah delima neon klasik dengan daun hijau segar di atasnya
+                    const r = tileSize * 0.36;
+                    ctx.save();
+                    ctx.shadowBlur = 12;
+                    ctx.shadowColor = "#ff3366";
+
+                    const grad = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.1, cx, cy, r);
+                    grad.addColorStop(0, "#ff809b");
+                    grad.addColorStop(0.7, "#ff3366");
+                    grad.addColorStop(1, "#991b1b");
+
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Tangkai & daun hijau kecil
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = "#00ff88";
+                    ctx.beginPath();
+                    ctx.ellipse(cx + 2.5, cy - r, 3.2, 1.8, Math.PI / 4, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.restore();
                 }
-                ctx.beginPath();
-                ctx.arc((apple.x + 0.5) * tileSize, (apple.y + 0.5) * tileSize, tileSize * 0.38, 0, Math.PI * 2);
-                ctx.fill();
             });
 
             // Snakes
