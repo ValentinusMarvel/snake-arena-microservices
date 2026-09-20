@@ -74,9 +74,23 @@ public class ArenaManager {
     }
 
 public synchronized Snake joinArena(String playerId, String playerName, String snakeType, String color, int startX, int startY) {
-        // Bersihkan ular aktif sebelumnya dari player ini jika ada (misal akibat refresh window)
-        snakes.values().removeIf(s -> !isBot(s) &&
-                (s.getPlayerId().equalsIgnoreCase(playerId) || s.getPlayerName().equalsIgnoreCase(playerName)));
+        long now = System.currentTimeMillis();
+
+        // Validasi Duplikasi Nama: Berikan peringatan jika nama sudah digunakan oleh pemain lain yang masih aktif
+        for (Snake existing : snakes.values()) {
+            if (existing.isAlive() && existing.getPlayerName().equalsIgnoreCase(playerName)) {
+                // Jika ular tersebut adalah sesi lama dari player yang sama dan sudah disconnect (> 4000ms), bersihkan
+                if (existing.getPlayerId().equalsIgnoreCase(playerId) && (now - existing.getLastHeartbeatTime() > 4000)) {
+                    snakes.remove(existing.getId());
+                    continue;
+                }
+
+                // Jika ular masih aktif (milik pemain lain atau masih terhubung): Tolak dengan peringatan!
+                if (now - existing.getLastHeartbeatTime() <= 4000) {
+                    throw new IllegalArgumentException("Nama '" + playerName + "' sedang digunakan oleh pemain lain di arena! Silakan pilih nama lain.");
+                }
+            }
+        }
 
         if (snakes.size() >= maxPlayers) {
             throw new IllegalStateException("Arena penuh! Maksimum " + maxPlayers + " pemain telah tercapai.");

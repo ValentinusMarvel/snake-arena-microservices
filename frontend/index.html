@@ -1047,64 +1047,80 @@
             document.getElementById("hudClass").style.color = color;
         }
 
-        function validateAndStartGame() {
+        async function validateAndStartGame() {
             const input = document.getElementById("overlayPlayerName");
             const val = input.value.trim();
             const valMsg = document.getElementById("nameValidationMsg");
 
             if (!val) {
                 input.classList.add("error");
+                valMsg.innerText = "⚠️ Nickname wajib diisi sebelum masuk ke arena!";
                 valMsg.style.display = "block";
                 input.focus();
                 return;
             }
 
+            const startBtn = document.querySelector(".btn-start");
+            const originalText = startBtn.innerText;
+            startBtn.innerText = "Memeriksa Nama & Masuk...";
+            startBtn.disabled = true;
+
+            // Hubungi Arena Service untuk join terlebih dahulu
+            const joinPayload = {
+                playerId: registeredPlayerId || playerId,
+                playerName: val,
+                snakeType: selectedClass,
+                color: selectedColor
+            };
+
+            const res = await makeApiCall("POST", `${ARENA_SERVICE_URL}/api/v1/arena/snakes`, joinPayload);
+            startBtn.innerText = originalText;
+            startBtn.disabled = false;
+
+            if (!res.success) {
+                // Nama sudah digunakan oleh pemain lain atau input tidak valid
+                input.classList.add("error");
+                const errMsg = (res.data && res.data.detail) ? res.data.detail : `Nama '${val}' sudah digunakan oleh pemain lain di arena! Silakan pilih nama lain.`;
+                valMsg.innerText = `⚠️ ${errMsg}`;
+                valMsg.style.display = "block";
+                input.select();
+                input.focus();
+                alert(`⚠️ Peringatan Nama Duplikat:\n${errMsg}`);
+                return;
+            }
+
+            // Berhasil join arena: Sembunyikan overlay dan mulai permainan
             input.classList.remove("error");
             valMsg.style.display = "none";
             playerName = val;
 
-            // Update HUD and sidebar
             document.getElementById("inputPlayerName").value = playerName;
             document.getElementById("hudPlayer").innerText = playerName;
             document.getElementById("hudPlayer").style.color = "#ffffff";
 
-            startGame();
-        }
-
-        function lockInGameControls(locked) {
-            // Lock/Unlock name and class change
-            document.getElementById("inputPlayerName").disabled = true;
-            document.getElementById("classLockNotice").innerText = locked ? "🔒 Terkunci saat Bermain" : "Pilih di Start Dialog";
-            document.getElementById("classLockNotice").style.color = locked ? "var(--neon-red)" : "var(--neon-cyan)";
-            document.getElementById("playerBadge").innerText = locked ? "IN ARENA" : "LOBBY";
-            document.getElementById("playerBadge").style.color = locked ? "var(--neon-green)" : "var(--text-muted)";
-
-            document.querySelectorAll('#sidebarClassSelector .class-card').forEach(c => {
-                c.classList.toggle('locked', locked);
-            });
-            document.getElementById("btnUpdateLoadout").disabled = locked;
-        }
-
-        async function startGame() {
             document.getElementById("gameOverlay").classList.add("hidden");
             gameRunning = true;
             score = 0;
             document.getElementById("hudScore").innerText = "0";
             lockInGameControls(true);
 
-            // Join Arena via REST API
-            const joinPayload = {
-                playerId: registeredPlayerId || playerId,
-                playerName: playerName,
-                snakeType: selectedClass,
-                color: selectedColor
-            };
-            const res = await makeApiCall("POST", `${ARENA_SERVICE_URL}/api/v1/arena/snakes`, joinPayload);
             if (res.data && res.data.id) {
                 snakeId = res.data.id;
                 sessionStorage.setItem("activeSnakeId", snakeId);
             }
             await fetchArenaState();
+        }
+
+        function lockInGameControls(locked) {
+            // Lock/Unlock name and class change
+            document.getElementById("inputPlayerName").disabled = true;
+            document.getElementById("classLockNotice").innerText = locked ? "🔒 Terkunci saat Bermain" : "Pilih di Start Dialog";
+            document.getElementById("classLockNotice").style.color = locked ? "var(--neon-gold)" : "var(--text-muted)";
+
+            document.querySelectorAll('#sidebarClassSelector .class-card').forEach(c => {
+                c.classList.toggle('locked', locked);
+            });
+            document.getElementById("btnUpdateLoadout").disabled = locked;
         }
 
         function endGame(reason) {
