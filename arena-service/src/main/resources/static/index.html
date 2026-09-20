@@ -2,8 +2,8 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snake Arena: Clash of Serpents | Enterprise Microservices Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Snake Arena: Clash of Serpents | Multi-Device Microservices Game</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -30,6 +30,7 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            touch-action: manipulation;
         }
 
         body {
@@ -53,35 +54,37 @@
             background: rgba(10, 13, 20, 0.85);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border-card);
-            padding: 12px 24px;
+            padding: 10px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             position: sticky;
             top: 0;
             z-index: 100;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .brand-container {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
         }
 
         .brand-icon {
-            width: 38px;
-            height: 38px;
+            width: 36px;
+            height: 36px;
             background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
             border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 18px;
             box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
         }
 
         .brand-title h1 {
-            font-size: 1.15rem;
+            font-size: 1.05rem;
             font-weight: 800;
             letter-spacing: -0.5px;
             background: linear-gradient(90deg, #fff, #9ca3af);
@@ -90,7 +93,7 @@
         }
 
         .brand-title p {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             color: var(--neon-green);
             font-weight: 600;
             display: flex;
@@ -111,12 +114,12 @@
         .author-badge {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--border-card);
-            padding: 6px 14px;
+            padding: 5px 12px;
             border-radius: 9999px;
-            font-size: 0.82rem;
+            font-size: 0.8rem;
         }
 
         .author-badge .student-name {
@@ -127,7 +130,7 @@
         .author-badge .student-nim {
             font-family: 'JetBrains Mono', monospace;
             color: var(--neon-cyan);
-            font-size: 0.78rem;
+            font-size: 0.75rem;
         }
 
         .swagger-links {
@@ -139,14 +142,14 @@
             background: rgba(0, 212, 255, 0.1);
             color: var(--neon-cyan);
             border: 1px solid rgba(0, 212, 255, 0.25);
-            padding: 5px 12px;
+            padding: 5px 10px;
             border-radius: 6px;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 600;
             text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
             transition: all 0.2s ease;
         }
 
@@ -159,9 +162,9 @@
         /* Layout Grid */
         .app-container {
             display: grid;
-            grid-template-columns: 320px 1fr 400px;
-            gap: 20px;
-            padding: 20px;
+            grid-template-columns: 310px 1fr 380px;
+            gap: 16px;
+            padding: 16px;
             flex: 1;
             max-width: 1700px;
             margin: 0 auto;
@@ -173,16 +176,16 @@
             background: var(--bg-card);
             border: 1px solid var(--border-card);
             border-radius: 16px;
-            padding: 18px;
+            padding: 16px;
             backdrop-filter: blur(16px);
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
         .panel-title {
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.8px;
@@ -190,66 +193,93 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding-bottom: 10px;
+            padding-bottom: 8px;
             border-bottom: 1px solid var(--border-card);
         }
 
-        /* Left Panel: Class Selection & Controls */
+        /* Nickname Input */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-group label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .input-text {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-card);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.85rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .input-text:focus {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+        }
+
+        /* Class Selector */
         .class-selector {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
         }
 
         .class-card {
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid var(--border-card);
-            border-radius: 12px;
-            padding: 12px;
+            border-radius: 10px;
+            padding: 10px;
             cursor: pointer;
-            transition: all 0.25s ease;
-            position: relative;
-            overflow: hidden;
+            transition: all 0.2s ease;
         }
 
         .class-card:hover {
             border-color: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
         }
 
         .class-card.selected {
             border-color: var(--card-accent, var(--neon-green));
             background: rgba(255, 255, 255, 0.05);
-            box-shadow: 0 0 16px rgba(0, 255, 136, 0.15);
+            box-shadow: 0 0 14px rgba(0, 255, 136, 0.15);
         }
 
         .class-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
 
         .class-name {
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             display: flex;
             align-items: center;
             gap: 6px;
         }
 
         .class-badge {
-            font-size: 0.68rem;
-            padding: 2px 8px;
+            font-size: 0.65rem;
+            padding: 2px 6px;
             border-radius: 999px;
             font-weight: 600;
             text-transform: uppercase;
         }
 
         .class-desc {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             color: var(--text-muted);
-            line-height: 1.4;
+            line-height: 1.35;
         }
 
         .class-viper { --card-accent: var(--neon-green); }
@@ -265,17 +295,17 @@
         .api-actions {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
 
         .action-btn {
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--border-card);
             color: #fff;
-            padding: 10px 14px;
+            padding: 8px 12px;
             border-radius: 8px;
             font-family: 'Outfit', sans-serif;
-            font-size: 0.82rem;
+            font-size: 0.78rem;
             font-weight: 600;
             cursor: pointer;
             display: flex;
@@ -287,14 +317,14 @@
         .action-btn:hover {
             background: rgba(255, 255, 255, 0.08);
             border-color: rgba(255, 255, 255, 0.2);
-            transform: translateX(3px);
+            transform: translateX(2px);
         }
 
         .method-tag {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: 700;
-            padding: 2px 6px;
+            padding: 2px 5px;
             border-radius: 4px;
         }
 
@@ -304,19 +334,19 @@
         .tag-patch { background: rgba(139, 92, 246, 0.15); color: var(--method-patch); }
         .tag-delete { background: rgba(239, 68, 68, 0.15); color: var(--method-delete); }
 
-        /* Breaking Change Switcher */
+        /* Version Switcher */
         .version-switcher {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 10px;
-            padding: 10px;
+            padding: 8px;
             border: 1px dashed rgba(255, 255, 255, 0.12);
         }
 
         .version-header {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 700;
             color: var(--neon-purple);
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -329,9 +359,9 @@
         }
 
         .btn-ver {
-            padding: 6px 10px;
+            padding: 5px 8px;
             border-radius: 6px;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 600;
             border: 1px solid var(--border-card);
             background: rgba(255, 255, 255, 0.03);
@@ -348,14 +378,14 @@
         }
 
         .btn-test-break {
-            margin-top: 8px;
+            margin-top: 6px;
             width: 100%;
             background: rgba(239, 68, 68, 0.15);
             color: var(--neon-red);
             border: 1px solid rgba(239, 68, 68, 0.3);
-            padding: 6px;
+            padding: 5px;
             border-radius: 6px;
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s;
@@ -363,14 +393,13 @@
 
         .btn-test-break:hover {
             background: rgba(239, 68, 68, 0.25);
-            box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
         }
 
-        /* Center Panel: Arena Canvas */
+        /* Center Column: Arena Canvas */
         .arena-container {
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 12px;
             align-items: center;
         }
 
@@ -382,7 +411,7 @@
             background: var(--bg-card);
             border: 1px solid var(--border-card);
             border-radius: 12px;
-            padding: 10px 18px;
+            padding: 8px 16px;
         }
 
         .hud-stat {
@@ -392,7 +421,7 @@
         }
 
         .hud-label {
-            font-size: 0.65rem;
+            font-size: 0.62rem;
             text-transform: uppercase;
             color: var(--text-muted);
             letter-spacing: 0.5px;
@@ -400,7 +429,7 @@
 
         .hud-val {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 1.15rem;
+            font-size: 1.05rem;
             font-weight: 700;
             color: #fff;
         }
@@ -409,26 +438,32 @@
             position: relative;
             border-radius: 16px;
             overflow: hidden;
-            border: 2px solid rgba(0, 255, 136, 0.2);
-            box-shadow: 0 0 30px rgba(0, 255, 136, 0.1);
+            border: 2px solid rgba(0, 255, 136, 0.25);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.12);
             background: #06090e;
+            width: 100%;
+            max-width: 600px;
+            aspect-ratio: 1 / 1;
         }
 
         canvas {
+            width: 100%;
+            height: 100%;
             display: block;
         }
 
         .game-overlay {
             position: absolute;
             inset: 0;
-            background: rgba(6, 9, 14, 0.85);
+            background: rgba(6, 9, 14, 0.88);
             backdrop-filter: blur(8px);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 16px;
+            gap: 14px;
             z-index: 10;
+            padding: 20px;
         }
 
         .game-overlay.hidden {
@@ -436,19 +471,20 @@
         }
 
         .game-overlay h2 {
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             font-weight: 800;
             letter-spacing: -0.5px;
+            text-align: center;
         }
 
         .btn-start {
             background: linear-gradient(135deg, var(--neon-green), #00b359);
             color: #000;
             font-weight: 800;
-            padding: 12px 32px;
+            padding: 12px 28px;
             border-radius: 10px;
             border: none;
-            font-size: 1rem;
+            font-size: 0.95rem;
             cursor: pointer;
             box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
             transition: all 0.2s ease;
@@ -464,47 +500,50 @@
             display: none;
             gap: 20px;
             width: 100%;
+            max-width: 480px;
             justify-content: space-around;
             padding: 10px;
+            align-items: center;
         }
 
         .d-pad {
             display: grid;
-            grid-template-columns: repeat(3, 44px);
-            grid-template-rows: repeat(3, 44px);
-            gap: 4px;
+            grid-template-columns: repeat(3, 50px);
+            grid-template-rows: repeat(3, 50px);
+            gap: 6px;
         }
 
         .d-btn {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid var(--border-card);
-            border-radius: 8px;
+            border-radius: 10px;
             color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             user-select: none;
+            -webkit-user-select: none;
         }
 
         .d-btn:active {
-            background: rgba(0, 255, 136, 0.3);
+            background: rgba(0, 255, 136, 0.35);
         }
 
         .btn-skill-touch {
-            width: 90px;
-            height: 90px;
+            width: 80px;
+            height: 80px;
             border-radius: 50%;
             background: radial-gradient(circle, var(--neon-purple), #6b21a8);
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.25);
             color: #fff;
             font-weight: 800;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             cursor: pointer;
             box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
         }
 
-        /* Right Panel: Live REST API Inspector */
+        /* Right Column: Live REST API Inspector */
         .inspector-panel {
             height: 100%;
             display: flex;
@@ -524,10 +563,10 @@
         .api-logs {
             flex: 1;
             overflow-y: auto;
-            max-height: 520px;
+            max-height: 480px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
             padding-right: 4px;
         }
 
@@ -544,12 +583,12 @@
             background: rgba(0, 0, 0, 0.35);
             border: 1px solid var(--border-card);
             border-radius: 8px;
-            padding: 10px;
+            padding: 8px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             animation: slideIn 0.25s ease-out;
         }
 
@@ -572,7 +611,7 @@
 
         .log-status {
             font-weight: 700;
-            padding: 1px 6px;
+            padding: 1px 5px;
             border-radius: 4px;
         }
 
@@ -591,35 +630,35 @@
             border-radius: 4px;
             padding: 6px;
             color: #94a3b8;
-            font-size: 0.68rem;
+            font-size: 0.65rem;
             white-space: pre-wrap;
-            max-height: 90px;
+            max-height: 80px;
             overflow-y: auto;
         }
 
-        /* Leaderboard table */
+        /* Leaderboard */
         .leaderboard-list {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 5px;
         }
 
         .lb-item {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 6px 10px;
+            padding: 5px 8px;
             background: rgba(255, 255, 255, 0.02);
             border-radius: 6px;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
         }
 
         .lb-item.user-snake {
             border-left: 3px solid var(--neon-green);
-            background: rgba(0, 255, 136, 0.05);
+            background: rgba(0, 255, 136, 0.06);
         }
 
-        @media (max-width: 1200px) {
+        @media (max-width: 1100px) {
             .app-container {
                 grid-template-columns: 1fr;
             }
@@ -631,7 +670,7 @@
 </head>
 <body>
 
-    <!-- Header with Identity & Swagger Links -->
+    <!-- Header with Identity & Dynamic Swagger Links -->
     <header>
         <div class="brand-container">
             <div class="brand-icon">🐍</div>
@@ -647,10 +686,10 @@
         </div>
 
         <div class="swagger-links">
-            <a href="http://localhost:8081/swagger-ui.html" target="_blank" class="btn-docs">
+            <a id="linkSwaggerPlayer" href="#" target="_blank" class="btn-docs">
                 <span>📘 Player API (8081)</span>
             </a>
-            <a href="http://localhost:8082/swagger-ui.html" target="_blank" class="btn-docs">
+            <a id="linkSwaggerArena" href="#" target="_blank" class="btn-docs">
                 <span>⚔️ Arena API (8082)</span>
             </a>
         </div>
@@ -662,8 +701,17 @@
         <!-- Left Column: Controls & API Operations -->
         <div class="panel-card">
             <div class="panel-title">
+                <span>Konfigurasi Pemain</span>
+                <span id="playerBadge" style="font-size:0.7rem; color:var(--neon-green)">ONLINE</span>
+            </div>
+
+            <div class="input-group">
+                <label for="inputPlayerName">Nama Pemain / Nickname:</label>
+                <input type="text" id="inputPlayerName" class="input-text" value="Marvel" placeholder="Masukkan nama..." onchange="updatePlayerName()">
+            </div>
+
+            <div class="panel-title" style="margin-top:2px;">
                 <span>Pilih Kelas Ular</span>
-                <span style="font-size:0.7rem; color:var(--text-muted)">Loadout DTO</span>
             </div>
 
             <div class="class-selector">
@@ -680,7 +728,7 @@
                         <span class="class-name">🛡️ Python</span>
                         <span class="class-badge">Tank</span>
                     </div>
-                    <p class="class-desc">Passive: Thick Scales. Tahan benturan ringan dan durasi skill aktif shield lebih lama.</p>
+                    <p class="class-desc">Passive: Thick Scales. Tahan benturan tubuh sendiri saat skill aktif shield menyala.</p>
                 </div>
 
                 <div class="class-card class-cobra" onclick="selectClass('COBRA', '#ffd700', this)">
@@ -708,7 +756,7 @@
             </div>
 
             <!-- REST CRUD Actions -->
-            <div class="panel-title" style="margin-top:4px;">
+            <div class="panel-title" style="margin-top:2px;">
                 <span>CRUD REST Operations</span>
             </div>
 
@@ -752,8 +800,8 @@
                     <span class="hud-val" id="hudScore">0</span>
                 </div>
                 <div class="hud-stat">
-                    <span class="hud-label">Status</span>
-                    <span class="hud-val" id="hudStatus" style="font-size:0.9rem; color:var(--neon-green)">ALIVE</span>
+                    <span class="hud-label">Arena Players</span>
+                    <span class="hud-val" id="hudPlayersCount" style="color:var(--neon-cyan)">1 / 16</span>
                 </div>
             </div>
 
@@ -761,24 +809,24 @@
                 <canvas id="gameCanvas" width="600" height="600"></canvas>
                 <div class="game-overlay" id="gameOverlay">
                     <h2 id="overlayTitle">CLASH OF SERPENTS</h2>
-                    <p style="color:var(--text-muted); font-size:0.85rem; max-width:320px; text-align:center;">
-                        Gunakan <b style="color:#fff">W, A, S, D</b> atau <b style="color:#fff">Panah</b> untuk navigasi. Tekan <b style="color:var(--neon-purple)">SPASI</b> untuk mengaktifkan Skill Kelas.
+                    <p style="color:var(--text-muted); font-size:0.85rem; max-width:340px; text-align:center;">
+                        Bisa dimainkan di <b>PC</b> (WASD/Panah + Spasi) atau <b>HP/Tablet</b> melalui browser pada jaringan Wi-Fi lokal yang sama!
                     </p>
                     <button class="btn-start" onclick="startGame()">MASUK KE ARENA</button>
                 </div>
             </div>
 
-            <!-- Touch Controls for Mobile -->
+            <!-- Touch Controls for Mobile / Tablet -->
             <div class="touch-controls">
                 <div class="d-pad">
                     <div></div>
-                    <button class="d-btn" onclick="changeDir(0, -1)">▲</button>
+                    <button class="d-btn" ontouchstart="changeDir(0, -1); event.preventDefault();" onclick="changeDir(0, -1)">▲</button>
                     <div></div>
-                    <button class="d-btn" onclick="changeDir(-1, 0)">◀</button>
-                    <button class="d-btn" onclick="changeDir(0, 1)">▼</button>
-                    <button class="d-btn" onclick="changeDir(1, 0)">▶</button>
+                    <button class="d-btn" ontouchstart="changeDir(-1, 0); event.preventDefault();" onclick="changeDir(-1, 0)">◀</button>
+                    <button class="d-btn" ontouchstart="changeDir(0, 1); event.preventDefault();" onclick="changeDir(0, 1)">▼</button>
+                    <button class="d-btn" ontouchstart="changeDir(1, 0); event.preventDefault();" onclick="changeDir(1, 0)">▶</button>
                 </div>
-                <button class="btn-skill-touch" onclick="triggerSkill()">SKILL</button>
+                <button class="btn-skill-touch" ontouchstart="triggerSkill(); event.preventDefault();" onclick="triggerSkill()">SKILL</button>
             </div>
         </div>
 
@@ -791,19 +839,14 @@
 
             <!-- Live Leaderboard -->
             <div style="background:rgba(0,0,0,0.25); border-radius:8px; padding:10px; border:1px solid var(--border-card);">
-                <div style="font-size:0.72rem; color:var(--text-muted); font-weight:700; margin-bottom:6px;">LIVE ARENA LEADERBOARD</div>
+                <div style="font-size:0.72rem; color:var(--text-muted); font-weight:700; margin-bottom:6px; display:flex; justify-content:space-between;">
+                    <span>LIVE ARENA LEADERBOARD</span>
+                    <span id="lbMaxInfo" style="color:var(--neon-cyan)">Maks: 16 Pemain</span>
+                </div>
                 <div class="leaderboard-list" id="leaderboardContainer">
                     <div class="lb-item user-snake">
-                        <span>1. Marvel (Player)</span>
+                        <span>1. Marvel (You)</span>
                         <span style="font-family:'JetBrains Mono'; font-weight:700; color:var(--neon-green)">0 pts</span>
-                    </div>
-                    <div class="lb-item">
-                        <span>2. Bot-Viper</span>
-                        <span style="font-family:'JetBrains Mono'; color:var(--text-muted)">40 pts</span>
-                    </div>
-                    <div class="lb-item">
-                        <span>3. Bot-Python</span>
-                        <span style="font-family:'JetBrains Mono'; color:var(--text-muted)">20 pts</span>
                     </div>
                 </div>
             </div>
@@ -821,10 +864,15 @@
     </div>
 
     <script>
-        // Game State & Configuration
-        const PLAYER_SERVICE_URL = "http://localhost:8081";
-        const ARENA_SERVICE_URL = "http://localhost:8082";
-        
+        // Dynamic Host Resolution for Multi-Device LAN & Tailscale Support
+        const currentHost = window.location.hostname || "localhost";
+        const PLAYER_SERVICE_URL = `http://${currentHost}:8081`;
+        const ARENA_SERVICE_URL = `http://${currentHost}:8082`;
+
+        // Update Swagger links dynamically
+        document.getElementById("linkSwaggerPlayer").href = `${PLAYER_SERVICE_URL}/swagger-ui.html`;
+        document.getElementById("linkSwaggerArena").href = `${ARENA_SERVICE_URL}/swagger-ui.html`;
+
         let currentVersion = "v1";
         let selectedClass = "VIPER";
         let selectedColor = "#00ff88";
@@ -835,6 +883,7 @@
         let skillActive = false;
         let gameRunning = false;
         let isMockMode = false;
+        let otherSnakes = [];
 
         // Canvas Setup
         const canvas = document.getElementById("gameCanvas");
@@ -855,10 +904,13 @@
             { id: "APL-3", x: 7, y: 22, type: "NORMAL", points: 10 }
         ];
 
-        let bots = [
-            { id: "BOT-1", name: "Bot-Viper", color: "#00ff88", segments: [{x: 5, y: 5}, {x: 5, y: 6}], dir: {x: 1, y: 0}, score: 40 },
-            { id: "BOT-2", name: "Bot-Python", color: "#00d4ff", segments: [{x: 24, y: 24}, {x: 24, y: 23}], dir: {x: -1, y: 0}, score: 20 }
-        ];
+        function updatePlayerName() {
+            const val = document.getElementById("inputPlayerName").value.trim();
+            if (val) {
+                playerName = val;
+                document.getElementById("hudPlayer").innerText = playerName;
+            }
+        }
 
         // REST Inspector Logger
         function logApi(method, endpoint, status, reqBody, resBody) {
@@ -889,7 +941,7 @@
         }
 
         // Generic API Caller with Auto-Fallback to Simulation
-        async function makeApiCall(method, url, body = null) {
+        async function makeApiCall(method, url, body = null, silent = false) {
             try {
                 const options = {
                     method: method,
@@ -906,16 +958,17 @@
                     data = { message: response.statusText };
                 }
 
-                logApi(method, url.replace(/^http:\/\/[^/]+/, ""), response.status, body, data);
+                if (!silent) {
+                    logApi(method, url.replace(/^http:\/\/[^/]+/, ""), response.status, body, data);
+                }
                 return { success: response.ok, status: response.status, data: data };
             } catch (err) {
-                // Backend is offline or CORS issue: Simulate gracefully with mock responses
                 isMockMode = true;
-                return simulateApiResponse(method, url, body);
+                return simulateApiResponse(method, url, body, silent);
             }
         }
 
-        function simulateApiResponse(method, url, body) {
+        function simulateApiResponse(method, url, body, silent) {
             let status = 200;
             let mockData = {};
 
@@ -952,7 +1005,9 @@
                 mockData = { id: playerId, username: playerName, score: score, class: selectedClass };
             }
 
-            logApi(method, url.replace(/^http:\/\/[^/]+/, ""), status, body, mockData);
+            if (!silent) {
+                logApi(method, url.replace(/^http:\/\/[^/]+/, ""), status, body, mockData);
+            }
             return { success: status >= 200 && status < 300, status: status, data: mockData };
         }
 
@@ -980,7 +1035,6 @@
 
         // Breaking Change Demo Trigger
         async function triggerBreakingChangeTest() {
-            // Send v1 payload (flat structure) to v2 endpoint to witness the 400 Bad Request breaking change rejection
             const v1Payload = {
                 username: playerName,
                 snakeType: selectedClass,
@@ -992,6 +1046,7 @@
 
         // API Actions
         async function apiCreatePlayer() {
+            updatePlayerName();
             if (currentVersion === "v1") {
                 const payload = { username: playerName, snakeType: selectedClass, speed: 12 };
                 await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v1/players`, payload);
@@ -1041,15 +1096,15 @@
 
         // Start & End Game
         async function startGame() {
+            updatePlayerName();
             document.getElementById("gameOverlay").classList.add("hidden");
             gameRunning = true;
             score = 0;
             document.getElementById("hudScore").innerText = "0";
-            document.getElementById("hudStatus").innerText = "ALIVE";
-            document.getElementById("hudStatus").style.color = "var(--neon-green)";
+            document.getElementById("hudPlayer").innerText = playerName;
 
             snake = [
-                { x: 15, y: 15 },
+                { x: Math.floor(Math.random() * 15) + 5, y: Math.floor(Math.random() * 15) + 5 },
                 { x: 15, y: 16 },
                 { x: 15, y: 17 }
             ];
@@ -1073,11 +1128,9 @@
             gameRunning = false;
             document.getElementById("gameOverlay").classList.remove("hidden");
             document.getElementById("overlayTitle").innerText = "GAME OVER";
-            document.getElementById("hudStatus").innerText = "DEAD";
-            document.getElementById("hudStatus").style.color = "var(--neon-red)";
         }
 
-        // Input Handling
+        // Input Handling (Keyboard)
         window.addEventListener("keydown", (e) => {
             if (!gameRunning) return;
             switch (e.key) {
@@ -1119,6 +1172,45 @@
             await makeApiCall("PATCH", url);
         }
 
+        // Real-Time Arena Synchronization (Multiplayer across devices)
+        let lastSyncTime = 0;
+        async function syncWithServerArena() {
+            if (!gameRunning || !snakeId) return;
+
+            // 1. Send our position to server
+            const posPayload = {
+                segments: snake,
+                direction: dir.y === -1 ? "UP" : (dir.y === 1 ? "DOWN" : (dir.x === -1 ? "LEFT" : "RIGHT"))
+            };
+            makeApiCall("PATCH", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}/position`, posPayload, true);
+
+            // 2. Fetch all other active players & apples from server
+            const res = await makeApiCall("GET", `${ARENA_SERVICE_URL}/api/v1/arena/state`, null, true);
+            if (res.success && res.data) {
+                if (res.data.apples && res.data.apples.length > 0) {
+                    apples = res.data.apples;
+                }
+                if (res.data.snakes) {
+                    otherSnakes = res.data.snakes.filter(s => s.id !== snakeId && s.alive);
+                }
+                if (res.data.leaderboard) {
+                    renderLeaderboard(res.data.leaderboard);
+                }
+                const activeCount = (res.data.snakes ? res.data.snakes.length : 1);
+                document.getElementById("hudPlayersCount").innerText = `${activeCount} / 16`;
+            }
+        }
+
+        function renderLeaderboard(leaderboard) {
+            const container = document.getElementById("leaderboardContainer");
+            container.innerHTML = leaderboard.slice(0, 5).map((entry, idx) => `
+                <div class="lb-item ${entry.id === snakeId ? 'user-snake' : ''}">
+                    <span>${idx + 1}. ${entry.playerName} (${entry.snakeType})</span>
+                    <span style="font-family:'JetBrains Mono'; font-weight:700; color:${entry.id === snakeId ? 'var(--neon-green)' : 'var(--text-muted)'}">${entry.score} pts</span>
+                </div>
+            `).join("");
+        }
+
         // Main Game Loop
         let lastTick = 0;
         function gameLoop(timestamp) {
@@ -1129,6 +1221,13 @@
                     update();
                 }
             }
+
+            // Sync with backend every 250ms for multiplayer state
+            if (timestamp - lastSyncTime > 250) {
+                lastSyncTime = timestamp;
+                syncWithServerArena();
+            }
+
             render();
             requestAnimationFrame(gameLoop);
         }
@@ -1137,13 +1236,13 @@
             dir = nextDir;
             const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
 
-            // Wall collision (wrap around arena for fun action)
+            // Wall collision wrap around arena
             if (head.x < 0) head.x = gridSize - 1;
             if (head.x >= gridSize) head.x = 0;
             if (head.y < 0) head.y = gridSize - 1;
             if (head.y >= gridSize) head.y = 0;
 
-            // Self collision (if Python with skillActive, shield protects)
+            // Self collision (shield protects if Python skill is active)
             if (!skillActive || selectedClass !== "PYTHON") {
                 for (let i = 0; i < snake.length; i++) {
                     if (snake[i].x === head.x && snake[i].y === head.y) {
@@ -1163,18 +1262,8 @@
                     const pts = apple.type === "GOLDEN" && selectedClass === "COBRA" ? apple.points + 20 : apple.points;
                     score += pts;
                     document.getElementById("hudScore").innerText = score;
-                    
-                    // Trigger REST PATCH eat
-                    makeApiCall("PATCH", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId || 'SNK-101'}/eat`, { appleId: apple.id });
 
-                    // Respawn apple
-                    apples[i] = {
-                        id: "APL-" + Math.floor(Math.random() * 10000),
-                        x: Math.floor(Math.random() * (gridSize - 2)) + 1,
-                        y: Math.floor(Math.random() * (gridSize - 2)) + 1,
-                        type: Math.random() > 0.75 ? "GOLDEN" : "NORMAL",
-                        points: 10
-                    };
+                    makeApiCall("PATCH", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId || 'SNK-101'}/eat`, { appleId: apple.id });
                     ate = true;
                     break;
                 }
@@ -1183,39 +1272,6 @@
             if (!ate) {
                 snake.pop();
             }
-
-            // Update Bots movement for lively arena
-            bots.forEach(bot => {
-                if (Math.random() > 0.8) {
-                    const dirs = [{x:1, y:0}, {x:-1, y:0}, {x:0, y:1}, {x:0, y:-1}];
-                    bot.dir = dirs[Math.floor(Math.random() * dirs.length)];
-                }
-                const bHead = { x: bot.segments[0].x + bot.dir.x, y: bot.segments[0].y + bot.dir.y };
-                if (bHead.x < 0) bHead.x = gridSize - 1;
-                if (bHead.x >= gridSize) bHead.x = 0;
-                if (bHead.y < 0) bHead.y = gridSize - 1;
-                if (bHead.y >= gridSize) bHead.y = 0;
-                bot.segments.unshift(bHead);
-                bot.segments.pop();
-            });
-
-            updateLeaderboard();
-        }
-
-        function updateLeaderboard() {
-            const list = [
-                { name: playerName + " (You)", score: score, isUser: true },
-                { name: bots[0].name, score: bots[0].score, isUser: false },
-                { name: bots[1].name, score: bots[1].score, isUser: false }
-            ].sort((a, b) => b.score - a.score);
-
-            const container = document.getElementById("leaderboardContainer");
-            container.innerHTML = list.map((item, idx) => `
-                <div class="lb-item ${item.isUser ? 'user-snake' : ''}">
-                    <span>${idx + 1}. ${item.name}</span>
-                    <span style="font-family:'JetBrains Mono'; font-weight:700; color:${item.isUser ? 'var(--neon-green)' : 'var(--text-muted)'}">${item.score} pts</span>
-                </div>
-            `).join("");
         }
 
         // Render Canvas
@@ -1223,7 +1279,7 @@
             ctx.fillStyle = "#06090e";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw Grid lines
+            // Grid lines
             ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
             ctx.lineWidth = 1;
             for (let i = 0; i <= gridSize; i++) {
@@ -1238,7 +1294,7 @@
                 ctx.stroke();
             }
 
-            // Draw Apples
+            // Apples
             apples.forEach(apple => {
                 ctx.shadowBlur = 12;
                 if (apple.type === "GOLDEN") {
@@ -1253,17 +1309,30 @@
                 ctx.fill();
             });
 
-            // Draw Bots
-            bots.forEach(bot => {
-                ctx.shadowBlur = 6;
-                ctx.shadowColor = bot.color;
-                ctx.fillStyle = bot.color;
-                bot.segments.forEach(seg => {
-                    ctx.fillRect(seg.x * tileSize + 2, seg.y * tileSize + 2, tileSize - 4, tileSize - 4);
-                });
+            // Other Players' Snakes (Multiplayer from different tabs or devices)
+            otherSnakes.forEach(other => {
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = other.color || "#00d4ff";
+                ctx.fillStyle = other.color || "#00d4ff";
+
+                if (other.segments) {
+                    other.segments.forEach((seg, sIdx) => {
+                        ctx.beginPath();
+                        ctx.roundRect(seg.x * tileSize + 1, seg.y * tileSize + 1, tileSize - 2, tileSize - 2, sIdx === 0 ? 5 : 3);
+                        ctx.fill();
+                    });
+
+                    // Draw player name above snake head
+                    if (other.segments.length > 0) {
+                        ctx.shadowBlur = 0;
+                        ctx.fillStyle = "#ffffff";
+                        ctx.font = "10px 'Outfit'";
+                        ctx.fillText(other.playerName, other.segments[0].x * tileSize, other.segments[0].y * tileSize - 4);
+                    }
+                }
             });
 
-            // Draw Player Snake
+            // Local Player Snake
             ctx.shadowBlur = skillActive ? 20 : 10;
             ctx.shadowColor = selectedColor;
             snake.forEach((seg, index) => {
@@ -1278,11 +1347,11 @@
 
         // Initialize Loop & Initial Logs
         requestAnimationFrame(gameLoop);
-        logApi("INFO", "/system/init", 200, null, {
-            status: "SNAKE_ARENA_INITIALIZED",
+        logApi("INFO", "/system/multiplayer", 200, null, {
+            status: "SNAKE_ARENA_READY",
+            network: { host: currentHost, playerService: PLAYER_SERVICE_URL, arenaService: ARENA_SERVICE_URL },
             student: "Valentinus Marvel (245150201111027)",
-            ports: { playerService: 8081, arenaService: 8082 },
-            features: ["HTTP CRUD (GET, POST, PUT, PATCH, DELETE)", "API Versioning (v1, v2 Breaking Changes)", "Microservices Decoupling"]
+            features: ["Cross-Device Playable (PC & Mobile)", "Max Capacity: 16 Players", "Real-Time State Sync"]
         });
     </script>
 </body>

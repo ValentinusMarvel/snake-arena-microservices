@@ -6,6 +6,7 @@ import com.snake.arenaservice.domain.Snake;
 import com.snake.arenaservice.dto.EatAppleInput;
 import com.snake.arenaservice.dto.JoinArenaInput;
 import com.snake.arenaservice.dto.LoadoutUpdateInput;
+import com.snake.arenaservice.dto.UpdatePositionInput;
 import com.snake.arenaservice.service.ArenaManager;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -31,7 +32,7 @@ public class ArenaController {
     @PostMapping("/snakes")
     @Operation(summary = "Bergabung ke arena dengan ular baru (POST)", responses = {
             @ApiResponse(responseCode = "201", description = "Ular berhasil masuk ke arena"),
-            @ApiResponse(responseCode = "400", description = "Data input tidak valid")
+            @ApiResponse(responseCode = "400", description = "Data input tidak valid / Arena penuh")
     })
     public ResponseEntity<Snake> joinArena(@Valid @RequestBody JoinArenaInput input) {
         Snake snake = arenaManager.joinArena(input.playerId(), input.playerName(), input.snakeType(), input.color());
@@ -53,6 +54,16 @@ public class ArenaController {
     })
     public ResponseEntity<Snake> getSnakeById(@PathVariable String id) {
         return ResponseEntity.ok(arenaManager.getSnake(id));
+    }
+
+    @PatchMapping("/snakes/{id}/position")
+    @Operation(summary = "Sinkronisasi posisi segmen ular secara real-time (PATCH)", responses = {
+            @ApiResponse(responseCode = "200", description = "Posisi ular berhasil diperbarui"),
+            @ApiResponse(responseCode = "404", description = "Ular tidak ditemukan")
+    })
+    public ResponseEntity<Snake> updatePosition(@PathVariable String id, @RequestBody UpdatePositionInput input) {
+        Snake updated = arenaManager.updatePosition(id, input.segments(), input.direction());
+        return ResponseEntity.ok(updated);
     }
 
     @PutMapping("/snakes/{id}/loadout")
@@ -91,7 +102,6 @@ public class ArenaController {
     })
     public ResponseEntity<Void> eliminateSnake(@PathVariable String id) {
         Snake eliminated = arenaManager.eliminateSnake(id);
-        // Inter-service HTTP call ke player-service untuk update match stats & high score
         playerServiceClient.syncPlayerScore(eliminated.getPlayerId(), eliminated.getScore(), true);
         return ResponseEntity.noContent().build();
     }
