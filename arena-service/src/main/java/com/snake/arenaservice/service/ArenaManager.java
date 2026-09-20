@@ -345,13 +345,10 @@ public synchronized Snake joinArena(String playerId, String playerName, String s
                     log.warn("Sinkronisasi skor gagal untuk {}", deadSnake.getPlayerName());
                 }
 
-                // Jika bot gugur, respawn bot baru dengan lokasi baru
+                // Bot yang gugur TIDAK respawn lagi untuk balancing gameplay
                 if (isBot(deadSnake)) {
-                    String botName = deadSnake.getPlayerName();
-                    String botType = deadSnake.getSnakeType();
-                    int sx = random.nextInt(gridWidth - 10) + 5;
-                    int sy = random.nextInt(gridHeight - 10) + 5;
-                    joinArena("BOT-" + (System.currentTimeMillis() % 1000), botName, botType, null, sx, sy);
+                    log.info("Bot {} tereliminasi secara permanen (TIDAK respawn lagi untuk menjaga balance arena).",
+                            deadSnake.getPlayerName());
                 }
             }
         }
