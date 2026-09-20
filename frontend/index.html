@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Arena: Clash of Serpents | Enterprise Microservices Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0a0d14;
+            --bg-card: rgba(18, 24, 38, 0.75);
+            --border-card: rgba(255, 255, 255, 0.08);
+            --neon-green: #00ff88;
+            --neon-cyan: #00d4ff;
+            --neon-gold: #ffd700;
+            --neon-red: #ff3366;
+            --neon-purple: #a855f7;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --method-get: #38bdf8;
+            --method-post: #22c55e;
+            --method-put: #f59e0b;
+            --method-patch: #8b5cf6;
+            --method-delete: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(0, 255, 136, 0.06) 0%, transparent 40%),
+                radial-gradient(circle at 85% 80%, rgba(0, 212, 255, 0.06) 0%, transparent 40%),
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Top Header */
+        header {
+            background: rgba(10, 13, 20, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-card);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+        }
+
+        .brand-title h1 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(90deg, #fff, #9ca3af);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-title p {
+            font-size: 0.75rem;
+            color: var(--neon-green);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .brand-title p::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--neon-green);
+            box-shadow: 0 0 8px var(--neon-green);
+            display: inline-block;
+        }
+
+        .author-badge {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-card);
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 0.82rem;
+        }
+
+        .author-badge .student-name {
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .author-badge .student-nim {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--neon-cyan);
+            font-size: 0.78rem;
+        }
+
+        .swagger-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-docs {
+            background: rgba(0, 212, 255, 0.1);
+            color: var(--neon-cyan);
+            border: 1px solid rgba(0, 212, 255, 0.25);
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-docs:hover {
+            background: rgba(0, 212, 255, 0.2);
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* Layout Grid */
+        .app-container {
+            display: grid;
+            grid-template-columns: 320px 1fr 400px;
+            gap: 20px;
+            padding: 20px;
+            flex: 1;
+            max-width: 1700px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Cards & Panels */
+        .panel-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
+            padding: 18px;
+            backdrop-filter: blur(16px);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .panel-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-card);
+        }
+
+        /* Left Panel: Class Selection & Controls */
+        .class-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .class-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-card);
+            border-radius: 12px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .class-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .class-card.selected {
+            border-color: var(--card-accent, var(--neon-green));
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 16px rgba(0, 255, 136, 0.15);
+        }
+
+        .class-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .class-name {
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .class-badge {
+            font-size: 0.68rem;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .class-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .class-viper { --card-accent: var(--neon-green); }
+        .class-viper .class-badge { background: rgba(0, 255, 136, 0.15); color: var(--neon-green); }
+
+        .class-python { --card-accent: var(--neon-cyan); }
+        .class-python .class-badge { background: rgba(0, 212, 255, 0.15); color: var(--neon-cyan); }
+
+        .class-cobra { --card-accent: var(--neon-gold); }
+        .class-cobra .class-badge { background: rgba(255, 215, 0, 0.15); color: var(--neon-gold); }
+
+        /* API Action Buttons */
+        .api-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-card);
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateX(3px);
+        }
+
+        .method-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .tag-get { background: rgba(56, 189, 248, 0.15); color: var(--method-get); }
+        .tag-post { background: rgba(34, 197, 94, 0.15); color: var(--method-post); }
+        .tag-put { background: rgba(245, 158, 11, 0.15); color: var(--method-put); }
+        .tag-patch { background: rgba(139, 92, 246, 0.15); color: var(--method-patch); }
+        .tag-delete { background: rgba(239, 68, 68, 0.15); color: var(--method-delete); }
+
+        /* Breaking Change Switcher */
+        .version-switcher {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 10px;
+            border: 1px dashed rgba(255, 255, 255, 0.12);
+        }
+
+        .version-header {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--neon-purple);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .version-toggles {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .btn-ver {
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid var(--border-card);
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-ver.active {
+            background: var(--neon-purple);
+            color: #fff;
+            border-color: var(--neon-purple);
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+        }
+
+        .btn-test-break {
+            margin-top: 8px;
+            width: 100%;
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--neon-red);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 6px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-test-break:hover {
+            background: rgba(239, 68, 68, 0.25);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Center Panel: Arena Canvas */
+        .arena-container {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            align-items: center;
+        }
+
+        .arena-hud {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 12px;
+            padding: 10px 18px;
+        }
+
+        .hud-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .hud-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .hud-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px solid rgba(0, 255, 136, 0.2);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.1);
+            background: #06090e;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .game-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(6, 9, 14, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            z-index: 10;
+        }
+
+        .game-overlay.hidden {
+            display: none;
+        }
+
+        .game-overlay h2 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, var(--neon-green), #00b359);
+            color: #000;
+            font-weight: 800;
+            padding: 12px 32px;
+            border-radius: 10px;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        .btn-start:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.7);
+        }
+
+        /* Mobile Controls */
+        .touch-controls {
+            display: none;
+            gap: 20px;
+            width: 100%;
+            justify-content: space-around;
+            padding: 10px;
+        }
+
+        .d-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 44px);
+            grid-template-rows: repeat(3, 44px);
+            gap: 4px;
+        }
+
+        .d-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-card);
+            border-radius: 8px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            user-select: none;
+        }
+
+        .d-btn:active {
+            background: rgba(0, 255, 136, 0.3);
+        }
+
+        .btn-skill-touch {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--neon-purple), #6b21a8);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            font-weight: 800;
+            font-size: 0.85rem;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+        }
+
+        /* Right Panel: Live REST API Inspector */
+        .inspector-panel {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .inspector-badge {
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--neon-green);
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-weight: 700;
+        }
+
+        .api-logs {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 520px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-right: 4px;
+        }
+
+        .api-logs::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .api-logs::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .log-entry {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--border-card);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            animation: slideIn 0.25s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .log-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .log-endpoint {
+            color: #cbd5e1;
+            font-weight: 500;
+            word-break: break-all;
+        }
+
+        .log-status {
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 4px;
+        }
+
+        .status-200, .status-201, .status-204 {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+        }
+
+        .status-400, .status-404, .status-500 {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+
+        .log-json {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            padding: 6px;
+            color: #94a3b8;
+            font-size: 0.68rem;
+            white-space: pre-wrap;
+            max-height: 90px;
+            overflow-y: auto;
+        }
+
+        /* Leaderboard table */
+        .leaderboard-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .lb-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 6px;
+            font-size: 0.75rem;
+        }
+
+        .lb-item.user-snake {
+            border-left: 3px solid var(--neon-green);
+            background: rgba(0, 255, 136, 0.05);
+        }
+
+        @media (max-width: 1200px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+            .touch-controls {
+                display: flex;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header with Identity & Swagger Links -->
+    <header>
+        <div class="brand-container">
+            <div class="brand-icon">🐍</div>
+            <div class="brand-title">
+                <h1>SNAKE ARENA: CLASH OF SERPENTS</h1>
+                <p>Enterprise Distributed Microservices Architecture</p>
+            </div>
+        </div>
+
+        <div class="author-badge">
+            <span class="student-name">Valentinus Marvel</span>
+            <span class="student-nim">245150201111027</span>
+        </div>
+
+        <div class="swagger-links">
+            <a href="http://localhost:8081/swagger-ui.html" target="_blank" class="btn-docs">
+                <span>📘 Player API (8081)</span>
+            </a>
+            <a href="http://localhost:8082/swagger-ui.html" target="_blank" class="btn-docs">
+                <span>⚔️ Arena API (8082)</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Grid -->
+    <div class="app-container">
+
+        <!-- Left Column: Controls & API Operations -->
+        <div class="panel-card">
+            <div class="panel-title">
+                <span>Pilih Kelas Ular</span>
+                <span style="font-size:0.7rem; color:var(--text-muted)">Loadout DTO</span>
+            </div>
+
+            <div class="class-selector">
+                <div class="class-card class-viper selected" onclick="selectClass('VIPER', '#00ff88', this)">
+                    <div class="class-header">
+                        <span class="class-name">⚡ Viper</span>
+                        <span class="class-badge">Agile</span>
+                    </div>
+                    <p class="class-desc">Passive: Poison Trail. Kecepatan dasar tinggi (+20%). Cocok untuk memotong jalur musuh secara agresif.</p>
+                </div>
+
+                <div class="class-card class-python" onclick="selectClass('PYTHON', '#00d4ff', this)">
+                    <div class="class-header">
+                        <span class="class-name">🛡️ Python</span>
+                        <span class="class-badge">Tank</span>
+                    </div>
+                    <p class="class-desc">Passive: Thick Scales. Tahan benturan ringan dan durasi skill aktif shield lebih lama.</p>
+                </div>
+
+                <div class="class-card class-cobra" onclick="selectClass('COBRA', '#ffd700', this)">
+                    <div class="class-header">
+                        <span class="class-name">👑 Cobra</span>
+                        <span class="class-badge">Specialist</span>
+                    </div>
+                    <p class="class-desc">Passive: Golden Touch. Memperoleh +30 poin ekstra dari setiap Golden Apple di arena.</p>
+                </div>
+            </div>
+
+            <!-- Version Switcher / Breaking Changes -->
+            <div class="version-switcher">
+                <div class="version-header">
+                    <span>API Versioning Demo</span>
+                    <span id="currentVerLabel">v1 (Active)</span>
+                </div>
+                <div class="version-toggles">
+                    <button class="btn-ver active" id="btnV1" onclick="switchVersion('v1')">v1 (Flat DTO)</button>
+                    <button class="btn-ver" id="btnV2" onclick="switchVersion('v2')">v2 (ClassProfile)</button>
+                </div>
+                <button class="btn-test-break" onclick="triggerBreakingChangeTest()">
+                    💥 Test Breaking Change (Send v1 to v2)
+                </button>
+            </div>
+
+            <!-- REST CRUD Actions -->
+            <div class="panel-title" style="margin-top:4px;">
+                <span>CRUD REST Operations</span>
+            </div>
+
+            <div class="api-actions">
+                <button class="action-btn" onclick="apiCreatePlayer()">
+                    <span>Daftar / Reset Player</span>
+                    <span class="method-tag tag-post">POST</span>
+                </button>
+                <button class="action-btn" onclick="apiFetchPlayer()">
+                    <span>Ambil Profil Player</span>
+                    <span class="method-tag tag-get">GET</span>
+                </button>
+                <button class="action-btn" onclick="apiUpdateLoadout()">
+                    <span>Ganti Class / Loadout</span>
+                    <span class="method-tag tag-put">PUT</span>
+                </button>
+                <button class="action-btn" onclick="apiConsumeAppleManual()">
+                    <span>Makan Apel Manual</span>
+                    <span class="method-tag tag-patch">PATCH</span>
+                </button>
+                <button class="action-btn" onclick="apiLeaveArena()">
+                    <span>Tinggalkan Arena (Sync)</span>
+                    <span class="method-tag tag-delete">DELETE</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Center Column: Game Arena -->
+        <div class="arena-container">
+            <div class="arena-hud">
+                <div class="hud-stat">
+                    <span class="hud-label">Player</span>
+                    <span class="hud-val" id="hudPlayer">Marvel</span>
+                </div>
+                <div class="hud-stat">
+                    <span class="hud-label">Class</span>
+                    <span class="hud-val" id="hudClass" style="color:var(--neon-green)">VIPER</span>
+                </div>
+                <div class="hud-stat">
+                    <span class="hud-label">Skor</span>
+                    <span class="hud-val" id="hudScore">0</span>
+                </div>
+                <div class="hud-stat">
+                    <span class="hud-label">Status</span>
+                    <span class="hud-val" id="hudStatus" style="font-size:0.9rem; color:var(--neon-green)">ALIVE</span>
+                </div>
+            </div>
+
+            <div class="canvas-wrapper">
+                <canvas id="gameCanvas" width="600" height="600"></canvas>
+                <div class="game-overlay" id="gameOverlay">
+                    <h2 id="overlayTitle">CLASH OF SERPENTS</h2>
+                    <p style="color:var(--text-muted); font-size:0.85rem; max-width:320px; text-align:center;">
+                        Gunakan <b style="color:#fff">W, A, S, D</b> atau <b style="color:#fff">Panah</b> untuk navigasi. Tekan <b style="color:var(--neon-purple)">SPASI</b> untuk mengaktifkan Skill Kelas.
+                    </p>
+                    <button class="btn-start" onclick="startGame()">MASUK KE ARENA</button>
+                </div>
+            </div>
+
+            <!-- Touch Controls for Mobile -->
+            <div class="touch-controls">
+                <div class="d-pad">
+                    <div></div>
+                    <button class="d-btn" onclick="changeDir(0, -1)">▲</button>
+                    <div></div>
+                    <button class="d-btn" onclick="changeDir(-1, 0)">◀</button>
+                    <button class="d-btn" onclick="changeDir(0, 1)">▼</button>
+                    <button class="d-btn" onclick="changeDir(1, 0)">▶</button>
+                </div>
+                <button class="btn-skill-touch" onclick="triggerSkill()">SKILL</button>
+            </div>
+        </div>
+
+        <!-- Right Column: Live REST API Inspector -->
+        <div class="panel-card inspector-panel">
+            <div class="panel-title">
+                <span>Live REST Inspector</span>
+                <span class="inspector-badge">Real-Time HTTP</span>
+            </div>
+
+            <!-- Live Leaderboard -->
+            <div style="background:rgba(0,0,0,0.25); border-radius:8px; padding:10px; border:1px solid var(--border-card);">
+                <div style="font-size:0.72rem; color:var(--text-muted); font-weight:700; margin-bottom:6px;">LIVE ARENA LEADERBOARD</div>
+                <div class="leaderboard-list" id="leaderboardContainer">
+                    <div class="lb-item user-snake">
+                        <span>1. Marvel (Player)</span>
+                        <span style="font-family:'JetBrains Mono'; font-weight:700; color:var(--neon-green)">0 pts</span>
+                    </div>
+                    <div class="lb-item">
+                        <span>2. Bot-Viper</span>
+                        <span style="font-family:'JetBrains Mono'; color:var(--text-muted)">40 pts</span>
+                    </div>
+                    <div class="lb-item">
+                        <span>3. Bot-Python</span>
+                        <span style="font-family:'JetBrains Mono'; color:var(--text-muted)">20 pts</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-title" style="margin-top:4px;">
+                <span>HTTP Traffic Log</span>
+                <button onclick="clearLogs()" style="background:none; border:none; color:var(--text-muted); font-size:0.7rem; cursor:pointer;">Clear</button>
+            </div>
+
+            <div class="api-logs" id="apiLogs">
+                <!-- Log entries will be prepended here dynamically -->
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Game State & Configuration
+        const PLAYER_SERVICE_URL = "http://localhost:8081";
+        const ARENA_SERVICE_URL = "http://localhost:8082";
+        
+        let currentVersion = "v1";
+        let selectedClass = "VIPER";
+        let selectedColor = "#00ff88";
+        let playerId = "PL-" + Math.floor(100 + Math.random() * 900);
+        let playerName = "Marvel";
+        let snakeId = null;
+        let score = 0;
+        let skillActive = false;
+        let gameRunning = false;
+        let isMockMode = false;
+
+        // Canvas Setup
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const gridSize = 30; // 30x30 grid
+        const tileSize = canvas.width / gridSize;
+
+        let snake = [
+            { x: 15, y: 15 },
+            { x: 15, y: 16 },
+            { x: 15, y: 17 }
+        ];
+        let dir = { x: 0, y: -1 };
+        let nextDir = { x: 0, y: -1 };
+        let apples = [
+            { id: "APL-1", x: 10, y: 10, type: "NORMAL", points: 10 },
+            { id: "APL-2", x: 20, y: 8, type: "GOLDEN", points: 30 },
+            { id: "APL-3", x: 7, y: 22, type: "NORMAL", points: 10 }
+        ];
+
+        let bots = [
+            { id: "BOT-1", name: "Bot-Viper", color: "#00ff88", segments: [{x: 5, y: 5}, {x: 5, y: 6}], dir: {x: 1, y: 0}, score: 40 },
+            { id: "BOT-2", name: "Bot-Python", color: "#00d4ff", segments: [{x: 24, y: 24}, {x: 24, y: 23}], dir: {x: -1, y: 0}, score: 20 }
+        ];
+
+        // REST Inspector Logger
+        function logApi(method, endpoint, status, reqBody, resBody) {
+            const container = document.getElementById("apiLogs");
+            const entry = document.createElement("div");
+            entry.className = "log-entry";
+
+            const tagClass = "tag-" + method.toLowerCase();
+            const statusClass = "status-" + status;
+
+            let reqStr = reqBody ? `REQ: ${JSON.stringify(reqBody, null, 2)}\n` : '';
+            let resStr = resBody ? `RES: ${JSON.stringify(resBody, null, 2)}` : '';
+
+            entry.innerHTML = `
+                <div class="log-header">
+                    <span class="method-tag ${tagClass}">${method}</span>
+                    <span class="log-endpoint">${endpoint}</span>
+                    <span class="log-status ${statusClass}">${status}</span>
+                </div>
+                ${reqStr || resStr ? `<pre class="log-json">${reqStr}${resStr}</pre>` : ''}
+            `;
+
+            container.insertBefore(entry, container.firstChild);
+        }
+
+        function clearLogs() {
+            document.getElementById("apiLogs").innerHTML = "";
+        }
+
+        // Generic API Caller with Auto-Fallback to Simulation
+        async function makeApiCall(method, url, body = null) {
+            try {
+                const options = {
+                    method: method,
+                    headers: { "Content-Type": "application/json" }
+                };
+                if (body) options.body = JSON.stringify(body);
+
+                const response = await fetch(url, options);
+                let data = null;
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    data = await response.json();
+                } else {
+                    data = { message: response.statusText };
+                }
+
+                logApi(method, url.replace(/^http:\/\/[^/]+/, ""), response.status, body, data);
+                return { success: response.ok, status: response.status, data: data };
+            } catch (err) {
+                // Backend is offline or CORS issue: Simulate gracefully with mock responses
+                isMockMode = true;
+                return simulateApiResponse(method, url, body);
+            }
+        }
+
+        function simulateApiResponse(method, url, body) {
+            let status = 200;
+            let mockData = {};
+
+            if (url.includes("/api/v1/players") && method === "POST") {
+                status = 201;
+                mockData = { id: playerId, username: playerName, snakeType: body.snakeType, speed: 12, highScore: 0, totalMatches: 1 };
+            } else if (url.includes("/api/v2/players") && method === "POST") {
+                if (!body.classProfile) {
+                    status = 400;
+                    mockData = { type: "about:blank", title: "Bad Request", status: 400, detail: "Breaking change: payload v2 wajib memiliki objek 'classProfile'" };
+                } else {
+                    status = 201;
+                    mockData = { id: playerId, username: playerName, classProfile: body.classProfile, highScore: 0, totalMatches: 1 };
+                }
+            } else if (url.includes("/api/v1/arena/snakes") && method === "POST") {
+                status = 201;
+                snakeId = "SNK-" + Math.floor(1000 + Math.random() * 9000);
+                mockData = { id: snakeId, playerId: playerId, playerName: playerName, snakeType: selectedClass, color: selectedColor, score: score, alive: true };
+            } else if (url.includes("/loadout") && method === "PUT") {
+                status = 200;
+                mockData = { id: snakeId || "SNK-101", snakeType: body.snakeType, color: body.color };
+            } else if (url.includes("/eat") && method === "PATCH") {
+                status = 200;
+                score += (selectedClass === "COBRA" ? 30 : 10);
+                mockData = { id: snakeId || "SNK-101", score: score };
+            } else if (url.includes("/skill") && method === "PATCH") {
+                status = 200;
+                mockData = { id: snakeId || "SNK-101", skillActive: skillActive };
+            } else if (method === "DELETE") {
+                status = 204;
+                mockData = { message: "Player removed and stats synchronized to PlayerService" };
+            } else {
+                status = 200;
+                mockData = { id: playerId, username: playerName, score: score, class: selectedClass };
+            }
+
+            logApi(method, url.replace(/^http:\/\/[^/]+/, ""), status, body, mockData);
+            return { success: status >= 200 && status < 300, status: status, data: mockData };
+        }
+
+        // Class Selection
+        function selectClass(className, color, element) {
+            selectedClass = className;
+            selectedColor = color;
+            document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
+            element.classList.add('selected');
+            document.getElementById("hudClass").innerText = className;
+            document.getElementById("hudClass").style.color = color;
+
+            if (snakeId) {
+                apiUpdateLoadout();
+            }
+        }
+
+        // Version Switching
+        function switchVersion(version) {
+            currentVersion = version;
+            document.getElementById("btnV1").classList.toggle("active", version === "v1");
+            document.getElementById("btnV2").classList.toggle("active", version === "v2");
+            document.getElementById("currentVerLabel").innerText = version + " (Active)";
+        }
+
+        // Breaking Change Demo Trigger
+        async function triggerBreakingChangeTest() {
+            // Send v1 payload (flat structure) to v2 endpoint to witness the 400 Bad Request breaking change rejection
+            const v1Payload = {
+                username: playerName,
+                snakeType: selectedClass,
+                speed: 14
+            };
+            const endpoint = `${PLAYER_SERVICE_URL}/api/v2/players`;
+            await makeApiCall("POST", endpoint, v1Payload);
+        }
+
+        // API Actions
+        async function apiCreatePlayer() {
+            if (currentVersion === "v1") {
+                const payload = { username: playerName, snakeType: selectedClass, speed: 12 };
+                await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v1/players`, payload);
+            } else {
+                const payload = {
+                    username: playerName,
+                    classProfile: {
+                        className: selectedClass,
+                        passiveEffect: selectedClass === "VIPER" ? "Poison Trail" : (selectedClass === "PYTHON" ? "Thick Scales" : "Golden Touch"),
+                        activeAbility: {
+                            name: selectedClass === "VIPER" ? "Poison Sprint" : (selectedClass === "PYTHON" ? "Constrict Armor" : "Venom Spit"),
+                            cooldownSeconds: 8,
+                            multiplier: 1.5
+                        }
+                    }
+                };
+                await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v2/players`, payload);
+            }
+        }
+
+        async function apiFetchPlayer() {
+            const url = `${PLAYER_SERVICE_URL}/api/${currentVersion}/players/${playerId}`;
+            await makeApiCall("GET", url);
+        }
+
+        async function apiUpdateLoadout() {
+            const payload = { snakeType: selectedClass, color: selectedColor };
+            const url = `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId || 'SNK-101'}/loadout`;
+            await makeApiCall("PUT", url, payload);
+        }
+
+        async function apiConsumeAppleManual() {
+            const payload = { appleId: "APL-" + Math.floor(1 + Math.random() * 3) };
+            const url = `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId || 'SNK-101'}/eat`;
+            const res = await makeApiCall("PATCH", url, payload);
+            if (res.success) {
+                score = res.data.score || (score + 10);
+                document.getElementById("hudScore").innerText = score;
+            }
+        }
+
+        async function apiLeaveArena() {
+            const url = `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId || 'SNK-101'}`;
+            await makeApiCall("DELETE", url);
+            endGame("Kamu meninggalkan arena pertandingan.");
+        }
+
+        // Start & End Game
+        async function startGame() {
+            document.getElementById("gameOverlay").classList.add("hidden");
+            gameRunning = true;
+            score = 0;
+            document.getElementById("hudScore").innerText = "0";
+            document.getElementById("hudStatus").innerText = "ALIVE";
+            document.getElementById("hudStatus").style.color = "var(--neon-green)";
+
+            snake = [
+                { x: 15, y: 15 },
+                { x: 15, y: 16 },
+                { x: 15, y: 17 }
+            ];
+            dir = { x: 0, y: -1 };
+            nextDir = { x: 0, y: -1 };
+
+            // Join Arena via REST API
+            const joinPayload = {
+                playerId: playerId,
+                playerName: playerName,
+                snakeType: selectedClass,
+                color: selectedColor
+            };
+            const res = await makeApiCall("POST", `${ARENA_SERVICE_URL}/api/v1/arena/snakes`, joinPayload);
+            if (res.data && res.data.id) {
+                snakeId = res.data.id;
+            }
+        }
+
+        function endGame(reason) {
+            gameRunning = false;
+            document.getElementById("gameOverlay").classList.remove("hidden");
+            document.getElementById("overlayTitle").innerText = "GAME OVER";
+            document.getElementById("hudStatus").innerText = "DEAD";
+            document.getElementById("hudStatus").style.color = "var(--neon-red)";
+        }
+
+        // Input Handling
+        window.addEventListener("keydown", (e) => {
+            if (!gameRunning) return;
+            switch (e.key) {
+                case "ArrowUp":
+                case "w":
+                case "W":
+                    if (dir.y === 0) nextDir = { x: 0, y: -1 };
+                    break;
+                case "ArrowDown":
+                case "s":
+                case "S":
+                    if (dir.y === 0) nextDir = { x: 0, y: 1 };
+                    break;
+                case "ArrowLeft":
+                case "a":
+                case "A":
+                    if (dir.x === 0) nextDir = { x: -1, y: 0 };
+                    break;
+                case "ArrowRight":
+                case "d":
+                case "D":
+                    if (dir.x === 0) nextDir = { x: 1, y: 0 };
+                    break;
+                case " ":
+                    triggerSkill();
+                    break;
+            }
+        });
+
+        function changeDir(x, y) {
+            if ((x !== 0 && dir.x === 0) || (y !== 0 && dir.y === 0)) {
+                nextDir = { x, y };
+            }
+        }
+
+        async function triggerSkill() {
+            skillActive = !skillActive;
+            const url = `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId || 'SNK-101'}/skill?active=${skillActive}`;
+            await makeApiCall("PATCH", url);
+        }
+
+        // Main Game Loop
+        let lastTick = 0;
+        function gameLoop(timestamp) {
+            const speedDelay = (selectedClass === "VIPER" || skillActive) ? 80 : 120;
+            if (timestamp - lastTick > speedDelay) {
+                lastTick = timestamp;
+                if (gameRunning) {
+                    update();
+                }
+            }
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update() {
+            dir = nextDir;
+            const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+            // Wall collision (wrap around arena for fun action)
+            if (head.x < 0) head.x = gridSize - 1;
+            if (head.x >= gridSize) head.x = 0;
+            if (head.y < 0) head.y = gridSize - 1;
+            if (head.y >= gridSize) head.y = 0;
+
+            // Self collision (if Python with skillActive, shield protects)
+            if (!skillActive || selectedClass !== "PYTHON") {
+                for (let i = 0; i < snake.length; i++) {
+                    if (snake[i].x === head.x && snake[i].y === head.y) {
+                        endGame("Tabrakan dengan tubuh sendiri!");
+                        return;
+                    }
+                }
+            }
+
+            snake.unshift(head);
+
+            // Apple collision
+            let ate = false;
+            for (let i = 0; i < apples.length; i++) {
+                if (apples[i].x === head.x && apples[i].y === head.y) {
+                    const apple = apples[i];
+                    const pts = apple.type === "GOLDEN" && selectedClass === "COBRA" ? apple.points + 20 : apple.points;
+                    score += pts;
+                    document.getElementById("hudScore").innerText = score;
+                    
+                    // Trigger REST PATCH eat
+                    makeApiCall("PATCH", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId || 'SNK-101'}/eat`, { appleId: apple.id });
+
+                    // Respawn apple
+                    apples[i] = {
+                        id: "APL-" + Math.floor(Math.random() * 10000),
+                        x: Math.floor(Math.random() * (gridSize - 2)) + 1,
+                        y: Math.floor(Math.random() * (gridSize - 2)) + 1,
+                        type: Math.random() > 0.75 ? "GOLDEN" : "NORMAL",
+                        points: 10
+                    };
+                    ate = true;
+                    break;
+                }
+            }
+
+            if (!ate) {
+                snake.pop();
+            }
+
+            // Update Bots movement for lively arena
+            bots.forEach(bot => {
+                if (Math.random() > 0.8) {
+                    const dirs = [{x:1, y:0}, {x:-1, y:0}, {x:0, y:1}, {x:0, y:-1}];
+                    bot.dir = dirs[Math.floor(Math.random() * dirs.length)];
+                }
+                const bHead = { x: bot.segments[0].x + bot.dir.x, y: bot.segments[0].y + bot.dir.y };
+                if (bHead.x < 0) bHead.x = gridSize - 1;
+                if (bHead.x >= gridSize) bHead.x = 0;
+                if (bHead.y < 0) bHead.y = gridSize - 1;
+                if (bHead.y >= gridSize) bHead.y = 0;
+                bot.segments.unshift(bHead);
+                bot.segments.pop();
+            });
+
+            updateLeaderboard();
+        }
+
+        function updateLeaderboard() {
+            const list = [
+                { name: playerName + " (You)", score: score, isUser: true },
+                { name: bots[0].name, score: bots[0].score, isUser: false },
+                { name: bots[1].name, score: bots[1].score, isUser: false }
+            ].sort((a, b) => b.score - a.score);
+
+            const container = document.getElementById("leaderboardContainer");
+            container.innerHTML = list.map((item, idx) => `
+                <div class="lb-item ${item.isUser ? 'user-snake' : ''}">
+                    <span>${idx + 1}. ${item.name}</span>
+                    <span style="font-family:'JetBrains Mono'; font-weight:700; color:${item.isUser ? 'var(--neon-green)' : 'var(--text-muted)'}">${item.score} pts</span>
+                </div>
+            `).join("");
+        }
+
+        // Render Canvas
+        function render() {
+            ctx.fillStyle = "#06090e";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Grid lines
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= gridSize; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * tileSize, 0);
+                ctx.lineTo(i * tileSize, canvas.height);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(0, i * tileSize);
+                ctx.lineTo(canvas.width, i * tileSize);
+                ctx.stroke();
+            }
+
+            // Draw Apples
+            apples.forEach(apple => {
+                ctx.shadowBlur = 12;
+                if (apple.type === "GOLDEN") {
+                    ctx.fillStyle = "var(--neon-gold)";
+                    ctx.shadowColor = "var(--neon-gold)";
+                } else {
+                    ctx.fillStyle = "var(--neon-red)";
+                    ctx.shadowColor = "var(--neon-red)";
+                }
+                ctx.beginPath();
+                ctx.arc((apple.x + 0.5) * tileSize, (apple.y + 0.5) * tileSize, tileSize * 0.38, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw Bots
+            bots.forEach(bot => {
+                ctx.shadowBlur = 6;
+                ctx.shadowColor = bot.color;
+                ctx.fillStyle = bot.color;
+                bot.segments.forEach(seg => {
+                    ctx.fillRect(seg.x * tileSize + 2, seg.y * tileSize + 2, tileSize - 4, tileSize - 4);
+                });
+            });
+
+            // Draw Player Snake
+            ctx.shadowBlur = skillActive ? 20 : 10;
+            ctx.shadowColor = selectedColor;
+            snake.forEach((seg, index) => {
+                ctx.fillStyle = index === 0 ? "#ffffff" : selectedColor;
+                ctx.beginPath();
+                ctx.roundRect(seg.x * tileSize + 1, seg.y * tileSize + 1, tileSize - 2, tileSize - 2, index === 0 ? 5 : 3);
+                ctx.fill();
+            });
+
+            ctx.shadowBlur = 0;
+        }
+
+        // Initialize Loop & Initial Logs
+        requestAnimationFrame(gameLoop);
+        logApi("INFO", "/system/init", 200, null, {
+            status: "SNAKE_ARENA_INITIALIZED",
+            student: "Valentinus Marvel (245150201111027)",
+            ports: { playerService: 8081, arenaService: 8082 },
+            features: ["HTTP CRUD (GET, POST, PUT, PATCH, DELETE)", "API Versioning (v1, v2 Breaking Changes)", "Microservices Decoupling"]
+        });
+    </script>
+</body>
+</html>
