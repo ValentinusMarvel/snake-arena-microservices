@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Snake Arena: Clash of Serpents | Multi-Device Microservices Game</title>
+    <title>Snake Arena: Clash of Serpents | Multi-Device Real-Time Arena</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -49,7 +49,7 @@
             overflow-x: hidden;
         }
 
-        /* Top Header */
+        /* Header */
         header {
             background: rgba(10, 13, 20, 0.85);
             backdrop-filter: blur(12px);
@@ -291,7 +291,7 @@
         .class-cobra { --card-accent: var(--neon-gold); }
         .class-cobra .class-badge { background: rgba(255, 215, 0, 0.15); color: var(--neon-gold); }
 
-        /* API Action Buttons */
+        /* API Actions */
         .api-actions {
             display: flex;
             flex-direction: column;
@@ -395,7 +395,7 @@
             background: rgba(239, 68, 68, 0.25);
         }
 
-        /* Center Column: Arena Canvas */
+        /* Arena Canvas */
         .arena-container {
             display: flex;
             flex-direction: column;
@@ -543,7 +543,7 @@
             box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
         }
 
-        /* Right Column: Live REST API Inspector */
+        /* Inspector Panel */
         .inspector-panel {
             height: 100%;
             display: flex;
@@ -670,7 +670,7 @@
 </head>
 <body>
 
-    <!-- Header with Identity & Dynamic Swagger Links -->
+    <!-- Header -->
     <header>
         <div class="brand-container">
             <div class="brand-icon">🐍</div>
@@ -740,7 +740,7 @@
                 </div>
             </div>
 
-            <!-- Version Switcher / Breaking Changes -->
+            <!-- Version Switcher -->
             <div class="version-switcher">
                 <div class="version-header">
                     <span>API Versioning Demo</span>
@@ -784,7 +784,7 @@
             </div>
         </div>
 
-        <!-- Center Column: Game Arena -->
+        <!-- Center Column: Arena Canvas -->
         <div class="arena-container">
             <div class="arena-hud">
                 <div class="hud-stat">
@@ -816,7 +816,7 @@
                 </div>
             </div>
 
-            <!-- Touch Controls for Mobile / Tablet -->
+            <!-- Touch Controls -->
             <div class="touch-controls">
                 <div class="d-pad">
                     <div></div>
@@ -856,20 +856,17 @@
                 <button onclick="clearLogs()" style="background:none; border:none; color:var(--text-muted); font-size:0.7rem; cursor:pointer;">Clear</button>
             </div>
 
-            <div class="api-logs" id="apiLogs">
-                <!-- Log entries will be prepended here dynamically -->
-            </div>
+            <div class="api-logs" id="apiLogs"></div>
         </div>
 
     </div>
 
     <script>
-        // Dynamic Host Resolution for Multi-Device LAN & Tailscale Support
+        // Dynamic Host
         const currentHost = window.location.hostname || "localhost";
         const PLAYER_SERVICE_URL = `http://${currentHost}:8081`;
         const ARENA_SERVICE_URL = `http://${currentHost}:8082`;
 
-        // Update Swagger links dynamically
         document.getElementById("linkSwaggerPlayer").href = `${PLAYER_SERVICE_URL}/swagger-ui.html`;
         document.getElementById("linkSwaggerArena").href = `${ARENA_SERVICE_URL}/swagger-ui.html`;
 
@@ -882,27 +879,18 @@
         let score = 0;
         let skillActive = false;
         let gameRunning = false;
-        let isMockMode = false;
-        let otherSnakes = [];
+
+        // Server-synchronized state
+        let arenaSnakes = [];
+        let arenaApples = [];
 
         // Canvas Setup
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
-        const gridSize = 30; // 30x30 grid
+        const gridSize = 30;
         const tileSize = canvas.width / gridSize;
 
-        let snake = [
-            { x: 15, y: 15 },
-            { x: 15, y: 16 },
-            { x: 15, y: 17 }
-        ];
-        let dir = { x: 0, y: -1 };
-        let nextDir = { x: 0, y: -1 };
-        let apples = [
-            { id: "APL-1", x: 10, y: 10, type: "NORMAL", points: 10 },
-            { id: "APL-2", x: 20, y: 8, type: "GOLDEN", points: 30 },
-            { id: "APL-3", x: 7, y: 22, type: "NORMAL", points: 10 }
-        ];
+        let currentDir = "UP";
 
         function updatePlayerName() {
             const val = document.getElementById("inputPlayerName").value.trim();
@@ -911,6 +899,23 @@
                 document.getElementById("hudPlayer").innerText = playerName;
             }
         }
+
+        // Web Worker to guarantee background execution without Chrome tab throttling
+        const workerBlob = new Blob([`
+            let interval = setInterval(() => {
+                postMessage('tick');
+            }, 100);
+            onmessage = (e) => {
+                if (e.data === 'stop') clearInterval(interval);
+            };
+        `], { type: 'application/javascript' });
+        const backgroundWorker = new Worker(URL.createObjectURL(workerBlob));
+
+        backgroundWorker.onmessage = () => {
+            if (gameRunning) {
+                fetchArenaState();
+            }
+        };
 
         // REST Inspector Logger
         function logApi(method, endpoint, status, reqBody, resBody) {
@@ -940,7 +945,6 @@
             document.getElementById("apiLogs").innerHTML = "";
         }
 
-        // Generic API Caller with Auto-Fallback to Simulation
         async function makeApiCall(method, url, body = null, silent = false) {
             try {
                 const options = {
@@ -963,55 +967,43 @@
                 }
                 return { success: response.ok, status: response.status, data: data };
             } catch (err) {
-                isMockMode = true;
-                return simulateApiResponse(method, url, body, silent);
+                return { success: false, status: 500, data: { error: err.message } };
             }
         }
 
-        function simulateApiResponse(method, url, body, silent) {
-            let status = 200;
-            let mockData = {};
+        // Fetch arena state from server
+        async function fetchArenaState() {
+            const res = await makeApiCall("GET", `${ARENA_SERVICE_URL}/api/v1/arena/state`, null, true);
+            if (res.success && res.data) {
+                arenaSnakes = res.data.snakes || [];
+                arenaApples = res.data.apples || [];
 
-            if (url.includes("/api/v1/players") && method === "POST") {
-                status = 201;
-                mockData = { id: playerId, username: playerName, snakeType: body.snakeType, speed: 12, highScore: 0, totalMatches: 1 };
-            } else if (url.includes("/api/v2/players") && method === "POST") {
-                if (!body.classProfile) {
-                    status = 400;
-                    mockData = { type: "about:blank", title: "Bad Request", status: 400, detail: "Breaking change: payload v2 wajib memiliki objek 'classProfile'" };
-                } else {
-                    status = 201;
-                    mockData = { id: playerId, username: playerName, classProfile: body.classProfile, highScore: 0, totalMatches: 1 };
+                // Update my score and HUD
+                if (snakeId) {
+                    const mySnake = arenaSnakes.find(s => s.id === snakeId);
+                    if (mySnake) {
+                        score = mySnake.score;
+                        document.getElementById("hudScore").innerText = score;
+                    }
                 }
-            } else if (url.includes("/api/v1/arena/snakes") && method === "POST") {
-                status = 201;
-                snakeId = "SNK-" + Math.floor(1000 + Math.random() * 9000);
-                mockData = { id: snakeId, playerId: playerId, playerName: playerName, snakeType: selectedClass, color: selectedColor, score: score, alive: true };
-            } else if (url.includes("/loadout") && method === "PUT") {
-                status = 200;
-                mockData = { id: snakeId || "SNK-101", snakeType: body.snakeType, color: body.color };
-            } else if (url.includes("/eat") && method === "PATCH") {
-                status = 200;
-                score += (selectedClass === "COBRA" ? 30 : 10);
-                mockData = { id: snakeId || "SNK-101", score: score };
-            } else if (url.includes("/skill") && method === "PATCH") {
-                status = 200;
-                mockData = { id: snakeId || "SNK-101", skillActive: skillActive };
-            } else if (method === "DELETE") {
-                status = 204;
-                mockData = { message: "Player removed and stats synchronized to PlayerService" };
-            } else {
-                status = 200;
-                mockData = { id: playerId, username: playerName, score: score, class: selectedClass };
-            }
 
-            if (!silent) {
-                logApi(method, url.replace(/^http:\/\/[^/]+/, ""), status, body, mockData);
+                if (res.data.leaderboard) {
+                    renderLeaderboard(res.data.leaderboard);
+                }
+                document.getElementById("hudPlayersCount").innerText = `${arenaSnakes.length} / 16`;
             }
-            return { success: status >= 200 && status < 300, status: status, data: mockData };
         }
 
-        // Class Selection
+        function renderLeaderboard(leaderboard) {
+            const container = document.getElementById("leaderboardContainer");
+            container.innerHTML = leaderboard.slice(0, 5).map((entry, idx) => `
+                <div class="lb-item ${entry.id === snakeId ? 'user-snake' : ''}">
+                    <span>${idx + 1}. ${entry.playerName} (${entry.snakeType})</span>
+                    <span style="font-family:'JetBrains Mono'; font-weight:700; color:${entry.id === snakeId ? 'var(--neon-green)' : 'var(--text-muted)'}">${entry.score} pts</span>
+                </div>
+            `).join("");
+        }
+
         function selectClass(className, color, element) {
             selectedClass = className;
             selectedColor = color;
@@ -1025,7 +1017,6 @@
             }
         }
 
-        // Version Switching
         function switchVersion(version) {
             currentVersion = version;
             document.getElementById("btnV1").classList.toggle("active", version === "v1");
@@ -1033,7 +1024,6 @@
             document.getElementById("currentVerLabel").innerText = version + " (Active)";
         }
 
-        // Breaking Change Demo Trigger
         async function triggerBreakingChangeTest() {
             const v1Payload = {
                 username: playerName,
@@ -1044,7 +1034,6 @@
             await makeApiCall("POST", endpoint, v1Payload);
         }
 
-        // API Actions
         async function apiCreatePlayer() {
             updatePlayerName();
             if (currentVersion === "v1") {
@@ -1083,8 +1072,7 @@
             const url = `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId || 'SNK-101'}/eat`;
             const res = await makeApiCall("PATCH", url, payload);
             if (res.success) {
-                score = res.data.score || (score + 10);
-                document.getElementById("hudScore").innerText = score;
+                fetchArenaState();
             }
         }
 
@@ -1094,7 +1082,6 @@
             endGame("Kamu meninggalkan arena pertandingan.");
         }
 
-        // Start & End Game
         async function startGame() {
             updatePlayerName();
             document.getElementById("gameOverlay").classList.add("hidden");
@@ -1102,14 +1089,6 @@
             score = 0;
             document.getElementById("hudScore").innerText = "0";
             document.getElementById("hudPlayer").innerText = playerName;
-
-            snake = [
-                { x: Math.floor(Math.random() * 15) + 5, y: Math.floor(Math.random() * 15) + 5 },
-                { x: 15, y: 16 },
-                { x: 15, y: 17 }
-            ];
-            dir = { x: 0, y: -1 };
-            nextDir = { x: 0, y: -1 };
 
             // Join Arena via REST API
             const joinPayload = {
@@ -1122,6 +1101,7 @@
             if (res.data && res.data.id) {
                 snakeId = res.data.id;
             }
+            await fetchArenaState();
         }
 
         function endGame(reason) {
@@ -1130,29 +1110,29 @@
             document.getElementById("overlayTitle").innerText = "GAME OVER";
         }
 
-        // Input Handling (Keyboard)
+        // Input Handling
         window.addEventListener("keydown", (e) => {
             if (!gameRunning) return;
             switch (e.key) {
                 case "ArrowUp":
                 case "w":
                 case "W":
-                    if (dir.y === 0) nextDir = { x: 0, y: -1 };
+                    sendDirection("UP");
                     break;
                 case "ArrowDown":
                 case "s":
                 case "S":
-                    if (dir.y === 0) nextDir = { x: 0, y: 1 };
+                    sendDirection("DOWN");
                     break;
                 case "ArrowLeft":
                 case "a":
                 case "A":
-                    if (dir.x === 0) nextDir = { x: -1, y: 0 };
+                    sendDirection("LEFT");
                     break;
                 case "ArrowRight":
                 case "d":
                 case "D":
-                    if (dir.x === 0) nextDir = { x: 1, y: 0 };
+                    sendDirection("RIGHT");
                     break;
                 case " ":
                     triggerSkill();
@@ -1160,9 +1140,17 @@
             }
         });
 
-        function changeDir(x, y) {
-            if ((x !== 0 && dir.x === 0) || (y !== 0 && dir.y === 0)) {
-                nextDir = { x, y };
+        function changeDir(dx, dy) {
+            if (dx === 0 && dy === -1) sendDirection("UP");
+            if (dx === 0 && dy === 1) sendDirection("DOWN");
+            if (dx === -1 && dy === 0) sendDirection("LEFT");
+            if (dx === 1 && dy === 0) sendDirection("RIGHT");
+        }
+
+        async function sendDirection(dir) {
+            currentDir = dir;
+            if (snakeId) {
+                makeApiCall("PATCH", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}/direction?dir=${dir}`, null, true);
             }
         }
 
@@ -1172,109 +1160,12 @@
             await makeApiCall("PATCH", url);
         }
 
-        // Real-Time Arena Synchronization (Multiplayer across devices)
-        let lastSyncTime = 0;
-        async function syncWithServerArena() {
-            if (!gameRunning || !snakeId) return;
-
-            // 1. Send our position to server
-            const posPayload = {
-                segments: snake,
-                direction: dir.y === -1 ? "UP" : (dir.y === 1 ? "DOWN" : (dir.x === -1 ? "LEFT" : "RIGHT"))
-            };
-            makeApiCall("PATCH", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}/position`, posPayload, true);
-
-            // 2. Fetch all other active players & apples from server
-            const res = await makeApiCall("GET", `${ARENA_SERVICE_URL}/api/v1/arena/state`, null, true);
-            if (res.success && res.data) {
-                if (res.data.apples && res.data.apples.length > 0) {
-                    apples = res.data.apples;
-                }
-                if (res.data.snakes) {
-                    otherSnakes = res.data.snakes.filter(s => s.id !== snakeId && s.alive);
-                }
-                if (res.data.leaderboard) {
-                    renderLeaderboard(res.data.leaderboard);
-                }
-                const activeCount = (res.data.snakes ? res.data.snakes.length : 1);
-                document.getElementById("hudPlayersCount").innerText = `${activeCount} / 16`;
-            }
-        }
-
-        function renderLeaderboard(leaderboard) {
-            const container = document.getElementById("leaderboardContainer");
-            container.innerHTML = leaderboard.slice(0, 5).map((entry, idx) => `
-                <div class="lb-item ${entry.id === snakeId ? 'user-snake' : ''}">
-                    <span>${idx + 1}. ${entry.playerName} (${entry.snakeType})</span>
-                    <span style="font-family:'JetBrains Mono'; font-weight:700; color:${entry.id === snakeId ? 'var(--neon-green)' : 'var(--text-muted)'}">${entry.score} pts</span>
-                </div>
-            `).join("");
-        }
-
-        // Main Game Loop
-        let lastTick = 0;
-        function gameLoop(timestamp) {
-            const speedDelay = (selectedClass === "VIPER" || skillActive) ? 80 : 120;
-            if (timestamp - lastTick > speedDelay) {
-                lastTick = timestamp;
-                if (gameRunning) {
-                    update();
-                }
-            }
-
-            // Sync with backend every 250ms for multiplayer state
-            if (timestamp - lastSyncTime > 250) {
-                lastSyncTime = timestamp;
-                syncWithServerArena();
-            }
-
+        // Rendering Loop (Runs smoothly on requestAnimationFrame)
+        function renderLoop() {
             render();
-            requestAnimationFrame(gameLoop);
+            requestAnimationFrame(renderLoop);
         }
 
-        function update() {
-            dir = nextDir;
-            const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
-
-            // Wall collision wrap around arena
-            if (head.x < 0) head.x = gridSize - 1;
-            if (head.x >= gridSize) head.x = 0;
-            if (head.y < 0) head.y = gridSize - 1;
-            if (head.y >= gridSize) head.y = 0;
-
-            // Self collision (shield protects if Python skill is active)
-            if (!skillActive || selectedClass !== "PYTHON") {
-                for (let i = 0; i < snake.length; i++) {
-                    if (snake[i].x === head.x && snake[i].y === head.y) {
-                        endGame("Tabrakan dengan tubuh sendiri!");
-                        return;
-                    }
-                }
-            }
-
-            snake.unshift(head);
-
-            // Apple collision
-            let ate = false;
-            for (let i = 0; i < apples.length; i++) {
-                if (apples[i].x === head.x && apples[i].y === head.y) {
-                    const apple = apples[i];
-                    const pts = apple.type === "GOLDEN" && selectedClass === "COBRA" ? apple.points + 20 : apple.points;
-                    score += pts;
-                    document.getElementById("hudScore").innerText = score;
-
-                    makeApiCall("PATCH", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId || 'SNK-101'}/eat`, { appleId: apple.id });
-                    ate = true;
-                    break;
-                }
-            }
-
-            if (!ate) {
-                snake.pop();
-            }
-        }
-
-        // Render Canvas
         function render() {
             ctx.fillStyle = "#06090e";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1295,7 +1186,7 @@
             }
 
             // Apples
-            apples.forEach(apple => {
+            arenaApples.forEach(apple => {
                 ctx.shadowBlur = 12;
                 if (apple.type === "GOLDEN") {
                     ctx.fillStyle = "var(--neon-gold)";
@@ -1309,49 +1200,42 @@
                 ctx.fill();
             });
 
-            // Other Players' Snakes (Multiplayer from different tabs or devices)
-            otherSnakes.forEach(other => {
-                ctx.shadowBlur = 8;
-                ctx.shadowColor = other.color || "#00d4ff";
-                ctx.fillStyle = other.color || "#00d4ff";
+            // Draw ALL Snakes (Local player + Remote players + Bots)
+            arenaSnakes.forEach(s => {
+                if (!s.alive || !s.segments || s.segments.length === 0) return;
 
-                if (other.segments) {
-                    other.segments.forEach((seg, sIdx) => {
-                        ctx.beginPath();
-                        ctx.roundRect(seg.x * tileSize + 1, seg.y * tileSize + 1, tileSize - 2, tileSize - 2, sIdx === 0 ? 5 : 3);
-                        ctx.fill();
-                    });
+                const isMe = (s.id === snakeId);
+                const sColor = s.color || "#00d4ff";
 
-                    // Draw player name above snake head
-                    if (other.segments.length > 0) {
-                        ctx.shadowBlur = 0;
-                        ctx.fillStyle = "#ffffff";
-                        ctx.font = "10px 'Outfit'";
-                        ctx.fillText(other.playerName, other.segments[0].x * tileSize, other.segments[0].y * tileSize - 4);
-                    }
-                }
-            });
+                ctx.shadowBlur = isMe ? (skillActive ? 22 : 12) : 8;
+                ctx.shadowColor = sColor;
 
-            // Local Player Snake
-            ctx.shadowBlur = skillActive ? 20 : 10;
-            ctx.shadowColor = selectedColor;
-            snake.forEach((seg, index) => {
-                ctx.fillStyle = index === 0 ? "#ffffff" : selectedColor;
-                ctx.beginPath();
-                ctx.roundRect(seg.x * tileSize + 1, seg.y * tileSize + 1, tileSize - 2, tileSize - 2, index === 0 ? 5 : 3);
-                ctx.fill();
+                s.segments.forEach((seg, sIdx) => {
+                    ctx.fillStyle = (sIdx === 0 ? "#ffffff" : sColor);
+                    ctx.beginPath();
+                    ctx.roundRect(seg.x * tileSize + 1, seg.y * tileSize + 1, tileSize - 2, tileSize - 2, sIdx === 0 ? 5 : 3);
+                    ctx.fill();
+                });
+
+                // Name label above snake head
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = isMe ? "var(--neon-green)" : "#cbd5e1";
+                ctx.font = isMe ? "bold 11px 'Outfit'" : "10px 'Outfit'";
+                const label = isMe ? `${s.playerName} (You)` : s.playerName;
+                ctx.fillText(label, s.segments[0].x * tileSize - 2, s.segments[0].y * tileSize - 4);
             });
 
             ctx.shadowBlur = 0;
         }
 
-        // Initialize Loop & Initial Logs
-        requestAnimationFrame(gameLoop);
-        logApi("INFO", "/system/multiplayer", 200, null, {
-            status: "SNAKE_ARENA_READY",
-            network: { host: currentHost, playerService: PLAYER_SERVICE_URL, arenaService: ARENA_SERVICE_URL },
-            student: "Valentinus Marvel (245150201111027)",
-            features: ["Cross-Device Playable (PC & Mobile)", "Max Capacity: 16 Players", "Real-Time State Sync"]
+        requestAnimationFrame(renderLoop);
+        fetchArenaState();
+
+        logApi("INFO", "/system/server-loop", 200, null, {
+            status: "SERVER_AUTHORITATIVE_ACTIVE",
+            tickRate: "120ms (Server Engine)",
+            webWorker: "Active (Bypasses Chrome Tab Throttling)",
+            multiplayer: "Fully Synchronized across Tabs & Devices"
         });
     </script>
 </body>

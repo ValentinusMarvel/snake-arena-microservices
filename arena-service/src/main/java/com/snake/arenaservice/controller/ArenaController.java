@@ -56,8 +56,18 @@ public class ArenaController {
         return ResponseEntity.ok(arenaManager.getSnake(id));
     }
 
+    @PatchMapping("/snakes/{id}/direction")
+    @Operation(summary = "Mengubah arah pergerakan ular secara real-time (PATCH)", responses = {
+            @ApiResponse(responseCode = "200", description = "Arah ular berhasil diubah"),
+            @ApiResponse(responseCode = "404", description = "Ular tidak ditemukan")
+    })
+    public ResponseEntity<Snake> changeDirection(@PathVariable String id, @RequestParam String dir) {
+        Snake snake = arenaManager.changeDirection(id, dir);
+        return ResponseEntity.ok(snake);
+    }
+
     @PatchMapping("/snakes/{id}/position")
-    @Operation(summary = "Sinkronisasi posisi segmen ular secara real-time (PATCH)", responses = {
+    @Operation(summary = "Sinkronisasi posisi segmen ular secara manual (PATCH)", responses = {
             @ApiResponse(responseCode = "200", description = "Posisi ular berhasil diperbarui"),
             @ApiResponse(responseCode = "404", description = "Ular tidak ditemukan")
     })
