@@ -852,27 +852,28 @@
 
             <div class="panel-title" style="margin-top:2px;">
                 <span>CRUD REST Operations</span>
+                <span id="registeredIdBadge" style="font-size:0.68rem; color:var(--neon-green); font-family:'JetBrains Mono';">No ID</span>
             </div>
 
             <div class="api-actions">
                 <button class="action-btn" id="btnCreatePlayer" onclick="apiCreatePlayer()">
-                    <span>Daftar / Reset Player</span>
+                    <span>Daftar Pemain (Register)</span>
                     <span class="method-tag tag-post">POST</span>
                 </button>
                 <button class="action-btn" id="btnFetchPlayer" onclick="apiFetchPlayer()">
-                    <span>Ambil Profil Player</span>
+                    <span>Ambil Profil (Fetch)</span>
                     <span class="method-tag tag-get">GET</span>
                 </button>
-                <button class="action-btn" id="btnUpdateLoadout" onclick="apiUpdateLoadout()">
-                    <span>Ganti Loadout (Lobby Only)</span>
+                <button class="action-btn" id="btnUpdateLoadout" onclick="apiUpdatePlayerProfile()">
+                    <span>Update Profil / Kelas</span>
                     <span class="method-tag tag-put">PUT</span>
                 </button>
-                <button class="action-btn" onclick="apiConsumeAppleManual()">
-                    <span>Makan Apel Manual</span>
+                <button class="action-btn" onclick="apiPartialUpdate()">
+                    <span>Patch Stats / Makan Apel</span>
                     <span class="method-tag tag-patch">PATCH</span>
                 </button>
-                <button class="action-btn" onclick="apiLeaveArena()">
-                    <span>Tinggalkan Arena (Sync)</span>
+                <button class="action-btn" onclick="apiDeletePlayer()">
+                    <span>Hapus Akun / Keluar Arena</span>
                     <span class="method-tag tag-delete">DELETE</span>
                 </button>
             </div>
@@ -1093,7 +1094,7 @@
 
             // Join Arena via REST API
             const joinPayload = {
-                playerId: playerId,
+                playerId: registeredPlayerId || playerId,
                 playerName: playerName,
                 snakeType: selectedClass,
                 color: selectedColor
@@ -1224,58 +1225,197 @@
             await makeApiCall("POST", endpoint, v1Payload);
         }
 
+        // Helper to update the ID badge in the UI
+        function updatePlayerIdBadge(id) {
+            registeredPlayerId = id;
+            const badge = document.getElementById("registeredIdBadge");
+            if (badge) {
+                badge.innerText = id ? id : "No ID";
+                badge.style.color = id ? "var(--neon-green)" : "var(--text-muted)";
+            }
+        }
+
+        let registeredPlayerId = null;
+
+        function getSafeUsername(base, suffix = "") {
+            let name = (base && base.trim()) ? base.trim() : "Player";
+            name = name.replace(/[^a-zA-Z0-9_]/g, "");
+            const maxBase = 20 - suffix.length;
+            if (name.length > maxBase) {
+                name = name.substring(0, maxBase);
+            }
+            if (name.length < 3) {
+                name = (name + "Hero").substring(0, maxBase);
+            }
+            return (name + suffix).substring(0, 20);
+        }
+
+        // 1. POST: Create / Register Player in Player Service
         async function apiCreatePlayer() {
-            const activeName = playerName || "Player-" + Math.floor(100 + Math.random() * 900);
+            const rawName = document.getElementById("inputPlayerName").value.trim() || playerName;
+            const suffix = `_${Math.floor(100 + Math.random() * 900)}`;
+            const cleanName = getSafeUsername(rawName, suffix);
+
+            let res;
             if (currentVersion === "v1") {
-                const payload = { username: activeName, snakeType: selectedClass, speed: 12 };
-                await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v1/players`, payload);
+                const payload = { username: cleanName, snakeType: selectedClass };
+                res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v1/players`, payload);
             } else {
                 const payload = {
-                    username: activeName,
+                    username: cleanName,
                     classProfile: {
                         className: selectedClass,
-                        passiveEffect: selectedClass === "VIPER" ? "Poison Trail" : (selectedClass === "PYTHON" ? "Thick Scales" : "Golden Touch"),
+                        passiveEffect: selectedClass === "VIPER" ? "POISON_TRAIL" : (selectedClass === "PYTHON" ? "THICK_BODY" : "GOLDEN_SENSE"),
                         activeAbility: {
-                            name: selectedClass === "VIPER" ? "Poison Sprint" : (selectedClass === "PYTHON" ? "Constrict Armor" : "Venom Spit"),
-                            cooldownSeconds: 8,
-                            multiplier: 1.5
+                            name: selectedClass === "VIPER" ? "Venom Dash" : (selectedClass === "PYTHON" ? "Apple Magnet" : "Poison Spit"),
+                            cooldownSeconds: 5,
+                            speedMultiplier: 1.8
                         }
                     }
                 };
-                await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v2/players`, payload);
+                res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v2/players`, payload);
             }
+
+            if (res.success && res.data && res.data.id) {
+                updatePlayerIdBadge(res.data.id);
+                playerId = res.data.id;
+                playerName = res.data.username;
+                document.getElementById("inputPlayerName").value = playerName;
+                document.getElementById("hudPlayer").innerText = playerName;
+                document.getElementById("hudPlayer").style.color = "#ffffff";
+            }
+            return res;
         }
 
+        // 2. GET: Read Player Profile (or All Players if no ID yet)
         async function apiFetchPlayer() {
-            const url = `${PLAYER_SERVICE_URL}/api/${currentVersion}/players/${playerId}`;
-            await makeApiCall("GET", url);
-        }
+            let targetId = registeredPlayerId || (playerId && !playerId.startsWith("PL-RANDOM") ? playerId : null);
 
-        async function apiUpdateLoadout() {
-            if (gameRunning) {
-                alert("Ganti loadout hanya diperbolehkan saat berada di lobby/di luar arena.");
-                return;
+            // If no registered ID, query /api/{version}/players collection to auto-discover
+            if (!targetId) {
+                const listRes = await makeApiCall("GET", `${PLAYER_SERVICE_URL}/api/${currentVersion}/players`);
+                if (listRes.success && Array.isArray(listRes.data) && listRes.data.length > 0) {
+                    const latest = listRes.data[listRes.data.length - 1];
+                    updatePlayerIdBadge(latest.id);
+                    targetId = latest.id;
+                    playerId = latest.id;
+                    playerName = latest.username;
+                    document.getElementById("inputPlayerName").value = playerName;
+                    document.getElementById("hudPlayer").innerText = playerName;
+                    document.getElementById("hudPlayer").style.color = "#ffffff";
+                } else {
+                    // No players exist yet: auto-register one first!
+                    const createRes = await apiCreatePlayer();
+                    targetId = (createRes.data && createRes.data.id) ? createRes.data.id : null;
+                }
             }
-            const payload = { snakeType: selectedClass, color: selectedColor };
-            const url = `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId || 'SNK-101'}/loadout`;
-            await makeApiCall("PUT", url, payload);
-        }
 
-        async function apiConsumeAppleManual() {
-            const payload = { appleId: "APL-" + Math.floor(1 + Math.random() * 3) };
-            const url = `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId || 'SNK-101'}/eat`;
-            await makeApiCall("PATCH", url, payload);
-            fetchArenaState();
-        }
-
-        async function apiLeaveArena() {
-            if (!snakeId) {
-                alert("Anda belum berada di dalam arena.");
-                return;
+            if (targetId) {
+                const url = `${PLAYER_SERVICE_URL}/api/${currentVersion}/players/${targetId}`;
+                await makeApiCall("GET", url);
             }
-            const url = `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}`;
-            await makeApiCall("DELETE", url);
-            endGame("Anda memutuskan untuk mundur dari arena pertempuran.");
+        }
+
+        // 3. PUT: Update Player Profile in Player Service & Arena Loadout
+        async function apiUpdatePlayerProfile() {
+            let targetId = registeredPlayerId || (playerId && !playerId.startsWith("PL-RANDOM") ? playerId : null);
+
+            // Auto-register first if no ID
+            if (!targetId) {
+                const createRes = await apiCreatePlayer();
+                targetId = (createRes.data && createRes.data.id) ? createRes.data.id : null;
+            }
+
+            if (targetId) {
+                const rawName = document.getElementById("inputPlayerName").value.trim() || playerName;
+                const suffix = `_U${Math.floor(10 + Math.random() * 90)}`;
+                const cleanName = getSafeUsername(rawName, suffix);
+
+                let res;
+                if (currentVersion === "v1") {
+                    const payload = {
+                        username: cleanName,
+                        snakeType: selectedClass
+                    };
+                    res = await makeApiCall("PUT", `${PLAYER_SERVICE_URL}/api/v1/players/${targetId}`, payload);
+                } else {
+                    const payload = {
+                        username: cleanName,
+                        classProfile: {
+                            className: selectedClass,
+                            passiveEffect: selectedClass === "VIPER" ? "POISON_TRAIL" : (selectedClass === "PYTHON" ? "THICK_BODY" : "GOLDEN_SENSE"),
+                            activeAbility: {
+                                name: selectedClass === "VIPER" ? "Venom Dash" : (selectedClass === "PYTHON" ? "Apple Magnet" : "Poison Spit"),
+                                cooldownSeconds: 5,
+                                speedMultiplier: 1.8
+                            }
+                        }
+                    };
+                    res = await makeApiCall("PUT", `${PLAYER_SERVICE_URL}/api/v2/players/${targetId}`, payload);
+                }
+
+                if (res.success && res.data) {
+                    playerName = res.data.username;
+                    document.getElementById("inputPlayerName").value = playerName;
+                    document.getElementById("hudPlayer").innerText = playerName;
+                }
+
+                // If currently playing in arena, also update live snake loadout
+                if (snakeId && gameRunning) {
+                    const arenaPayload = { snakeType: selectedClass, color: selectedColor };
+                    await makeApiCall("PUT", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}/loadout`, arenaPayload);
+                }
+            }
+        }
+
+        // 4. PATCH: Partial Update (Stats in Player Service OR Eat Apple in Arena)
+        async function apiPartialUpdate() {
+            if (snakeId && gameRunning) {
+                // In Arena: Eat nearest apple or trigger manual bite via PATCH
+                const appleId = (arenaApples.length > 0) ? arenaApples[0].id : "APL-1";
+                await makeApiCall("PATCH", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}/eat`, { appleId: appleId });
+                fetchArenaState();
+            } else {
+                // In Lobby: Partial stats update in Player Service
+                let targetId = registeredPlayerId || (playerId && !playerId.startsWith("PL-RANDOM") ? playerId : null);
+                if (!targetId) {
+                    const createRes = await apiCreatePlayer();
+                    targetId = (createRes.data && createRes.data.id) ? createRes.data.id : null;
+                }
+                if (targetId) {
+                    const statsPayload = { score: 100, matchCompleted: true };
+                    await makeApiCall("PATCH", `${PLAYER_SERVICE_URL}/api/v1/players/${targetId}/stats`, statsPayload);
+                }
+            }
+        }
+
+        // 5. DELETE: Delete Player Account from Player Service & Leave Arena
+        async function apiDeletePlayer() {
+            let targetId = registeredPlayerId || (playerId && !playerId.startsWith("PL-RANDOM") ? playerId : null);
+
+            // If in arena, leave arena first
+            if (snakeId && gameRunning) {
+                await makeApiCall("DELETE", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}`);
+                endGame("Anda telah meninggalkan arena pertandingan.");
+            }
+
+            // Delete player account from Player Service
+            if (targetId) {
+                const res = await makeApiCall("DELETE", `${PLAYER_SERVICE_URL}/api/${currentVersion}/players/${targetId}`);
+                if (res.status === 204 || res.success) {
+                    updatePlayerIdBadge(null);
+                    playerId = "PL-RANDOM-" + Math.floor(100 + Math.random() * 900);
+                    document.getElementById("inputPlayerName").value = "";
+                    document.getElementById("hudPlayer").innerText = "(Belum Join)";
+                    document.getElementById("hudPlayer").style.color = "var(--text-muted)";
+                }
+            } else {
+                // Fallback if no target player ID: remove snake from arena if active
+                if (snakeId) {
+                    await makeApiCall("DELETE", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}`);
+                    endGame("Anda telah meninggalkan arena pertandingan.");
+                }
+            }
         }
 
         window.addEventListener("keydown", (e) => {
