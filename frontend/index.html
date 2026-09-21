@@ -891,6 +891,10 @@
                     <span class="hud-val" id="hudClass" style="color:var(--neon-green)">VIPER</span>
                 </div>
                 <div class="hud-stat">
+                    <span class="hud-label">Skill</span>
+                    <span class="hud-val" id="hudSkillStatus" style="color:var(--neon-green); font-size:0.85rem; font-weight:700;">⚡ READY</span>
+                </div>
+                <div class="hud-stat">
                     <span class="hud-label">Skor</span>
                     <span class="hud-val" id="hudScore">0</span>
                 </div>
@@ -1018,6 +1022,9 @@
         let snakeId = null;
         let score = 0;
         let skillActive = false;
+        let skillActiveUntil = 0;
+        let skillCooldownUntil = 0;
+        let skillTimerInterval = null;
         let gameRunning = false;
 
         let arenaSnakes = [];
@@ -1148,6 +1155,11 @@
 
         function endGame(reason) {
             gameRunning = false;
+            skillActive = false;
+            skillActiveUntil = 0;
+            skillCooldownUntil = 0;
+            if (skillTimerInterval) { clearInterval(skillTimerInterval); skillTimerInterval = null; }
+            updateSkillStatusUi("⚡ READY", "var(--neon-green)");
             sessionStorage.removeItem("activeSnakeId");
             snakeId = null;
             lockInGameControls(false);
@@ -1611,9 +1623,61 @@
 
         async function triggerSkill() {
             if (!snakeId || !gameRunning) return;
-            skillActive = !skillActive;
-            const url = `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}/skill?active=${skillActive}`;
+            const now = Date.now();
+
+            if (skillActive) {
+                // Sedang aktif: tidak perlu klik ulang
+                return;
+            }
+
+            if (now < skillCooldownUntil) {
+                const sec = Math.ceil((skillCooldownUntil - now) / 1000);
+                updateSkillStatusUi(`⏳ CD (${sec}s)`, "var(--neon-gold)");
+                return;
+            }
+
+            // Durasi Aktif 3 Detik + Masa Cooldown 5 Detik
+            skillActive = true;
+            skillActiveUntil = now + 3000;
+            skillCooldownUntil = now + 3000 + 5000;
+            updateSkillStatusUi("⚡ AKTIF (3s)", "var(--neon-green)");
+
+            const url = `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}/skill?active=true`;
             await makeApiCall("PATCH", url);
+
+            if (skillTimerInterval) clearInterval(skillTimerInterval);
+            skillTimerInterval = setInterval(() => {
+                const cur = Date.now();
+                if (cur < skillActiveUntil) {
+                    const left = Math.ceil((skillActiveUntil - cur) / 1000);
+                    updateSkillStatusUi(`⚡ AKTIF (${left}s)`, "var(--neon-green)");
+                } else if (cur < skillCooldownUntil) {
+                    if (skillActive) {
+                        skillActive = false;
+                        makeApiCall("PATCH", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}/skill?active=false`, null, true);
+                    }
+                    const cdLeft = Math.ceil((skillCooldownUntil - cur) / 1000);
+                    updateSkillStatusUi(`⏳ CD (${cdLeft}s)`, "var(--neon-gold)");
+                } else {
+                    skillActive = false;
+                    clearInterval(skillTimerInterval);
+                    skillTimerInterval = null;
+                    updateSkillStatusUi("⚡ READY", "var(--neon-green)");
+                }
+            }, 250);
+        }
+
+        function updateSkillStatusUi(text, color) {
+            const el = document.getElementById("hudSkillStatus");
+            if (el) {
+                el.innerText = text;
+                el.style.color = color;
+            }
+            const touchBtn = document.querySelector(".btn-skill-touch");
+            if (touchBtn) {
+                touchBtn.innerText = text.includes("AKTIF") ? "AKTIF" : (text.includes("CD") ? text : "SKILL");
+                touchBtn.style.opacity = text.includes("CD") ? "0.5" : "1";
+            }
         }
 
         function renderLoop() {

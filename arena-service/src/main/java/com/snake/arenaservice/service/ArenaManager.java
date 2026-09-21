@@ -216,7 +216,24 @@ public synchronized Snake joinArena(String playerId, String playerName, String s
     public synchronized Snake toggleSkill(String snakeId, boolean active) {
         Snake snake = getSnake(snakeId);
         snake.updateHeartbeat();
-        snake.setSkillActive(active);
+        long now = System.currentTimeMillis();
+
+        if (active) {
+            if (snake.isSkillActive()) {
+                return snake;
+            }
+            if (now < snake.getSkillCooldownUntil()) {
+                long remainingSec = (snake.getSkillCooldownUntil() - now + 999) / 1000;
+                throw new IllegalStateException("Skill masih dalam masa cooldown! Silakan tunggu " + remainingSec + " detik lagi.");
+            }
+            snake.setSkillActive(true);
+            snake.setSkillActivatedAt(now);
+            // Durasi aktif 3 detik + Cooldown 5 detik
+            snake.setSkillCooldownUntil(now + 3000 + 5000);
+            log.info("Skill aktif untuk ular {} (durasi: 3s, cooldown: 5s)", snake.getPlayerName());
+        } else {
+            snake.setSkillActive(false);
+        }
         return snake;
     }
 
@@ -257,7 +274,7 @@ public synchronized Snake joinArena(String playerId, String playerName, String s
         Set<String> eliminatedIds = new HashSet<>();
         long now = System.currentTimeMillis();
 
-        // 0. Deteksi ular yatim (ghost snake) yang terputus / ditinggal refresh (> 4 detik tanpa heartbeat)
+        // 0. Deteksi ular yatim (ghost snake) yang terputus / ditinggal refresh (> 7 detik tanpa heartbeat)
         for (Snake snake : snakes.values()) {
             if (isBot(snake)) {
                 snake.updateHeartbeat();
@@ -265,6 +282,12 @@ public synchronized Snake joinArena(String playerId, String playerName, String s
                 log.info("Client timeout: Ular {} ({}) terputus/refresh window, otomatis dibersihkan",
                         snake.getPlayerName(), snake.getId());
                 eliminatedIds.add(snake.getId());
+            }
+
+            // Auto-expire skill setelah durasi 3 detik selesai
+            if (snake.isSkillActive() && (now - snake.getSkillActivatedAt() > 3000)) {
+                snake.setSkillActive(false);
+                log.info("Durasi skill ular {} berakhir (3 detik), masuk cooldown 5 detik", snake.getPlayerName());
             }
         }
 
