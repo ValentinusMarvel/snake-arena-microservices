@@ -1013,10 +1013,16 @@
         let currentVersion = "v1";
         let selectedClass = "VIPER";
         let selectedColor = "#00ff88";
-        let playerId = localStorage.getItem("snakeArenaPlayerId");
+        // Ensure each Chrome window / tab is an independent player!
+        // Combining window.name with sessionStorage guarantees unique player ID per window/tab
+        if (!window.name || !window.name.startsWith("WIN_")) {
+            window.name = "WIN_" + Math.random().toString(36).substring(2, 9);
+        }
+        let tabInstanceKey = "snakeArenaPlayerId_" + window.name;
+        let playerId = sessionStorage.getItem(tabInstanceKey);
         if (!playerId) {
-            playerId = "PL-" + Math.floor(100 + Math.random() * 900);
-            localStorage.setItem("snakeArenaPlayerId", playerId);
+            playerId = "PL-" + Math.floor(1000 + Math.random() * 9000);
+            sessionStorage.setItem(tabInstanceKey, playerId);
         }
         let playerName = "";
         let snakeId = null;
@@ -1035,19 +1041,44 @@
         const gridSize = 30;
         const tileSize = canvas.width / gridSize;
 
-        // Web Worker ticker (anti background throttling)
+        // Web Worker ticker & direct background heartbeat: 100% immune to Chrome tab/window throttling
         const workerBlob = new Blob([`
-            let interval = setInterval(() => {
-                postMessage('tick');
+            let count = 0;
+            let currentSnakeId = null;
+            let arenaUrl = '';
+
+            // 1. Tick every 100ms for state polling
+            setInterval(() => {
+                count++;
+                postMessage({ type: 'tick' });
+
+                // 2. Direct Web Worker heartbeat every 1500ms (15 ticks):
+                // Runs on a dedicated OS background thread, 100% immune to Chrome tab/window throttling!
+                if (count % 15 === 0 && currentSnakeId && arenaUrl) {
+                    fetch(arenaUrl + '/api/v1/arena/snakes/' + currentSnakeId + '/heartbeat', {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' }
+                    }).catch(() => {});
+                }
             }, 100);
+
             onmessage = (e) => {
-                if (e.data === 'stop') clearInterval(interval);
+                if (!e.data) return;
+                if (e.data.type === 'setSnake') {
+                    currentSnakeId = e.data.snakeId;
+                    arenaUrl = e.data.arenaUrl;
+                } else if (e.data.type === 'clearSnake') {
+                    currentSnakeId = null;
+                }
             };
         `], { type: 'application/javascript' });
         const backgroundWorker = new Worker(URL.createObjectURL(workerBlob));
 
-        backgroundWorker.onmessage = () => {
-            fetchArenaState();
+        backgroundWorker.onmessage = (e) => {
+            if (!e.data) return;
+            if (e.data.type === 'tick' || e.data === 'tick') {
+                fetchArenaState();
+            }
         };
 
         function selectOverlayClass(className, color, el) {
@@ -1137,6 +1168,13 @@
             if (res.data && res.data.id) {
                 snakeId = res.data.id;
                 sessionStorage.setItem("activeSnakeId", snakeId);
+                if (backgroundWorker) {
+                    backgroundWorker.postMessage({
+                        type: 'setSnake',
+                        snakeId: snakeId,
+                        arenaUrl: ARENA_SERVICE_URL
+                    });
+                }
             }
             await fetchArenaState();
         }
@@ -1161,6 +1199,9 @@
             if (skillTimerInterval) { clearInterval(skillTimerInterval); skillTimerInterval = null; }
             updateSkillStatusUi("⚡ READY", "var(--neon-green)");
             sessionStorage.removeItem("activeSnakeId");
+            if (backgroundWorker) {
+                backgroundWorker.postMessage({ type: 'clearSnake' });
+            }
             snakeId = null;
             lockInGameControls(false);
 
@@ -1253,12 +1294,20 @@
 
         function renderLeaderboard(leaderboard) {
             const container = document.getElementById("leaderboardContainer");
-            container.innerHTML = leaderboard.slice(0, 5).map((entry, idx) => `
-                <div class="lb-item ${entry.id === snakeId ? 'user-snake' : ''}">
-                    <span>${idx + 1}. ${entry.playerName} (${entry.snakeType})</span>
-                    <span style="font-family:'JetBrains Mono'; font-weight:700; color:${entry.id === snakeId ? 'var(--neon-green)' : 'var(--text-muted)'}">${entry.score} pts</span>
-                </div>
-            `).join("");
+            if (!container) return;
+            if (!leaderboard || leaderboard.length === 0) {
+                container.innerHTML = `<div class="lb-item"><span>(Menunggu pertandingan dimulai...)</span></div>`;
+                return;
+            }
+            container.innerHTML = leaderboard.slice(0, 5).map((entry, idx) => {
+                const isMySnake = (snakeId && (entry.snakeId === snakeId || entry.id === snakeId)) || (playerName && entry.playerName === playerName);
+                return `
+                    <div class="lb-item ${isMySnake ? 'user-snake' : ''}">
+                        <span>${idx + 1}. ${entry.playerName} (${entry.snakeType})</span>
+                        <span style="font-family:'JetBrains Mono'; font-weight:700; color:${isMySnake ? 'var(--neon-green)' : 'var(--text-muted)'}">${entry.score} pts</span>
+                    </div>
+                `;
+            }).join("");
         }
 
         function switchVersion(version) {
@@ -1361,6 +1410,13 @@
             if (arenaRes.success && arenaRes.data) {
                 snakeId = arenaRes.data.id;
                 sessionStorage.setItem("activeSnakeId", snakeId);
+                if (backgroundWorker) {
+                    backgroundWorker.postMessage({
+                        type: 'setSnake',
+                        snakeId: snakeId,
+                        arenaUrl: ARENA_SERVICE_URL
+                    });
+                }
 
                 // Sembunyikan overlay dan mulai game langsung
                 document.getElementById("gameOverlay").classList.add("hidden");
@@ -1546,22 +1602,27 @@
 
             // If in arena, leave arena first
             if (snakeId && gameRunning) {
+                if (backgroundWorker) {
+                    backgroundWorker.postMessage({ type: 'clearSnake' });
+                }
                 await makeApiCall("DELETE", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}`);
                 endGame("Anda telah meninggalkan arena pertandingan.");
+                return;
             }
 
-            // Delete player account from Player Service
+            // Outside arena / Lobby: Delete player account from Player Service
             if (targetId) {
                 const res = await makeApiCall("DELETE", `${PLAYER_SERVICE_URL}/api/${currentVersion}/players/${targetId}`);
                 if (res.status === 204 || res.success) {
                     updatePlayerIdBadge(null);
-                    playerId = "PL-RANDOM-" + Math.floor(100 + Math.random() * 900);
+                    sessionStorage.removeItem(tabInstanceKey);
+                    playerId = "PL-" + Math.floor(1000 + Math.random() * 9000);
+                    sessionStorage.setItem(tabInstanceKey, playerId);
                     document.getElementById("inputPlayerName").value = "";
                     document.getElementById("hudPlayer").innerText = "(Belum Join)";
                     document.getElementById("hudPlayer").style.color = "var(--text-muted)";
                 }
             } else {
-                // Fallback if no target player ID: remove snake from arena if active
                 if (snakeId) {
                     await makeApiCall("DELETE", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}`);
                     endGame("Anda telah meninggalkan arena pertandingan.");
@@ -1912,20 +1973,14 @@
             rules: ["Name & Class Locked In-Game", "No Apples on Death", "Balanced Max 6 Apples Pool", "PvP Collisions Active"]
         });
 
-        // Clean up any lingering ghost snake from a previous refreshed window
-        (function cleanupPreviousSessionSnake() {
-            const staleId = sessionStorage.getItem("activeSnakeId");
-            if (staleId) {
-                sessionStorage.removeItem("activeSnakeId");
-                fetch(`${ARENA_SERVICE_URL}/api/v1/arena/snakes/${staleId}`, { method: "DELETE" }).catch(() => {});
-            }
-        })();
-
-        // Unload listener: Immediately eliminate snake when user refreshes, closes tab, or navigates away
+        // Unload listener: Immediately eliminate snake only when user navigates away or closes tab
         function cleanupCurrentSnake() {
             const current = snakeId || sessionStorage.getItem("activeSnakeId");
             if (current) {
                 sessionStorage.removeItem("activeSnakeId");
+                if (backgroundWorker) {
+                    backgroundWorker.postMessage({ type: 'clearSnake' });
+                }
                 if (navigator.sendBeacon) {
                     navigator.sendBeacon(`${ARENA_SERVICE_URL}/api/v1/arena/snakes/${current}/leave`);
                 }
@@ -1933,14 +1988,6 @@
             }
         }
         window.addEventListener("beforeunload", cleanupCurrentSnake);
-        window.addEventListener("pagehide", cleanupCurrentSnake);
-
-        // Heartbeat timer: Keep snake alive on server while active
-        setInterval(() => {
-            if (gameRunning && snakeId) {
-                fetch(`${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}/heartbeat`, { method: "PATCH" }).catch(() => {});
-            }
-        }, 1500);
 
     </script>
 </body>
