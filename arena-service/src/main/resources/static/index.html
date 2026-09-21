@@ -857,7 +857,7 @@
 
             <div class="api-actions">
                 <button class="action-btn" id="btnCreatePlayer" onclick="apiCreatePlayer()">
-                    <span>Daftar Pemain (Register)</span>
+                    <span>Daftar & Spawn Ular</span>
                     <span class="method-tag tag-post">POST</span>
                 </button>
                 <button class="action-btn" id="btnFetchPlayer" onclick="apiFetchPlayer()">
@@ -1002,7 +1002,11 @@
         let currentVersion = "v1";
         let selectedClass = "VIPER";
         let selectedColor = "#00ff88";
-        let playerId = "PL-" + Math.floor(100 + Math.random() * 900);
+        let playerId = localStorage.getItem("snakeArenaPlayerId");
+        if (!playerId) {
+            playerId = "PL-" + Math.floor(100 + Math.random() * 900);
+            localStorage.setItem("snakeArenaPlayerId", playerId);
+        }
         let playerName = "";
         let snakeId = null;
         let score = 0;
@@ -1065,7 +1069,19 @@
             startBtn.innerText = "Memeriksa Nama & Masuk...";
             startBtn.disabled = true;
 
-            // Hubungi Arena Service untuk join terlebih dahulu
+            // Auto-register player profile in Player Service if not registered yet
+            if (!registeredPlayerId) {
+                try {
+                    const regPayload = { username: val, snakeType: selectedClass };
+                    const regRes = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v1/players`, regPayload, true);
+                    if (regRes.success && regRes.data && regRes.data.id) {
+                        updatePlayerIdBadge(regRes.data.id);
+                        playerId = regRes.data.id;
+                    }
+                } catch (e) {}
+            }
+
+            // Hubungi Arena Service untuk join / spawn ular
             const joinPayload = {
                 playerId: registeredPlayerId || playerId,
                 playerName: val,
@@ -1268,19 +1284,24 @@
             return (name + suffix).substring(0, 20);
         }
 
-        // 1. POST: Create / Register Player in Player Service
+        // 1. POST: Create / Register Player in Player Service AND Spawn Snake in Arena
         async function apiCreatePlayer() {
-            const rawName = document.getElementById("inputPlayerName").value.trim() || playerName;
-            const suffix = `_${Math.floor(100 + Math.random() * 900)}`;
-            const cleanName = getSafeUsername(rawName, suffix);
-
+            let rawName = document.getElementById("overlayPlayerName").value.trim() || 
+                          document.getElementById("inputPlayerName").value.trim() || 
+                          playerName || "Player";
+            
+            // Register in Player Service
             let res;
             if (currentVersion === "v1") {
-                const payload = { username: cleanName, snakeType: selectedClass };
+                const payload = { username: rawName, snakeType: selectedClass };
                 res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v1/players`, payload);
+                if (!res.success && res.status === 400) {
+                    const safeName = getSafeUsername(rawName, `_${Math.floor(10 + Math.random() * 90)}`);
+                    res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v1/players`, { username: safeName, snakeType: selectedClass });
+                }
             } else {
                 const payload = {
-                    username: cleanName,
+                    username: rawName,
                     classProfile: {
                         className: selectedClass,
                         passiveEffect: selectedClass === "VIPER" ? "POISON_TRAIL" : (selectedClass === "PYTHON" ? "THICK_BODY" : "GOLDEN_SENSE"),
@@ -1292,6 +1313,11 @@
                     }
                 };
                 res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v2/players`, payload);
+                if (!res.success && res.status === 400) {
+                    const safeName = getSafeUsername(rawName, `_${Math.floor(10 + Math.random() * 90)}`);
+                    payload.username = safeName;
+                    res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v2/players`, payload);
+                }
             }
 
             if (res.success && res.data && res.data.id) {
@@ -1299,9 +1325,37 @@
                 playerId = res.data.id;
                 playerName = res.data.username;
                 document.getElementById("inputPlayerName").value = playerName;
+                document.getElementById("overlayPlayerName").value = playerName;
                 document.getElementById("hudPlayer").innerText = playerName;
                 document.getElementById("hudPlayer").style.color = "#ffffff";
             }
+
+            // Also spawn snake into Arena Service (POST /api/v1/arena/snakes)
+            const joinPayload = {
+                playerId: registeredPlayerId || playerId,
+                playerName: playerName || rawName,
+                snakeType: selectedClass,
+                color: selectedColor
+            };
+
+            const arenaRes = await makeApiCall("POST", `${ARENA_SERVICE_URL}/api/v1/arena/snakes`, joinPayload);
+            if (arenaRes.success && arenaRes.data) {
+                snakeId = arenaRes.data.id;
+                sessionStorage.setItem("activeSnakeId", snakeId);
+
+                // Sembunyikan overlay dan mulai game langsung
+                document.getElementById("gameOverlay").classList.add("hidden");
+                gameRunning = true;
+                score = 0;
+                document.getElementById("hudScore").innerText = "0";
+                lockInGameControls(true);
+
+                await fetchArenaState();
+            } else if (!arenaRes.success) {
+                const errMsg = (arenaRes.data && arenaRes.data.detail) ? arenaRes.data.detail : "Gagal spawn ular di arena!";
+                alert(`⚠️ Peringatan Arena:\n${errMsg}`);
+            }
+
             return res;
         }
 

@@ -76,18 +76,24 @@ public class ArenaManager {
 public synchronized Snake joinArena(String playerId, String playerName, String snakeType, String color, int startX, int startY) {
         long now = System.currentTimeMillis();
 
-        // Validasi Duplikasi Nama: Berikan peringatan jika nama sudah digunakan oleh pemain lain yang masih aktif
-        for (Snake existing : snakes.values()) {
-            if (existing.isAlive() && existing.getPlayerName().equalsIgnoreCase(playerName)) {
-                // Jika ular tersebut adalah sesi lama dari player yang sama dan sudah disconnect (> 4000ms), bersihkan
-                if (existing.getPlayerId().equalsIgnoreCase(playerId) && (now - existing.getLastHeartbeatTime() > 4000)) {
-                    snakes.remove(existing.getId());
-                    continue;
-                }
+        // 1. Bersihkan ular lama milik player ID yang sama jika ada (misal respawn atau reconnect instan)
+        for (Snake existing : new ArrayList<>(snakes.values())) {
+            if (existing.getPlayerId() != null && existing.getPlayerId().equalsIgnoreCase(playerId)) {
+                snakes.remove(existing.getId());
+            }
+        }
 
-                // Jika ular masih aktif (milik pemain lain atau masih terhubung): Tolak dengan peringatan!
-                if (now - existing.getLastHeartbeatTime() <= 4000) {
-                    throw new IllegalArgumentException("Nama '" + playerName + "' sedang digunakan oleh pemain lain di arena! Silakan pilih nama lain.");
+        // 2. Validasi Duplikasi Nama: Berikan peringatan jika nama sudah digunakan oleh pemain LAIN yang masih aktif
+        for (Snake existing : new ArrayList<>(snakes.values())) {
+            if (existing.isAlive() && existing.getPlayerName().equalsIgnoreCase(playerName)) {
+                if (!existing.getPlayerId().equalsIgnoreCase(playerId)) {
+                    // Jika pemain lain masih aktif (heartbeat dalam 5 detik terakhir)
+                    if (now - existing.getLastHeartbeatTime() <= 5000) {
+                        throw new IllegalArgumentException("Nama '" + playerName + "' sedang digunakan oleh pemain lain di arena! Silakan pilih nama lain.");
+                    } else {
+                        // Sesi pemain lain sudah disconnected / expired: bersihkan
+                        snakes.remove(existing.getId());
+                    }
                 }
             }
         }
@@ -105,6 +111,7 @@ public synchronized Snake joinArena(String playerId, String playerName, String s
         String actualColor = color != null && !color.isBlank() ? color : getDefaultColor(snakeType);
         Snake snake = new Snake(snakeId, playerId, playerName, snakeType.toUpperCase(), actualColor, segments, "UP", 0, true, false);
         snakes.put(snakeId, snake);
+        log.info("Snake spawned: {} ({}) for player {} at ({},{})", playerName, snakeId, playerId, startX, startY);
         return snake;
     }
 
@@ -254,7 +261,7 @@ public synchronized Snake joinArena(String playerId, String playerName, String s
         for (Snake snake : snakes.values()) {
             if (isBot(snake)) {
                 snake.updateHeartbeat();
-            } else if (now - snake.getLastHeartbeatTime() > 4000) {
+            } else if (now - snake.getLastHeartbeatTime() > 7000) {
                 log.info("Client timeout: Ular {} ({}) terputus/refresh window, otomatis dibersihkan",
                         snake.getPlayerName(), snake.getId());
                 eliminatedIds.add(snake.getId());
