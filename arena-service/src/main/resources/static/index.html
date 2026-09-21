@@ -1356,7 +1356,8 @@
         async function apiCreatePlayer() {
             let rawName = document.getElementById("overlayPlayerName").value.trim() || 
                           document.getElementById("inputPlayerName").value.trim() || 
-                          playerName || "Player";
+                          playerName || 
+                          ("Player_" + Math.floor(100 + Math.random() * 900));
             
             // Register in Player Service
             let res;
