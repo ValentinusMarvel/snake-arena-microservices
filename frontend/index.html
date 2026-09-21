@@ -811,7 +811,7 @@
             </div>
 
             <div class="class-selector" id="sidebarClassSelector">
-                <div class="class-card class-viper selected" data-class="VIPER" onclick="selectSidebarClass('VIPER', '#00ff88')">
+                <div class="class-card class-viper selected" data-class="VIPER" onclick="selectSidebarClass('VIPER', '#00ff88', true)">
                     <div class="class-header">
                         <span class="class-name">⚡ Viper</span>
                         <span class="class-badge">Agile</span>
@@ -819,7 +819,7 @@
                     <p class="class-desc">Passive: Poison Trail. Kecepatan dasar tinggi (+20%). Cocok untuk memotong jalur musuh secara agresif.</p>
                 </div>
 
-                <div class="class-card class-python" data-class="PYTHON" onclick="selectSidebarClass('PYTHON', '#00d4ff')">
+                <div class="class-card class-python" data-class="PYTHON" onclick="selectSidebarClass('PYTHON', '#00d4ff', true)">
                     <div class="class-header">
                         <span class="class-name">🛡️ Python</span>
                         <span class="class-badge">Tank</span>
@@ -827,7 +827,7 @@
                     <p class="class-desc">Passive: Thick Scales. Tahan benturan tubuh lawan saat skill aktif shield menyala.</p>
                 </div>
 
-                <div class="class-card class-cobra" data-class="COBRA" onclick="selectSidebarClass('COBRA', '#ffd700')">
+                <div class="class-card class-cobra" data-class="COBRA" onclick="selectSidebarClass('COBRA', '#ffd700', true)">
                     <div class="class-header">
                         <span class="class-name">👑 Cobra</span>
                         <span class="class-badge">Specialist</span>
@@ -1136,7 +1136,7 @@
             document.querySelectorAll('#sidebarClassSelector .class-card').forEach(c => {
                 c.classList.toggle('locked', locked);
             });
-            document.getElementById("btnUpdateLoadout").disabled = locked;
+            // document.getElementById("btnUpdateLoadout").disabled = locked; // allow live PUT loadout swap
         }
 
         function endGame(reason) {
@@ -1360,8 +1360,8 @@
         }
 
         // 2. GET: Read Player Profile (or All Players if no ID yet)
-        function selectSidebarClass(className, color) {
-            if (gameRunning) {
+        function selectSidebarClass(className, color, fromUserClick = false) {
+            if (gameRunning && fromUserClick) {
                 alert("Ganti kelas hanya diperbolehkan saat berada di lobby/di luar arena.");
                 return;
             }
@@ -1411,9 +1411,20 @@
                     const fetchedClass = res.data.snakeType || (res.data.classProfile && res.data.classProfile.className);
                     if (fetchedClass) {
                         const colorMap = { "VIPER": "#00ff88", "PYTHON": "#00d4ff", "COBRA": "#ffd700" };
-                        selectSidebarClass(fetchedClass, colorMap[fetchedClass] || "#ffffff");
+                        // Pass false so programmatic GET never triggers user-click alert!
+                        selectSidebarClass(fetchedClass, colorMap[fetchedClass] || "#ffffff", false);
                     }
                 }
+            }
+
+            // Jika sedang bertanding di dalam arena, ambil juga data ular & snapshot terkini (GET in-game)
+            if (snakeId && gameRunning) {
+                const snakeRes = await makeApiCall("GET", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}`);
+                if (snakeRes.success && snakeRes.data) {
+                    score = snakeRes.data.score || 0;
+                    document.getElementById("hudScore").innerText = score;
+                }
+                await fetchArenaState();
             }
         }
 
