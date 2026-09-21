@@ -811,7 +811,7 @@
             </div>
 
             <div class="class-selector" id="sidebarClassSelector">
-                <div class="class-card class-viper selected" data-class="VIPER">
+                <div class="class-card class-viper selected" data-class="VIPER" onclick="selectSidebarClass('VIPER', '#00ff88')">
                     <div class="class-header">
                         <span class="class-name">⚡ Viper</span>
                         <span class="class-badge">Agile</span>
@@ -819,7 +819,7 @@
                     <p class="class-desc">Passive: Poison Trail. Kecepatan dasar tinggi (+20%). Cocok untuk memotong jalur musuh secara agresif.</p>
                 </div>
 
-                <div class="class-card class-python" data-class="PYTHON">
+                <div class="class-card class-python" data-class="PYTHON" onclick="selectSidebarClass('PYTHON', '#00d4ff')">
                     <div class="class-header">
                         <span class="class-name">🛡️ Python</span>
                         <span class="class-badge">Tank</span>
@@ -827,7 +827,7 @@
                     <p class="class-desc">Passive: Thick Scales. Tahan benturan tubuh lawan saat skill aktif shield menyala.</p>
                 </div>
 
-                <div class="class-card class-cobra" data-class="COBRA">
+                <div class="class-card class-cobra" data-class="COBRA" onclick="selectSidebarClass('COBRA', '#ffd700')">
                     <div class="class-header">
                         <span class="class-name">👑 Cobra</span>
                         <span class="class-badge">Specialist</span>
@@ -1306,6 +1306,28 @@
         }
 
         // 2. GET: Read Player Profile (or All Players if no ID yet)
+        function selectSidebarClass(className, color) {
+            if (gameRunning) {
+                alert("Ganti kelas hanya diperbolehkan saat berada di lobby/di luar arena.");
+                return;
+            }
+            selectedClass = className;
+            selectedColor = color;
+
+            document.querySelectorAll('#sidebarClassSelector .class-card').forEach(c => {
+                c.classList.toggle('selected', c.dataset.class === className);
+            });
+
+            // Sinkronkan juga pilihan di dialog start overlay
+            document.querySelectorAll('.overlay-class-opt').forEach(opt => {
+                opt.classList.toggle('active', opt.innerText.includes(className));
+            });
+
+            document.getElementById("hudClass").innerText = className;
+            document.getElementById("hudClass").style.color = color;
+        }
+
+        // 2. GET: Read Player Profile (or All Players if no ID yet)
         async function apiFetchPlayer() {
             let targetId = registeredPlayerId || (playerId && !playerId.startsWith("PL-RANDOM") ? playerId : null);
 
@@ -1330,11 +1352,18 @@
 
             if (targetId) {
                 const url = `${PLAYER_SERVICE_URL}/api/${currentVersion}/players/${targetId}`;
-                await makeApiCall("GET", url);
+                const res = await makeApiCall("GET", url);
+                if (res.success && res.data) {
+                    const fetchedClass = res.data.snakeType || (res.data.classProfile && res.data.classProfile.className);
+                    if (fetchedClass) {
+                        const colorMap = { "VIPER": "#00ff88", "PYTHON": "#00d4ff", "COBRA": "#ffd700" };
+                        selectSidebarClass(fetchedClass, colorMap[fetchedClass] || "#ffffff");
+                    }
+                }
             }
         }
 
-        // 3. PUT: Update Player Profile in Player Service & Arena Loadout
+        // 3. PUT: Update Player Profile (Mengganti Username DAN Tipe Kelas Ular)
         async function apiUpdatePlayerProfile() {
             let targetId = registeredPlayerId || (playerId && !playerId.startsWith("PL-RANDOM") ? playerId : null);
 
@@ -1348,6 +1377,14 @@
                 const rawName = document.getElementById("inputPlayerName").value.trim() || playerName;
                 const suffix = `_U${Math.floor(10 + Math.random() * 90)}`;
                 const cleanName = getSafeUsername(rawName, suffix);
+
+                // Rotasi kelas ular ke tipe berikutnya (VIPER -> PYTHON -> COBRA -> VIPER)
+                // agar efek PUT mengganti kelas ular dan username terlihat secara nyata di DB dan UI
+                const classRotation = ["VIPER", "PYTHON", "COBRA"];
+                const colorMap = { "VIPER": "#00ff88", "PYTHON": "#00d4ff", "COBRA": "#ffd700" };
+                const nextIdx = (classRotation.indexOf(selectedClass) + 1) % classRotation.length;
+                selectedClass = classRotation[nextIdx];
+                selectedColor = colorMap[selectedClass];
 
                 let res;
                 if (currentVersion === "v1") {
@@ -1376,6 +1413,19 @@
                     playerName = res.data.username;
                     document.getElementById("inputPlayerName").value = playerName;
                     document.getElementById("hudPlayer").innerText = playerName;
+
+                    // Update UI kelas di HUD dan sorot card kelas baru di sidebar
+                    document.getElementById("hudClass").innerText = selectedClass;
+                    document.getElementById("hudClass").style.color = selectedColor;
+
+                    document.querySelectorAll('#sidebarClassSelector .class-card').forEach(c => {
+                        c.classList.toggle('selected', c.dataset.class === selectedClass);
+                    });
+
+                    // Sinkronkan juga pilihan overlay
+                    document.querySelectorAll('.overlay-class-opt').forEach(opt => {
+                        opt.classList.toggle('active', opt.innerText.includes(selectedClass));
+                    });
                 }
 
                 // If currently playing in arena, also update live snake loadout
@@ -1386,7 +1436,6 @@
             }
         }
 
-        // 4. PATCH: Partial Update (Stats in Player Service OR Eat Apple in Arena)
         async function apiPartialUpdate() {
             if (snakeId && gameRunning) {
                 // In Arena: Eat nearest apple or trigger manual bite via PATCH
