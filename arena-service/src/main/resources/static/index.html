@@ -1686,6 +1686,20 @@
         }
 
         function render() {
+            // Dynamic canvas glowing border when player skill is active
+            const canvasEl = document.getElementById("gameCanvas");
+            if (canvasEl) {
+                if (gameRunning && skillActive) {
+                    const cColor = selectedClass === "PYTHON" ? "rgba(0, 240, 255, 0.5)" : 
+                                  (selectedClass === "COBRA" ? "rgba(255, 215, 0, 0.5)" : "rgba(0, 255, 136, 0.5)");
+                    canvasEl.style.boxShadow = `0 0 35px ${cColor}, inset 0 0 25px ${cColor}`;
+                    canvasEl.style.borderColor = selectedColor;
+                } else {
+                    canvasEl.style.boxShadow = "0 8px 32px rgba(0, 0, 0, 0.5)";
+                    canvasEl.style.borderColor = "var(--border-card)";
+                }
+            }
+
             ctx.fillStyle = "#06090e";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -1791,23 +1805,100 @@
                 if (!s.alive || !s.segments || s.segments.length === 0) return;
 
                 const isMe = (s.id === snakeId);
+                const isSkillOn = isMe ? skillActive : (s.skillActive || false);
                 const sColor = s.color || "#00d4ff";
+                const head = s.segments[0];
+                const headCx = head.x * tileSize + tileSize / 2;
+                const headCy = head.y * tileSize + tileSize / 2;
+                const pulse = 1.0 + Math.sin(Date.now() / 110) * 0.18;
 
-                ctx.shadowBlur = isMe ? (skillActive ? 24 : 12) : 8;
-                ctx.shadowColor = sColor;
+                // 1. HIGH-VISIBILITY SKILL AURA & FORCEFIELD
+                if (isSkillOn) {
+                    ctx.save();
+                    const shieldColor = s.snakeType === "PYTHON" ? "#00f0ff" : 
+                                       (s.snakeType === "COBRA" ? "#ffd700" : "#00ff88");
+                    const shieldRgba = s.snakeType === "PYTHON" ? "rgba(0, 240, 255, 0.28)" : 
+                                      (s.snakeType === "COBRA" ? "rgba(255, 215, 0, 0.28)" : "rgba(0, 255, 136, 0.28)");
+
+                    // A. Glowing translucent energy trail around all body segments
+                    s.segments.forEach(seg => {
+                        ctx.shadowBlur = 20 * pulse;
+                        ctx.shadowColor = shieldColor;
+                        ctx.fillStyle = shieldRgba;
+                        ctx.beginPath();
+                        ctx.arc(seg.x * tileSize + tileSize / 2, seg.y * tileSize + tileSize / 2, tileSize * 0.95 * pulse, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+
+                    // B. Spherical Forcefield Bubble around Head
+                    ctx.shadowBlur = 30 * pulse;
+                    ctx.shadowColor = shieldColor;
+                    ctx.strokeStyle = shieldColor;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(headCx, headCy, tileSize * 1.35 * pulse, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    // C. Rotating Cyber Energy Dash Ring
+                    const rotAngle = (Date.now() / 250) % (Math.PI * 2);
+                    ctx.setLineDash([5, 5]);
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(headCx, headCy, tileSize * 1.65 * pulse, rotAngle, rotAngle + Math.PI * 2);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.restore();
+                }
+
+                // 2. DRAW SNAKE BODY SEGMENTS
+                ctx.shadowBlur = isSkillOn ? (26 * pulse) : (isMe ? 14 : 8);
+                ctx.shadowColor = isSkillOn ? (s.snakeType === "PYTHON" ? "#00f0ff" : (s.snakeType === "COBRA" ? "#ffd700" : "#00ff88")) : sColor;
 
                 s.segments.forEach((seg, sIdx) => {
-                    ctx.fillStyle = (sIdx === 0 ? "#ffffff" : sColor);
+                    const isHead = (sIdx === 0);
+                    ctx.fillStyle = isHead ? "#ffffff" : sColor;
                     ctx.beginPath();
-                    ctx.roundRect(seg.x * tileSize + 1, seg.y * tileSize + 1, tileSize - 2, tileSize - 2, sIdx === 0 ? 5 : 3);
+                    ctx.roundRect(seg.x * tileSize + 1, seg.y * tileSize + 1, tileSize - 2, tileSize - 2, isHead ? 6 : 4);
                     ctx.fill();
+
+                    // Outer neon border if skill active
+                    if (isSkillOn) {
+                        ctx.strokeStyle = isHead ? "#ffffff" : (s.snakeType === "PYTHON" ? "#00f0ff" : (s.snakeType === "COBRA" ? "#ffd700" : "#00ff88"));
+                        ctx.lineWidth = isHead ? 2.5 : 1.5;
+                        ctx.stroke();
+                    }
                 });
 
+                // 3. FLOATING BADGE & NAME LABEL
                 ctx.shadowBlur = 0;
+                if (isSkillOn) {
+                    ctx.save();
+                    const badgeText = s.snakeType === "PYTHON" ? "🛡️ ARMOR SHIELD" : 
+                                     (s.snakeType === "COBRA" ? "👑 GOLDEN SENSE" : "⚡ VENOM DASH");
+                    const badgeColor = s.snakeType === "PYTHON" ? "#00f0ff" : 
+                                      (s.snakeType === "COBRA" ? "#ffd700" : "#00ff88");
+                    ctx.font = "bold 9px 'JetBrains Mono', monospace";
+                    const tw = ctx.measureText(badgeText).width;
+                    const bx = headCx - tw / 2 - 6;
+                    const by = head.y * tileSize - 22;
+
+                    ctx.fillStyle = "rgba(10, 15, 26, 0.88)";
+                    ctx.beginPath();
+                    ctx.roundRect(bx, by, tw + 12, 14, 4);
+                    ctx.fill();
+                    ctx.strokeStyle = badgeColor;
+                    ctx.lineWidth = 1.2;
+                    ctx.stroke();
+
+                    ctx.fillStyle = badgeColor;
+                    ctx.fillText(badgeText, bx + 6, by + 10);
+                    ctx.restore();
+                }
+
                 ctx.fillStyle = isMe ? "var(--neon-green)" : "#cbd5e1";
                 ctx.font = isMe ? "bold 11px 'Outfit'" : "10px 'Outfit'";
                 const label = isMe ? `${s.playerName} (You)` : s.playerName;
-                ctx.fillText(label, s.segments[0].x * tileSize - 2, s.segments[0].y * tileSize - 4);
+                ctx.fillText(label, head.x * tileSize - 2, head.y * tileSize - (isSkillOn ? 26 : 4));
             });
 
             ctx.shadowBlur = 0;
