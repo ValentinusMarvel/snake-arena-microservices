@@ -15,11 +15,11 @@ Sistem mengadopsi arsitektur **Decoupled Microservices** yang terbagi menjadi du
 
 ```mermaid
 graph TD
-    Client["Client Web / Mobile UI (HTML5 + REST Inspector)"] -->|HTTP Port 8081| PlayerService["Player Service (Port 8081)"]
-    Client -->|HTTP Port 8082| ArenaService["Arena Service (Port 8082)"]
-    ArenaService -->|Inter-Service HTTP Sync /api/v1/players/{id}/score| PlayerService
-    PlayerService --> H2[(In-Memory H2 DB)]
-    ArenaService --> ArenaMem[(Concurrent Arena State)]
+    Client["Client Web / Mobile UI (HTML5 + REST Inspector)"] -->|"HTTP Port 8081"| PlayerService["Player Service (Port 8081)"]
+    Client -->|"HTTP Port 8082"| ArenaService["Arena Service (Port 8082)"]
+    ArenaService -->|"Inter-Service HTTP Sync: PATCH /api/v1/players/:id/stats"| PlayerService
+    PlayerService --> H2[("In-Memory H2 DB")]
+    ArenaService --> ArenaMem[("Concurrent Arena State")]
 ```
 
 ### 1. `player-service` (Port 8081)
@@ -51,7 +51,7 @@ Sistem mengimplementasikan seluruh standar kata kerja HTTP (**GET, POST, PUT, PA
 | **Player** | `GET` | `/api/v1/players/{id}` | Mengambil data profil pemain versi 1 |
 | **Player** | `GET` | `/api/v2/players/{id}` | Mengambil data profil pemain versi 2 (`classProfile`) |
 | **Player** | `PUT` | `/api/v1/players/{id}` | Memperbarui seluruh profil pemain secara menyeluruh |
-| **Player** | `PATCH` | `/api/v1/players/{id}/score` | Sinkronisasi skor (digunakan oleh Arena Service) |
+| **Player** | `PATCH` | `/api/v1/players/{id}/stats` | Sinkronisasi skor dan match stats (digunakan oleh Arena Service) |
 | **Player** | `DELETE` | `/api/v1/players/{id}` | Menghapus data akun pemain (`204 No Content`) |
 | **Arena** | `POST` | `/api/v1/arena/snakes` | Pemain bergabung ke arena pertandingan (`201 Created`) |
 | **Arena** | `GET` | `/api/v1/arena/state` | Mengambil snapshot arena (posisi semua ular, apel, bot) |
