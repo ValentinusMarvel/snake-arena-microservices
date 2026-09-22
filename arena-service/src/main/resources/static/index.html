@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Snake Arena: Clash of Serpents | Enterprise Microservices Game</title>
+    <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -87,16 +88,42 @@
         }
 
         .brand-emblem {
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(135deg, #0e141f, #161e2d);
-            border: 1px solid var(--tactical-emerald);
-            border-radius: 4px;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 1px solid var(--border-highlight);
+            background: #0f131a;
             display: flex;
             align-items: center;
             justify-content: center;
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
-            color: var(--tactical-emerald);
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        .brand-logo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .overlay-logo-container {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid var(--border-highlight);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+            margin-bottom: 4px;
+            background: #0f131a;
+        }
+
+        .overlay-logo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
 
         .brand-title h1 {
@@ -727,12 +754,10 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: var(--bg-chassis);
+            background: var(--bg-inset);
             border: 1px solid var(--border-chassis);
-            border-top: 1px solid var(--border-highlight);
-            border-radius: 6px;
-            padding: 10px 18px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            padding: 8px 16px;
         }
 
         .hud-stat {
@@ -1232,11 +1257,7 @@
     <header>
         <div class="brand-container">
             <div class="brand-emblem">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 2c-4 0-8 3.5-8 8 0 3 2 5.5 5 6.5L7 21l3-1 2 2 2-2 3 1-2-4.5c3-1 5-3.5 5-6.5 0-4.5-4-8-8-8z"/>
-                    <circle cx="9" cy="9" r="1.2" fill="currentColor"/>
-                    <circle cx="15" cy="9" r="1.2" fill="currentColor"/>
-                </svg>
+                <img src="assets/logo.jpg" alt="Snake Arena Logo" class="brand-logo-img">
             </div>
             <div class="brand-title">
                 <h1>SNAKE ARENA: CLASH OF SERPENTS</h1>
@@ -1405,7 +1426,12 @@
         </div>
 
         <!-- Center Column: Arena HUD & Monitor Canvas -->
-        <div class="arena-container">
+        <div class="arena-container chassis-panel">
+            <div class="module-header" style="width: 100%;">
+                <span>[02] ARENA PERMAINAN & KONTROL LIVE</span>
+                <span class="module-index" style="color:var(--cyber-cyan); background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.25);">CANVAS 2D</span>
+            </div>
+
             <div class="arena-hud">
                 <div class="hud-stat">
                     <span class="hud-label">PEMAIN</span>
@@ -1454,6 +1480,9 @@
                 
                 <!-- Tactical Start / Respawn Screen -->
                 <div class="game-overlay" id="gameOverlay">
+                    <div class="overlay-logo-container">
+                        <img src="assets/logo.jpg" alt="Snake Arena Logo" class="overlay-logo-img">
+                    </div>
                     <h2 id="overlayTitle">MULAI SESI PERMAINAN</h2>
                     <p id="overlaySubtitle" style="color:var(--text-body); font-size:0.8rem; max-width:340px; line-height:1.4;">
                         Masukkan nama pemain dan pilih tipe ular sebelum memulai permainan.
