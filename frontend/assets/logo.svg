@@ -1,0 +1,18 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Subtle Titanium Squircle Frame -->
+  <rect width="40" height="40" rx="10" fill="#131722" stroke="rgba(255, 255, 255, 0.14)" stroke-width="1.2"/>
+  
+  <!-- Minimalist Geometric S-Serpent -->
+  <path d="M28 13 C28 9.2 24.5 7.2 20 7.2 C14.5 7.2 11 10.8 11 15.8 C11 22.2 25 20.2 25 26.2 C25 30.2 21.5 32.8 17 32.8 C12.5 32.8 10 29.8 10 29.8" 
+        stroke="url(#snakeLogoGrad)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+        
+  <!-- Precision Optic Node (Serpent Head Apex) -->
+  <circle cx="28" cy="13" r="1.8" fill="#ffffff"/>
+  
+  <defs>
+    <linearGradient id="snakeLogoGrad" x1="11" y1="7.2" x2="28" y2="32.8" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+  </defs>
+</svg>
