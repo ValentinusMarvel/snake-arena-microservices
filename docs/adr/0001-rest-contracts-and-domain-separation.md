@@ -30,13 +30,24 @@ Diperlukan pemisahan tanggung jawab yang ketat (*separation of concerns*) serta 
    - **PATCH**: Partial update data statistik (`/stats`) yang menerima `{ score, matchCompleted }`. Menghitung ulang tier pada v2.
    - **DELETE**: Menghapus data akun pemain dari database (HTTP 204 No Content).
 
-### B. Auto-Recovery Saat Registrasi Lobi
-Jika nama yang dimasukkan pengguna sudah ada di basis data H2 `player-service`:
-- Request `POST /api/v1/players` mengembalikan HTTP 400 Bad Request (*"Username sudah digunakan"*).
-- Frontend secara otomatis melakukan *fallback* dengan memanggil `GET /api/v1/players`, mengambil `playerId` yang bersesuaian, dan menyinkronkan profil tanpa memunculkan pesan error yang mengganggu alur pemain.
+### B. Sistem Tag Unik / Discriminator (Opsi C: Ala Discord & Battle.net)
+Untuk mencegah pembajakan identitas (*identity hijacking*) dan percampuran skor tertinggi (*shared highscore*) antar-perangkat saat pemain menggunakan nama panggilan yang sama tanpa sistem otentikasi password:
+1. **Format Identitas**: `BaseCallsign#XXXX` (contoh: `Viper#1024`, `Pilot#5821`).
+2. **Isolasi Profil Antar-Perangkat**:
+   - Setiap perangkat browser menyimpan profil lokalnya (`localStorage`: `{ baseName, tag, playerId }`).
+   - Device A dengan nama `Viper` mendapatkan tag unik (misal `Viper#1024`), sementara Device B yang juga memasukkan nama `Viper` mendapatkan tag terpisah (misal `Viper#5821`).
+   - Keduanya terdaftar sebagai entitas `PlayerEntity` terpisah di `player-service`, sehingga memiliki `playerId`, statistik pertandingan, dan *high score* masing-masing yang 100% independen.
+3. **Multiplayer Tanpa Konflik Callsign**:
+   - Di arena pertempuran (`arena-service`), kedua ular diidentifikasi dengan nama lengkap bertag (`Viper#1024` dan `Viper#5821`).
+   - Keduanya dapat bertarung bersamaan di satu arena tanpa terbentur validasi duplikasi nama.
+4. **Auto-Tag Resolution pada Backend**:
+   - Jika endpoint `POST` menerima nama tanpa tag yang sudah terdaftar di database, backend otomatis menghasilkan tag 4-digit unik untuk menghindari kegagalan pendaftaran.
 
 ---
 
 ## 3. Konsekuensi & Trade-Off
-- **Positif**: Pemisahan jelas antara akun permanen dan sesi game volatile. Frontend dapat bertransisi antara v1 dan v2 secara mulus.
-- **Batasan**: DTO v2 tidak boleh dilonggarkan menjadi flat agar kontrak arsitektur versioning tetap teruji dan valid.
+- **Positif**:
+  - Skor tertinggi dan akun antar-perangkat tidak lagi bercampur tanpa izin.
+  - Pemain bebas memilih nama panggilan apa saja tanpa khawatir ditolak karena sudah dipakai orang lain.
+  - Kompatibilitas mundur (*backward compatibility*) tetap terjaga dengan seluruh unit test.
+- **Batasan**: Batas maksimal karakter username pada DTO diperluas hingga 30 karakter untuk menampung tag `#XXXX`.

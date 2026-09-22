@@ -222,11 +222,18 @@ window.SnakeArena = window.SnakeArena || {};
         }
         nameLookupTimer = setTimeout(async () => {
             try {
+                let lookupName = clean;
+                if (!lookupName.includes("#") && window.SnakeArena && window.SnakeArena.App && window.SnakeArena.App.getDeviceProfile) {
+                    const devProfile = window.SnakeArena.App.getDeviceProfile(clean);
+                    if (devProfile && devProfile.tag) {
+                        lookupName = `${clean}#${devProfile.tag}`;
+                    }
+                }
                 const res = await fetch(`${PLAYER_SERVICE_URL}/api/v1/players`);
                 if (res.ok) {
                     const list = await res.json();
                     if (Array.isArray(list)) {
-                        const found = list.find(p => p.username && p.username.toLowerCase() === clean.toLowerCase());
+                        const found = list.find(p => p.username && (p.username.toLowerCase() === lookupName.toLowerCase() || p.username.toLowerCase() === clean.toLowerCase()));
                         if (found && found.id) {
                             updatePlayerIdBadge(found.id);
                             if (window.SnakeArena && window.SnakeArena.App) {
@@ -256,11 +263,10 @@ window.SnakeArena = window.SnakeArena || {};
 
         // In-Game POST: Sync active snake without resetting position or score
         if (window.gameRunning && window.snakeId) {
-            const baseName = window.playerName || "Serpent";
-            const uniqueCallsign = getSafeUsername(baseName, `_${Math.floor(10 + Math.random() * 90)}`);
+            const currentCallsign = window.playerName || "Serpent";
             const joinPayload = {
                 playerId: registeredPlayerId || window.playerId,
-                playerName: uniqueCallsign,
+                playerName: currentCallsign,
                 snakeType: window.selectedClass || "VIPER",
                 color: window.selectedColor || "#00e575"
             };
@@ -279,18 +285,22 @@ window.SnakeArena = window.SnakeArena || {};
                 if (hudP) hudP.innerText = window.playerName;
                 const inp1 = document.getElementById("inputPlayerName");
                 const inp2 = document.getElementById("overlayPlayerName");
-                if (inp1) inp1.value = window.playerName;
-                if (inp2) inp2.value = window.playerName;
+                const cleanBase = window.playerName.replace(/#\d+$/, "");
+                if (inp1) inp1.value = cleanBase;
+                if (inp2) inp2.value = cleanBase;
+                if (window.SnakeArena && window.SnakeArena.App && window.SnakeArena.App.updateTagBadges) {
+                    window.SnakeArena.App.updateTagBadges(cleanBase);
+                }
                 await fetchArenaState();
                 logApi("INFO", "/arena/snake-synced", 200, null, {
-                    message: `Ular '${uniqueCallsign}' berhasil disinkronkan di arena tanpa mengubah posisi.`,
+                    message: `Ular '${currentCallsign}' berhasil disinkronkan di arena tanpa mengubah posisi.`,
                     snakeId: window.snakeId
                 });
             }
             return arenaRes;
         }
 
-        // Lobby POST: Register new account in Player Service
+        // Lobby POST: Register new account in Player Service with unique tag
         const inpOverlay = document.getElementById("overlayPlayerName");
         const inpSidebar = document.getElementById("inputPlayerName");
         let rawName = (inpOverlay ? inpOverlay.value.trim() : "") || 
@@ -298,41 +308,57 @@ window.SnakeArena = window.SnakeArena || {};
                       window.playerName || 
                       ("Pilot_" + Math.floor(100 + Math.random() * 900));
 
+        let cleanBase = rawName.replace(/#\d+$/, "").trim();
+        let tag = rawName.match(/#(\d{4})$/) ? rawName.match(/#(\d{4})$/)[1] : null;
+        if (!tag && window.SnakeArena && window.SnakeArena.App && window.SnakeArena.App.getDeviceProfile) {
+            tag = window.SnakeArena.App.getDeviceProfile(cleanBase).tag;
+        }
+        let taggedName = tag ? `${cleanBase}#${tag}` : rawName;
+
         let res;
         const currentClass = window.selectedClass || "VIPER";
         if (currentVersion === "v1") {
-            const payload = { username: rawName, snakeType: currentClass };
+            const payload = { username: taggedName, snakeType: currentClass };
             res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v1/players`, payload, false, btn);
             if (!res.success && res.status === 400) {
-                // If username already exists, generate non-duplicate suffix automatically
-                const safeName = getSafeUsername(rawName, `_${Math.floor(10 + Math.random() * 90)}`);
-                res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v1/players`, { username: safeName, snakeType: currentClass }, false, btn);
+                // If tag collided, generate fresh random tag
+                tag = String(Math.floor(1000 + Math.random() * 9000));
+                taggedName = `${cleanBase}#${tag}`;
+                res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v1/players`, { username: taggedName, snakeType: currentClass }, false, btn);
             }
         } else {
             const buildV2Payload = (uname) => ({
                 username: uname,
                 classProfile: buildV2ClassProfile(currentClass)
             });
-            res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v2/players`, buildV2Payload(rawName), false, btn);
+            res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v2/players`, buildV2Payload(taggedName), false, btn);
             if (!res.success && res.status === 400) {
-                const safeName = getSafeUsername(rawName, `_${Math.floor(10 + Math.random() * 90)}`);
-                res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v2/players`, buildV2Payload(safeName), false, btn);
+                tag = String(Math.floor(1000 + Math.random() * 9000));
+                taggedName = `${cleanBase}#${tag}`;
+                res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v2/players`, buildV2Payload(taggedName), false, btn);
             }
         }
 
         if (res.success && res.data) {
-            updatePlayerIdBadge(res.data.id);
+            const savedUname = res.data.username || taggedName;
             if (window.SnakeArena && window.SnakeArena.App) {
-                window.SnakeArena.App.setPlayerIdentity(res.data.id, res.data.username);
+                window.SnakeArena.App.setPlayerIdentity(res.data.id, savedUname);
+                if (window.SnakeArena.App.saveDeviceProfile && tag) {
+                    window.SnakeArena.App.saveDeviceProfile(cleanBase, tag, res.data.id);
+                }
+                if (window.SnakeArena.App.updateTagBadges) {
+                    window.SnakeArena.App.updateTagBadges(cleanBase);
+                }
             } else {
+                updatePlayerIdBadge(res.data.id);
                 window.playerId = res.data.id;
-                window.playerName = res.data.username;
+                window.playerName = savedUname;
             }
-            if (inpSidebar) inpSidebar.value = res.data.username;
-            if (inpOverlay) inpOverlay.value = res.data.username;
+            if (inpSidebar) inpSidebar.value = cleanBase;
+            if (inpOverlay) inpOverlay.value = cleanBase;
             const hudP = document.getElementById("hudPlayer");
             if (hudP) {
-                hudP.innerText = res.data.username;
+                hudP.innerText = savedUname;
                 hudP.style.color = "#ffffff";
             }
         }

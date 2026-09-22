@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Random;
 
 @RestController
 @RequestMapping("/api/v2/players")
@@ -59,19 +60,35 @@ public class PlayerV2Controller {
         );
     }
 
+    private String resolveUsernameWithTag(String username) {
+        if (repository.findByUsername(username).isEmpty()) {
+            return username;
+        }
+        if (!username.contains("#")) {
+            Random random = new Random();
+            for (int i = 0; i < 50; i++) {
+                int tag = 1000 + random.nextInt(9000);
+                String candidate = username + "#" + tag;
+                if (repository.findByUsername(candidate).isEmpty()) {
+                    return candidate;
+                }
+            }
+            return username + "#" + (System.currentTimeMillis() % 10000);
+        }
+        throw new IllegalArgumentException("Username '" + username + "' sudah digunakan");
+    }
+
     @PostMapping
     @Operation(summary = "Mendaftar player baru v2 (Breaking Change: wajib classProfile)", responses = {
             @ApiResponse(responseCode = "201", description = "Pemain v2 berhasil dibuat"),
             @ApiResponse(responseCode = "400", description = "Payload v1 ditolak atau input tidak valid")
     })
     public ResponseEntity<PlayerV2Output> createPlayerV2(@Valid @RequestBody PlayerV2Input input) {
-        repository.findByUsername(input.username()).ifPresent(p -> {
-            throw new IllegalArgumentException("Username '" + input.username() + "' sudah digunakan");
-        });
+        String resolvedUsername = resolveUsernameWithTag(input.username().trim());
 
         String id = "PL-" + (System.currentTimeMillis() % 100000);
         String snakeType = input.classProfile().className().toUpperCase();
-        PlayerEntity entity = new PlayerEntity(id, input.username(), snakeType, 6, 0, 0, LocalDateTime.now());
+        PlayerEntity entity = new PlayerEntity(id, resolvedUsername, snakeType, 6, 0, 0, LocalDateTime.now());
         PlayerEntity saved = repository.save(entity);
         return ResponseEntity.status(HttpStatus.CREATED).body(toOutputV2(saved));
     }

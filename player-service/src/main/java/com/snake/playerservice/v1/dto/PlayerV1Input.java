@@ -6,8 +6,8 @@ import jakarta.validation.constraints.Size;
 
 public record PlayerV1Input(
         @NotBlank(message = "Username tidak boleh kosong")
-        @Size(min = 3, max = 20, message = "Username harus antara 3 - 20 karakter")
-        @Schema(example = "PlayerOne", description = "Nama panggilan pemain")
+        @Size(min = 3, max = 30, message = "Username harus antara 3 - 30 karakter")
+        @Schema(example = "PlayerOne#1024", description = "Nama panggilan pemain dengan tag unik")
         String username,
 
         @NotBlank(message = "snakeType tidak boleh kosong")

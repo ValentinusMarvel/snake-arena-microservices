@@ -115,4 +115,32 @@ class PlayerServiceTests {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title", is("Bad Request")));
     }
+
+    @Test
+    @DisplayName("Test Option C - Pendaftaran nama dasar sama menghasilkan tag unik dan ID berbeda")
+    void testDiscriminatorTagSeparation() throws Exception {
+        // Player 1 di Device A
+        PlayerV1Input p1 = new PlayerV1Input("ViperPilot", "VIPER");
+        String res1 = mockMvc.perform(post("/api/v1/players")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(p1)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.username", is("ViperPilot")))
+                .andReturn().getResponse().getContentAsString();
+
+        String id1 = objectMapper.readTree(res1).get("id").asText();
+
+        // Player 2 di Device B mendaftar dengan nama dasar sama
+        PlayerV1Input p2 = new PlayerV1Input("ViperPilot", "VIPER");
+        String res2 = mockMvc.perform(post("/api/v1/players")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(p2)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.username", containsString("ViperPilot#")))
+                .andReturn().getResponse().getContentAsString();
+
+        String id2 = objectMapper.readTree(res2).get("id").asText();
+
+        org.junit.jupiter.api.Assertions.assertNotEquals(id1, id2);
+    }
 }

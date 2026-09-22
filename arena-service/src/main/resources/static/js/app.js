@@ -147,6 +147,51 @@ window.SnakeArena = window.SnakeArena || {};
         }
     }
 
+    function getDeviceProfile(baseName) {
+        const cleanBase = (baseName || "Pilot").trim().replace(/#\d+$/, "");
+        const storageKey = "snake_player_profile_" + cleanBase.toLowerCase();
+        let saved = localStorage.getItem(storageKey);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                if (parsed && parsed.tag) return parsed;
+            } catch (e) {}
+        }
+        const newTag = String(Math.floor(1000 + Math.random() * 9000));
+        const profile = { baseName: cleanBase, tag: newTag, playerId: null };
+        localStorage.setItem(storageKey, JSON.stringify(profile));
+        return profile;
+    }
+
+    function saveDeviceProfile(baseName, tag, pId) {
+        const cleanBase = (baseName || "Pilot").trim().replace(/#\d+$/, "");
+        const storageKey = "snake_player_profile_" + cleanBase.toLowerCase();
+        const profile = { baseName: cleanBase, tag: tag, playerId: pId };
+        localStorage.setItem(storageKey, JSON.stringify(profile));
+    }
+
+    function updateTagBadges(nameVal) {
+        const cleanBase = (nameVal || "").trim().replace(/#\d+$/, "");
+        if (!cleanBase) {
+            const elO = document.getElementById("overlayPlayerTag");
+            if (elO) elO.innerText = "TAG: #????";
+            const elS = document.getElementById("inputTagSuffix");
+            if (elS) elS.innerText = "#????";
+            const elSide = document.getElementById("sidebarPlayerTag");
+            if (elSide) elSide.innerText = "TAG: #????";
+            return null;
+        }
+        const explicitTagMatch = nameVal.match(/#(\d{4})$/);
+        const tag = explicitTagMatch ? explicitTagMatch[1] : getDeviceProfile(cleanBase).tag;
+        const elO = document.getElementById("overlayPlayerTag");
+        if (elO) elO.innerText = `TAG: #${tag}`;
+        const elS = document.getElementById("inputTagSuffix");
+        if (elS) elS.innerText = `#${tag}`;
+        const elSide = document.getElementById("sidebarPlayerTag");
+        if (elSide) elSide.innerText = `TAG: #${tag}`;
+        return tag;
+    }
+
     async function deployCurrentSnake(callsign, sClass, sColor) {
         const joinPayload = {
             playerId: window.registeredPlayerId || playerId,
@@ -175,6 +220,11 @@ window.SnakeArena = window.SnakeArena || {};
             return;
         }
 
+        const cleanBase = val.replace(/#\d+$/, "").trim();
+        const tagMatch = val.match(/#(\d{4})$/);
+        let tag = tagMatch ? tagMatch[1] : getDeviceProfile(cleanBase).tag;
+        let fullCallsign = `${cleanBase}#${tag}`;
+
         const startBtn = document.querySelector(".btn-deploy");
         const originalText = startBtn ? startBtn.innerText : "MASUK KE ARENA";
         if (startBtn) {
@@ -182,19 +232,36 @@ window.SnakeArena = window.SnakeArena || {};
             startBtn.disabled = true;
         }
 
-        // Register or retrieve player from Player Service
+        // Register or retrieve player from Player Service using unique tag
+        let targetId = null;
         try {
-            let targetId = window.registeredPlayerId;
-            if (!targetId || (playerName && playerName.toLowerCase() !== val.toLowerCase())) {
-                const regRes = await window.makeApiCall("POST", `${window.PLAYER_SERVICE_URL || 'http://localhost:8081'}/api/v1/players`, { username: val, snakeType: selectedClass });
+            const devProfile = getDeviceProfile(cleanBase);
+            if (devProfile && devProfile.playerId) {
+                // Verifikasi apakah akun pada device ini masih ada di backend
+                const checkRes = await window.makeApiCall("GET", `${window.PLAYER_SERVICE_URL || 'http://localhost:8081'}/api/v1/players/${devProfile.playerId}`, null, true);
+                if (checkRes && checkRes.success && checkRes.data) {
+                    targetId = devProfile.playerId;
+                    fullCallsign = checkRes.data.username;
+                }
+            }
+
+            if (!targetId) {
+                let regRes = await window.makeApiCall("POST", `${window.PLAYER_SERVICE_URL || 'http://localhost:8081'}/api/v1/players`, { username: fullCallsign, snakeType: selectedClass });
                 if (regRes && regRes.success && regRes.data && regRes.data.id) {
                     targetId = regRes.data.id;
+                    fullCallsign = regRes.data.username;
+                    saveDeviceProfile(cleanBase, tag, targetId);
                 } else {
-                    const listRes = await window.makeApiCall("GET", `${window.PLAYER_SERVICE_URL || 'http://localhost:8081'}/api/v1/players`, null, true);
-                    if (listRes && listRes.success && Array.isArray(listRes.data)) {
-                        const existing = listRes.data.find(p => p.username && p.username.toLowerCase() === val.toLowerCase());
-                        if (existing && existing.id) {
-                            targetId = existing.id;
+                    // Jika terjadi tabrakan tag yang langka, coba tag baru
+                    for (let attempt = 0; attempt < 5; attempt++) {
+                        tag = String(Math.floor(1000 + Math.random() * 9000));
+                        fullCallsign = `${cleanBase}#${tag}`;
+                        regRes = await window.makeApiCall("POST", `${window.PLAYER_SERVICE_URL || 'http://localhost:8081'}/api/v1/players`, { username: fullCallsign, snakeType: selectedClass });
+                        if (regRes && regRes.success && regRes.data && regRes.data.id) {
+                            targetId = regRes.data.id;
+                            fullCallsign = regRes.data.username;
+                            saveDeviceProfile(cleanBase, tag, targetId);
+                            break;
                         }
                     }
                 }
@@ -202,11 +269,11 @@ window.SnakeArena = window.SnakeArena || {};
 
             if (targetId) {
                 if (window.updatePlayerIdBadge) window.updatePlayerIdBadge(targetId);
-                setPlayerIdentity(targetId, val);
+                setPlayerIdentity(targetId, fullCallsign);
             }
         } catch (err) {}
 
-        const res = await deployCurrentSnake(val, selectedClass, selectedColor);
+        const res = await deployCurrentSnake(fullCallsign, selectedClass, selectedColor);
         if (startBtn) {
             startBtn.innerText = originalText;
             startBtn.disabled = false;
@@ -214,7 +281,7 @@ window.SnakeArena = window.SnakeArena || {};
 
         if (!res.success) {
             if (input) input.classList.add("error");
-            const errMsg = (res.data && res.data.detail) ? res.data.detail : `Callsign '${val}' sudah aktif di arena. Silakan pilih callsign lain.`;
+            const errMsg = (res.data && res.data.detail) ? res.data.detail : `Callsign '${fullCallsign}' sudah aktif di arena. Silakan pilih callsign lain.`;
             if (valMsg) {
                 valMsg.innerText = `[ERR_DUPLICATE_CALLSIGN] ${errMsg}`;
                 valMsg.style.display = "block";
@@ -229,14 +296,19 @@ window.SnakeArena = window.SnakeArena || {};
 
         if (input) input.classList.remove("error");
         if (valMsg) valMsg.style.display = "none";
-        playerName = val;
-        window.playerName = val;
+        playerName = fullCallsign;
+        window.playerName = fullCallsign;
+
+        updateTagBadges(cleanBase);
 
         const inpS = document.getElementById("inputPlayerName");
-        if (inpS) inpS.value = val;
+        if (inpS) inpS.value = cleanBase;
+        const inpO = document.getElementById("overlayPlayerName");
+        if (inpO) inpO.value = cleanBase;
+
         const hudP = document.getElementById("hudPlayer");
         if (hudP) {
-            hudP.innerText = val;
+            hudP.innerText = fullCallsign;
             hudP.style.color = "#ffffff";
         }
         const hudC = document.getElementById("hudClass");
@@ -541,10 +613,12 @@ window.SnakeArena = window.SnakeArena || {};
 
             elInpSidebar.addEventListener("input", (e) => {
                 elInpOverlay.value = e.target.value;
+                updateTagBadges(e.target.value);
                 if (window.lookupPlayerByName) window.lookupPlayerByName(e.target.value);
             });
             elInpOverlay.addEventListener("input", (e) => {
                 elInpSidebar.value = e.target.value;
+                updateTagBadges(e.target.value);
                 if (window.lookupPlayerByName) window.lookupPlayerByName(e.target.value);
             });
             elInpOverlay.addEventListener("keydown", (e) => {
@@ -556,6 +630,7 @@ window.SnakeArena = window.SnakeArena || {};
         }
 
         if (window.updatePlayerIdBadge) window.updatePlayerIdBadge(null);
+        updateTagBadges("");
 
         if (window.logApi) {
             window.logApi("INFO", "/system/init", 200, null, {
@@ -578,6 +653,7 @@ window.SnakeArena = window.SnakeArena || {};
             elInpSidebar.value = "";
             elInpOverlay.value = "";
         }
+        updateTagBadges("");
         if (window.updatePlayerIdBadge) window.updatePlayerIdBadge(null);
         if (window.renderLoop) requestAnimationFrame(window.renderLoop);
         if (window.fetchArenaState) window.fetchArenaState();
@@ -613,7 +689,10 @@ window.SnakeArena = window.SnakeArena || {};
         updateSkillStatusUi,
         setSnakeId,
         renderLeaderboard,
-        cleanupCurrentSnake
+        cleanupCurrentSnake,
+        updateTagBadges,
+        getDeviceProfile,
+        saveDeviceProfile
     };
 
     // Backward-compatible global aliases
@@ -638,4 +717,7 @@ window.SnakeArena = window.SnakeArena || {};
     window.updateSkillStatusUi = updateSkillStatusUi;
     window.renderLeaderboard = renderLeaderboard;
     window.cleanupCurrentSnake = cleanupCurrentSnake;
+    window.updateTagBadges = updateTagBadges;
+    window.getDeviceProfile = getDeviceProfile;
+    window.saveDeviceProfile = saveDeviceProfile;
 })();
