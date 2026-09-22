@@ -33,6 +33,8 @@ buildNumber.properties
 .project
 .classpath
 .agents/
+AGENTS.md
+*.bak
 
 # OS files
 .DS_Store
