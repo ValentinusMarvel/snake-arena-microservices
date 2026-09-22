@@ -76,9 +76,11 @@ public class ArenaManager {
 public synchronized Snake joinArena(String playerId, String playerName, String snakeType, String color, int startX, int startY) {
         long now = System.currentTimeMillis();
 
-        // 1. Bersihkan ular lama milik player ID yang sama jika ada (misal respawn atau reconnect instan)
+        // 1. Bersihkan ular lama milik player ID yang sama jika ada, simpan referensi jika masih hidup
+        Snake existingSnake = null;
         for (Snake existing : new ArrayList<>(snakes.values())) {
             if (existing.getPlayerId() != null && existing.getPlayerId().equalsIgnoreCase(playerId)) {
+                existingSnake = existing;
                 snakes.remove(existing.getId());
             }
         }
@@ -103,15 +105,26 @@ public synchronized Snake joinArena(String playerId, String playerName, String s
         }
 
         String snakeId = "SNK-" + (System.currentTimeMillis() % 100000) + "-" + random.nextInt(100);
-        List<Point> segments = new ArrayList<>();
-        segments.add(new Point(startX, startY));
-        segments.add(new Point(startX, (startY + 1) % gridHeight));
-        segments.add(new Point(startX, (startY + 2) % gridHeight));
+        List<Point> segments;
+        String dir;
+        int score = 0;
+        if (existingSnake != null && existingSnake.isAlive() && existingSnake.getSegments() != null && !existingSnake.getSegments().isEmpty()) {
+            // Pertahankan koordinat segmen, arah pergerakan, dan skor saat ini agar ular tidak terlempar ke lokasi acak baru saat menekan POST in-game
+            segments = new ArrayList<>(existingSnake.getSegments());
+            dir = existingSnake.getDirection();
+            score = existingSnake.getScore();
+        } else {
+            segments = new ArrayList<>();
+            segments.add(new Point(startX, startY));
+            segments.add(new Point(startX, (startY + 1) % gridHeight));
+            segments.add(new Point(startX, (startY + 2) % gridHeight));
+            dir = "UP";
+        }
 
         String actualColor = color != null && !color.isBlank() ? color : getDefaultColor(snakeType);
-        Snake snake = new Snake(snakeId, playerId, playerName, snakeType.toUpperCase(), actualColor, segments, "UP", 0, true, false);
+        Snake snake = new Snake(snakeId, playerId, playerName, snakeType.toUpperCase(), actualColor, segments, dir, score, true, false);
         snakes.put(snakeId, snake);
-        log.info("Snake spawned: {} ({}) for player {} at ({},{})", playerName, snakeId, playerId, startX, startY);
+        log.info("Snake spawned: {} ({}) for player {} at ({},{}) [retainedPosition={}]", playerName, snakeId, playerId, segments.get(0).x(), segments.get(0).y(), existingSnake != null);
         return snake;
     }
 

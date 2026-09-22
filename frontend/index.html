@@ -2108,6 +2108,10 @@
                 if (arenaRes.success && arenaRes.data) {
                     snakeId = arenaRes.data.id;
                     sessionStorage.setItem("activeSnakeId", snakeId);
+                    playerName = arenaRes.data.playerName;
+                    document.getElementById("hudPlayer").innerText = playerName;
+                    document.getElementById("inputPlayerName").value = playerName;
+                    document.getElementById("overlayPlayerName").value = playerName;
                     if (backgroundWorker) {
                         backgroundWorker.postMessage({
                             type: 'setSnake',
@@ -2117,7 +2121,7 @@
                     }
                     await fetchArenaState();
                     logApi("INFO", "/arena/snake-spawned", 200, null, {
-                        message: `Ular baru '${uniqueCallsign}' berhasil di-spawn ke dalam arena.`,
+                        message: `Ular '${uniqueCallsign}' berhasil diperbarui di arena tanpa mengubah posisi.`,
                         snakeId: snakeId
                     });
                 }
