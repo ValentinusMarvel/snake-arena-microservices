@@ -126,6 +126,16 @@ window.SnakeArena = window.SnakeArena || {};
         }
     }
 
+    async function deployCurrentSnake(callsign, sClass, sColor) {
+        const joinPayload = {
+            playerId: window.registeredPlayerId || playerId,
+            playerName: callsign,
+            snakeType: sClass,
+            color: sColor
+        };
+        return await window.makeApiCall("POST", `${window.ARENA_SERVICE_URL || 'http://localhost:8082'}/api/v1/arena/snakes`, joinPayload);
+    }
+
     async function validateAndStartGame() {
         if (window.playSfx) window.playSfx('click');
         const input = document.getElementById("overlayPlayerName");
@@ -151,109 +161,94 @@ window.SnakeArena = window.SnakeArena || {};
             startBtn.disabled = true;
         }
 
+        // Register or retrieve player from Player Service
         try {
-            const playerRes = await fetch(`${window.PLAYER_SERVICE_URL || 'http://localhost:8081'}/api/v1/players`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username: val, snakeType: selectedClass })
-            });
-
-            if (playerRes.ok) {
-                const playerData = await playerRes.json();
-                setPlayerIdentity(playerData.id, playerData.username);
-                if (window.updatePlayerIdBadge) window.updatePlayerIdBadge(playerData.id);
-            } else if (playerRes.status === 400) {
-                const queryRes = await fetch(`${window.PLAYER_SERVICE_URL || 'http://localhost:8081'}/api/v1/players`);
-                if (queryRes.ok) {
-                    const list = await queryRes.json();
-                    if (Array.isArray(list)) {
-                        const existing = list.find(p => p.username && p.username.toLowerCase() === val.toLowerCase());
+            let targetId = window.registeredPlayerId;
+            if (!targetId || (playerName && playerName.toLowerCase() !== val.toLowerCase())) {
+                const regRes = await window.makeApiCall("POST", `${window.PLAYER_SERVICE_URL || 'http://localhost:8081'}/api/v1/players`, { username: val, snakeType: selectedClass });
+                if (regRes && regRes.success && regRes.data && regRes.data.id) {
+                    targetId = regRes.data.id;
+                } else {
+                    const listRes = await window.makeApiCall("GET", `${window.PLAYER_SERVICE_URL || 'http://localhost:8081'}/api/v1/players`, null, true);
+                    if (listRes && listRes.success && Array.isArray(listRes.data)) {
+                        const existing = listRes.data.find(p => p.username && p.username.toLowerCase() === val.toLowerCase());
                         if (existing && existing.id) {
-                            setPlayerIdentity(existing.id, existing.username);
-                            if (window.updatePlayerIdBadge) window.updatePlayerIdBadge(existing.id);
+                            targetId = existing.id;
                         }
                     }
                 }
             }
+
+            if (targetId) {
+                if (window.updatePlayerIdBadge) window.updatePlayerIdBadge(targetId);
+                setPlayerIdentity(targetId, val);
+            }
         } catch (err) {}
 
-        const finalName = playerName || val;
-        await deployCurrentSnake(finalName, selectedClass, selectedColor);
-
+        const res = await deployCurrentSnake(val, selectedClass, selectedColor);
         if (startBtn) {
             startBtn.innerText = originalText;
             startBtn.disabled = false;
         }
-    }
 
-    async function deployCurrentSnake(callsign, sClass, sColor) {
-        try {
-            const joinPayload = {
-                playerId: window.registeredPlayerId || playerId,
-                playerName: callsign,
-                snakeType: sClass,
-                color: sColor
-            };
-
-            const arenaRes = await fetch(`${window.ARENA_SERVICE_URL || 'http://localhost:8082'}/api/v1/arena/snakes`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(joinPayload)
-            });
-
-            if (!arenaRes.ok) {
-                const errData = await arenaRes.json().catch(() => ({}));
-                alert("Gagal deploy serpent: " + (errData.error || arenaRes.statusText));
-                return;
+        if (!res.success) {
+            if (input) input.classList.add("error");
+            const errMsg = (res.data && res.data.detail) ? res.data.detail : `Callsign '${val}' sudah aktif di arena. Silakan pilih callsign lain.`;
+            if (valMsg) {
+                valMsg.innerText = `[ERR_DUPLICATE_CALLSIGN] ${errMsg}`;
+                valMsg.style.display = "block";
             }
+            if (input) {
+                input.select();
+                input.focus();
+            }
+            alert(`[ERR_DUPLICATE_CALLSIGN]\n${errMsg}`);
+            return;
+        }
 
-            const snakeData = await arenaRes.json();
-            snakeId = snakeData.id;
+        if (input) input.classList.remove("error");
+        if (valMsg) valMsg.style.display = "none";
+        playerName = val;
+        window.playerName = val;
+
+        const inpS = document.getElementById("inputPlayerName");
+        if (inpS) inpS.value = val;
+        const hudP = document.getElementById("hudPlayer");
+        if (hudP) {
+            hudP.innerText = val;
+            hudP.style.color = "#ffffff";
+        }
+        const hudC = document.getElementById("hudClass");
+        if (hudC) {
+            hudC.innerText = selectedClass;
+            hudC.style.color = selectedColor;
+        }
+
+        const overlay = document.getElementById("gameOverlay");
+        if (overlay) overlay.classList.add("hidden");
+
+        gameRunning = true;
+        window.gameRunning = true;
+        score = 0;
+        window.score = 0;
+        window.prevScore = 0;
+        const hudS = document.getElementById("hudScore");
+        if (hudS) hudS.innerText = "0";
+        lockInGameControls(true);
+
+        if (res.data && res.data.id) {
+            snakeId = res.data.id;
             window.snakeId = snakeId;
             sessionStorage.setItem("activeSnakeId", snakeId);
-
-            backgroundWorker.postMessage({
-                type: 'setSnake',
-                snakeId: snakeId,
-                arenaUrl: window.ARENA_SERVICE_URL || 'http://localhost:8082'
-            });
-
-            score = 0;
-            window.score = 0;
-            gameRunning = true;
-            window.gameRunning = true;
-
-            const overlay = document.getElementById("gameOverlay");
-            if (overlay) overlay.classList.add("hidden");
-
-            const hudP = document.getElementById("hudPlayer");
-            if (hudP) {
-                hudP.innerText = callsign;
-                hudP.style.color = "#ffffff";
-            }
-            const hudC = document.getElementById("hudClass");
-            if (hudC) {
-                hudC.innerText = sClass;
-                hudC.style.color = sColor;
-            }
-            const hudS = document.getElementById("hudScore");
-            if (hudS) hudS.innerText = "0";
-
-            lockInGameControls(true);
-
-            if (window.logApi) {
-                window.logApi("POST", "/arena/snakes (Deploy)", 200, joinPayload, {
-                    status: "SERPENT_SPAWNED",
+            if (backgroundWorker) {
+                backgroundWorker.postMessage({
+                    type: 'setSnake',
                     snakeId: snakeId,
-                    tacticalClass: sClass,
-                    assignedCoordinates: `[${snakeData.x}, ${snakeData.y}]`
+                    arenaUrl: window.ARENA_SERVICE_URL || 'http://localhost:8082'
                 });
             }
-
-            if (window.fetchArenaState) await window.fetchArenaState();
-        } catch (e) {
-            alert("Kesalahan koneksi ke Arena Service: " + e.message);
         }
+        if (window.fetchArenaState) await window.fetchArenaState();
     }
 
     /**

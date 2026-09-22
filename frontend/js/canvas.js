@@ -17,23 +17,22 @@ window.SnakeArena = window.SnakeArena || {};
     const gridSize = 30;
     const tileSize = canvas ? canvas.width / gridSize : 20;
 
-    let arenaSnakes = [];
-    let arenaApples = [];
-    let prevScore = 0;
-
-    function renderLoop() {
-        render();
-        requestAnimationFrame(renderLoop);
-    }
-
     function render() {
         if (!ctx || !canvas) return;
 
+        const now = Date.now();
+        const currentSnakes = window.arenaSnakes || [];
+        const currentApples = window.arenaApples || [];
+        const mySnakeId = window.snakeId;
+        const isGameRunning = window.gameRunning;
+        const mySkillActive = window.skillActive;
+        const myColor = window.selectedColor || "#00e575";
+
         const enclosureEl = document.getElementById("canvasEnclosure");
         if (enclosureEl) {
-            if (window.gameRunning && window.skillActive) {
+            if (isGameRunning && mySkillActive) {
                 enclosureEl.style.boxShadow = "0 12px 30px rgba(0, 0, 0, 0.5)";
-                enclosureEl.style.borderColor = window.selectedColor || "#00e575";
+                enclosureEl.style.borderColor = myColor;
             } else {
                 enclosureEl.style.boxShadow = "0 12px 30px rgba(0, 0, 0, 0.4)";
                 enclosureEl.style.borderColor = "var(--border-muted)";
@@ -65,14 +64,10 @@ window.SnakeArena = window.SnakeArena || {};
         ctx.lineWidth = 2;
         ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
 
-        const currentSnakes = window.arenaSnakes || arenaSnakes;
-        const currentApples = window.arenaApples || arenaApples;
-
         // 1. RENDER APPLES / COLLECTIBLES
         currentApples.forEach(apple => {
             const cx = apple.x * tileSize + tileSize / 2;
             const cy = apple.y * tileSize + tileSize / 2;
-            const now = Date.now();
 
             if (apple.type === "GOLDEN") {
                 // GOLDEN APPLE: Radiant Core + Rotating Micro-Diamonds
@@ -126,7 +121,6 @@ window.SnakeArena = window.SnakeArena || {};
                     ctx.fill();
                 }
                 ctx.restore();
-
             } else {
                 // NORMAL APPLE: Polished Ruby Gem with Emerald Stem Leaf
                 const r = tileSize / 2.6;
@@ -159,157 +153,180 @@ window.SnakeArena = window.SnakeArena || {};
 
         // 2. RENDER SNAKES: Directional Head, Eyes, & Segmented Exoskeleton
         currentSnakes.forEach(s => {
-            if (!s.alive || !s.body || s.body.length === 0) return;
+            const segs = s.segments || s.body;
+            if (!s.alive || !segs || segs.length === 0) return;
 
-            const isMe = (s.id === window.snakeId);
-            const isSkillOn = isMe ? window.skillActive : s.skillActive;
-            const primaryColor = s.color || "#00e575";
+            const isMe = (s.id === mySnakeId);
+            const isSkillOn = isMe ? mySkillActive : (s.skillActive || false);
+            const sColor = s.color || "#00e575";
 
-            const head = s.body[0];
-            const neck = s.body[1] || head;
+            const head = segs[0];
+            const headCx = head.x * tileSize + tileSize / 2;
+            const headCy = head.y * tileSize + tileSize / 2;
+            const pulse = 1.0 + Math.sin(now / 110) * 0.15;
 
             // Determine Direction Vector
-            let dirX = head.x - neck.x;
-            let dirY = head.y - neck.y;
-            if (dirX === 0 && dirY === 0) {
-                if (s.direction === "UP") { dirY = -1; }
-                else if (s.direction === "DOWN") { dirY = 1; }
-                else if (s.direction === "LEFT") { dirX = -1; }
-                else if (s.direction === "RIGHT") { dirX = 1; }
+            let dir = s.direction || "UP";
+            if (segs.length > 1) {
+                const neck = segs[1];
+                if (head.x > neck.x) dir = "RIGHT";
+                else if (head.x < neck.x) dir = "LEFT";
+                else if (head.y > neck.y) dir = "DOWN";
+                else if (head.y < neck.y) dir = "UP";
             }
 
             // A. SKILL FORCEFIELD / AURA
             if (isSkillOn) {
                 ctx.save();
-                const now = Date.now();
-                const hx = head.x * tileSize + tileSize / 2;
-                const hy = head.y * tileSize + tileSize / 2;
+                const shieldColor = s.snakeType === "PYTHON" ? "#38bdf8" : 
+                                   (s.snakeType === "COBRA" ? "#f59e0b" : "#10b981");
+                const shieldRgba = s.snakeType === "PYTHON" ? "rgba(56, 189, 248, 0.15)" : 
+                                  (s.snakeType === "COBRA" ? "rgba(245, 158, 11, 0.15)" : "rgba(16, 185, 129, 0.15)");
 
                 // Trail Forcefield
-                s.body.forEach((seg, idx) => {
-                    const sx = seg.x * tileSize + tileSize / 2;
-                    const sy = seg.y * tileSize + tileSize / 2;
-                    ctx.fillStyle = `${primaryColor}18`;
+                segs.forEach(seg => {
+                    ctx.fillStyle = shieldRgba;
                     ctx.beginPath();
-                    ctx.arc(sx, sy, tileSize * 0.75, 0, Math.PI * 2);
+                    ctx.arc(seg.x * tileSize + tileSize / 2, seg.y * tileSize + tileSize / 2, tileSize * 0.75 * pulse, 0, Math.PI * 2);
                     ctx.fill();
                 });
 
                 // Bubble Shield
-                const auraRadius = tileSize * 1.5 + Math.sin(now / 100) * 2;
-                ctx.strokeStyle = primaryColor;
-                ctx.lineWidth = 2;
+                ctx.strokeStyle = shieldColor;
+                ctx.lineWidth = 1.5;
                 ctx.beginPath();
-                ctx.arc(hx, hy, auraRadius, 0, Math.PI * 2);
+                ctx.arc(headCx, headCy, tileSize * 1.15 * pulse, 0, Math.PI * 2);
                 ctx.stroke();
 
                 // Rotating Tactical Indicator
-                ctx.strokeStyle = `${primaryColor}66`;
-                ctx.lineWidth = 1;
-                ctx.setLineDash([4, 4]);
+                const rotAngle = (now / 260) % (Math.PI * 2);
+                ctx.setLineDash([3, 3]);
+                ctx.lineWidth = 1.0;
                 ctx.beginPath();
-                ctx.arc(hx, hy, auraRadius + 4, now / 200, now / 200 + Math.PI * 2);
+                ctx.arc(headCx, headCy, tileSize * 1.35 * pulse, rotAngle, rotAngle + Math.PI * 2);
                 ctx.stroke();
                 ctx.setLineDash([]);
                 ctx.restore();
             }
 
             // B. DRAW BODY SEGMENTS (Tapered from neck to tail)
-            const total = s.body.length;
-            for (let i = total - 1; i >= 1; i--) {
-                const seg = s.body[i];
-                const sx = seg.x * tileSize + tileSize / 2;
-                const sy = seg.y * tileSize + tileSize / 2;
+            for (let i = segs.length - 1; i >= 1; i--) {
+                const seg = segs[i];
+                const scx = seg.x * tileSize + tileSize / 2;
+                const scy = seg.y * tileSize + tileSize / 2;
 
-                const t = 1 - (i / total);
-                const segRadius = (tileSize / 2.3) * (0.65 + 0.35 * t);
+                const taper = 0.55 + 0.33 * (1 - i / segs.length);
+                const segRadius = (tileSize / 2) * taper;
 
-                ctx.fillStyle = primaryColor;
+                ctx.save();
+                ctx.fillStyle = sColor;
                 ctx.beginPath();
-                ctx.arc(sx, sy, segRadius, 0, Math.PI * 2);
+                ctx.arc(scx, scy, segRadius, 0, Math.PI * 2);
                 ctx.fill();
 
                 // Inner Dorsal Core Highlight
-                ctx.fillStyle = "rgba(255, 255, 255, 0.28)";
+                ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
                 ctx.beginPath();
-                ctx.arc(sx, sy, segRadius * 0.45, 0, Math.PI * 2);
+                ctx.arc(scx, scy, segRadius * 0.45, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.restore();
             }
 
             // C. DRAW DIRECTION-AWARE HEAD & LUMINOUS OPTIC EYES
-            const headCx = head.x * tileSize + tileSize / 2;
-            const headCy = head.y * tileSize + tileSize / 2;
-            const angle = Math.atan2(dirY, dirX) + Math.PI / 2;
-
             ctx.save();
             ctx.translate(headCx, headCy);
-            ctx.rotate(angle);
+
+            let headAngle = 0;
+            if (dir === "DOWN") headAngle = Math.PI;
+            else if (dir === "LEFT") headAngle = -Math.PI / 2;
+            else if (dir === "RIGHT") headAngle = Math.PI / 2;
+            ctx.rotate(headAngle);
 
             // Armored Head Shell (Pointing UP in local space)
-            const hr = tileSize / 2.1;
-            ctx.fillStyle = primaryColor;
+            const hr = tileSize * 0.48;
+            ctx.fillStyle = isMe ? "#ffffff" : sColor;
             ctx.beginPath();
-            ctx.ellipse(0, 0, hr * 0.95, hr * 1.15, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
-            ctx.beginPath();
-            ctx.ellipse(0, -2, hr * 0.5, hr * 0.7, 0, 0, Math.PI * 2);
+            ctx.moveTo(0, -hr * 1.15); // Snout tip
+            ctx.lineTo(hr * 0.95, hr * 0.7);
+            ctx.quadraticCurveTo(0, hr * 0.4, -hr * 0.95, hr * 0.7);
+            ctx.closePath();
             ctx.fill();
 
             // Luminous Optic Eyes
-            const eyeSpacing = hr * 0.55;
-            const eyeFwd = -hr * 0.45;
+            const eyeX = hr * 0.42;
+            const eyeY = -hr * 0.25;
+            const eyeR = hr * 0.24;
 
-            // Eye Glow
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath();
-            ctx.arc(-eyeSpacing, eyeFwd, 2.5, 0, Math.PI * 2);
-            ctx.arc(eyeSpacing, eyeFwd, 2.5, 0, Math.PI * 2);
-            ctx.fill();
+            [-1, 1].forEach(side => {
+                const ex = side * eyeX;
 
-            // Core Pupil
-            ctx.fillStyle = "#000000";
-            ctx.beginPath();
-            ctx.arc(-eyeSpacing, eyeFwd - 0.5, 1.2, 0, Math.PI * 2);
-            ctx.arc(eyeSpacing, eyeFwd - 0.5, 1.2, 0, Math.PI * 2);
-            ctx.fill();
+                ctx.fillStyle = isMe ? "#06090f" : "#ffffff";
+                ctx.beginPath();
+                ctx.arc(ex, eyeY, eyeR, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = isMe ? "var(--tactical-emerald)" : "#000000";
+                ctx.beginPath();
+                ctx.arc(ex, eyeY - eyeR * 0.25, eyeR * 0.55, 0, Math.PI * 2);
+                ctx.fill();
+            });
 
             ctx.restore();
 
             // D. FLOATING CALLSIGN & CLASS HUD BADGE
             ctx.save();
-            ctx.font = isMe ? "bold 11px 'JetBrains Mono', monospace" : "9px 'JetBrains Mono', monospace";
             ctx.textAlign = "center";
-            ctx.fillStyle = isMe ? "#ffffff" : "rgba(255, 255, 255, 0.65)";
+
+            if (isSkillOn) {
+                const badgeText = s.snakeType === "PYTHON" ? "[PERISAI]" : 
+                                 (s.snakeType === "COBRA" ? "[GOLD SENSE]" : "[AKSELERASI]");
+                const badgeColor = s.snakeType === "PYTHON" ? "#38bdf8" : 
+                                  (s.snakeType === "COBRA" ? "#f59e0b" : "#10b981");
+                ctx.font = "bold 9px 'JetBrains Mono', monospace";
+                const tw = ctx.measureText(badgeText).width;
+                const by = head.y * tileSize - 22;
+
+                ctx.fillStyle = "#11141c";
+                ctx.beginPath();
+                ctx.roundRect(headCx - tw / 2 - 6, by, tw + 12, 14, 3);
+                ctx.fill();
+                ctx.strokeStyle = badgeColor;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                ctx.fillStyle = badgeColor;
+                ctx.fillText(badgeText, headCx, by + 10);
+            }
+
+            ctx.font = isMe ? "600 11px 'Inter', sans-serif" : "500 10px 'Inter', sans-serif";
+            ctx.fillStyle = isMe ? "#10b981" : "#94a3b8";
             const label = isMe ? `${s.playerName} (YOU)` : s.playerName;
             ctx.fillText(label, headCx, head.y * tileSize - (isSkillOn ? 25 : 6));
             ctx.restore();
         });
     }
 
-    // Export to SnakeArena namespace
+    function renderLoop() {
+        render();
+        requestAnimationFrame(renderLoop);
+    }
+
+    // Immediately start loop
+    requestAnimationFrame(renderLoop);
+
     window.SnakeArena.Canvas = {
         canvas,
         ctx,
         gridSize,
         tileSize,
         render,
-        renderLoop,
-        get arenaSnakes() { return arenaSnakes; },
-        set arenaSnakes(v) { arenaSnakes = v; },
-        get arenaApples() { return arenaApples; },
-        set arenaApples(v) { arenaApples = v; }
+        renderLoop
     };
 
-    // Backward-compatible global aliases
     window.canvas = canvas;
     window.ctx = ctx;
     window.gridSize = gridSize;
     window.tileSize = tileSize;
-    window.arenaSnakes = arenaSnakes;
-    window.arenaApples = arenaApples;
-    window.prevScore = prevScore;
     window.render = render;
     window.renderLoop = renderLoop;
 })();
