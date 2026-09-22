@@ -2197,9 +2197,34 @@
             document.getElementById("hudClass").style.color = color;
         }
 
-        // 2. GET: Read Player Profile & In-Game Telemetry
+        // 2. GET: Read Player Profile (Lobby) OR Live Snake Telemetry (In-Game)
         async function apiFetchPlayer() {
             playSfx('click');
+
+            // In-Game Mode: Ambil Telemetri Ular Aktif dari Arena Service
+            if (gameRunning) {
+                let targetSnakeId = snakeId || sessionStorage.getItem("activeSnakeId");
+                if (!targetSnakeId && arenaSnakes && arenaSnakes.length > 0) {
+                    const mySnake = arenaSnakes.find(s => s.alive && (s.playerId === (registeredPlayerId || playerId) || s.playerName === playerName));
+                    if (mySnake) targetSnakeId = mySnake.id;
+                }
+
+                if (targetSnakeId) {
+                    const snakeRes = await makeApiCall("GET", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${targetSnakeId}`);
+                    if (snakeRes.success && snakeRes.data) {
+                        snakeId = snakeRes.data.id;
+                        sessionStorage.setItem("activeSnakeId", snakeId);
+                        score = snakeRes.data.score || 0;
+                        document.getElementById("hudScore").innerText = score;
+                    }
+                } else {
+                    // Fallback jika ID ular belum terlacak: ambil telemetri snapshot arena
+                    await makeApiCall("GET", `${ARENA_SERVICE_URL}/api/v1/arena/state`);
+                }
+                return;
+            }
+
+            // Lobby Mode: Ambil Profil Pemain dari Player Service
             let targetId = registeredPlayerId || (playerId && !playerId.startsWith("PL-RANDOM") ? playerId : null);
 
             if (!targetId) {
@@ -2229,15 +2254,6 @@
                         selectSidebarClass(fetchedClass, colorMap[fetchedClass] || "#ffffff", false);
                     }
                 }
-            }
-
-            if (snakeId && gameRunning) {
-                const snakeRes = await makeApiCall("GET", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}`);
-                if (snakeRes.success && snakeRes.data) {
-                    score = snakeRes.data.score || 0;
-                    document.getElementById("hudScore").innerText = score;
-                }
-                await fetchArenaState();
             }
         }
 
