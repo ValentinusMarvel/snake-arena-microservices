@@ -266,8 +266,14 @@ window.SnakeArena = window.SnakeArena || {};
             };
             const arenaRes = await makeApiCall("POST", `${ARENA_SERVICE_URL}/api/v1/arena/snakes`, joinPayload, false, btn);
             if (arenaRes.success && arenaRes.data) {
-                window.snakeId = arenaRes.data.id;
-                sessionStorage.setItem("activeSnakeId", window.snakeId);
+                const newSnakeId = arenaRes.data.id;
+                window.snakeId = newSnakeId;
+                sessionStorage.setItem("activeSnakeId", newSnakeId);
+                if (window.SnakeArena && window.SnakeArena.App && window.SnakeArena.App.setSnakeId) {
+                    window.SnakeArena.App.setSnakeId(newSnakeId);
+                } else if (window.setSnakeId) {
+                    window.setSnakeId(newSnakeId);
+                }
                 window.playerName = arenaRes.data.playerName;
                 const hudP = document.getElementById("hudPlayer");
                 if (hudP) hudP.innerText = window.playerName;
@@ -275,13 +281,6 @@ window.SnakeArena = window.SnakeArena || {};
                 const inp2 = document.getElementById("overlayPlayerName");
                 if (inp1) inp1.value = window.playerName;
                 if (inp2) inp2.value = window.playerName;
-                if (window.backgroundWorker) {
-                    window.backgroundWorker.postMessage({
-                        type: 'setSnake',
-                        snakeId: window.snakeId,
-                        arenaUrl: ARENA_SERVICE_URL
-                    });
-                }
                 await fetchArenaState();
                 logApi("INFO", "/arena/snake-synced", 200, null, {
                     message: `Ular '${uniqueCallsign}' berhasil disinkronkan di arena tanpa mengubah posisi.`,

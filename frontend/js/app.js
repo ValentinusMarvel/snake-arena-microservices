@@ -82,6 +82,23 @@ window.SnakeArena = window.SnakeArena || {};
         window.playerName = name;
     }
 
+    function setSnakeId(id) {
+        snakeId = id;
+        window.snakeId = id;
+        if (id) {
+            sessionStorage.setItem("activeSnakeId", id);
+        } else {
+            sessionStorage.removeItem("activeSnakeId");
+        }
+        if (backgroundWorker) {
+            backgroundWorker.postMessage(id ? {
+                type: 'setSnake',
+                snakeId: id,
+                arenaUrl: window.ARENA_SERVICE_URL || 'http://localhost:8082'
+            } : { type: 'clearSnake' });
+        }
+    }
+
     function selectOverlayClass(className, color, el) {
         if (gameRunning) return;
         if (window.playSfx) window.playSfx('click');
@@ -90,12 +107,15 @@ window.SnakeArena = window.SnakeArena || {};
         window.selectedClass = className;
         window.selectedColor = color;
 
-        document.querySelectorAll('.overlay-class-opt').forEach(opt => opt.classList.remove('active'));
-        if (el) el.classList.add('active');
+        document.querySelectorAll('.overlay-class-opt').forEach(opt => {
+            const optClass = opt.dataset.class || opt.querySelector('.opt-title')?.innerText.trim();
+            opt.classList.toggle('active', (optClass || "").toUpperCase() === className.toUpperCase());
+        });
 
         document.querySelectorAll('#sidebarClassSelector .class-card').forEach(c => {
-            c.classList.toggle('selected', c.dataset.class === className);
+            c.classList.toggle('selected', (c.dataset.class || "").toUpperCase() === className.toUpperCase());
         });
+
         const hudC = document.getElementById("hudClass");
         if (hudC) {
             hudC.innerText = className;
@@ -112,11 +132,12 @@ window.SnakeArena = window.SnakeArena || {};
         window.selectedColor = color;
 
         document.querySelectorAll('#sidebarClassSelector .class-card').forEach(c => {
-            c.classList.toggle('selected', c.dataset.class === className);
+            c.classList.toggle('selected', (c.dataset.class || "").toUpperCase() === className.toUpperCase());
         });
 
         document.querySelectorAll('.overlay-class-opt').forEach(opt => {
-            opt.classList.toggle('active', opt.dataset.class === className);
+            const optClass = opt.dataset.class || opt.querySelector('.opt-title')?.innerText.trim();
+            opt.classList.toggle('active', (optClass || "").toUpperCase() === className.toUpperCase());
         });
 
         const hudC = document.getElementById("hudClass");
@@ -327,7 +348,8 @@ window.SnakeArena = window.SnakeArena || {};
     }
 
     async function triggerSkill() {
-        if (!snakeId || !gameRunning) return;
+        const activeId = window.snakeId || snakeId || sessionStorage.getItem("activeSnakeId");
+        if (!activeId || !gameRunning) return;
         const now = Date.now();
 
         if (skillActive) return;
@@ -338,15 +360,38 @@ window.SnakeArena = window.SnakeArena || {};
             return;
         }
 
+        // Verify that activeId is alive in arena state, or auto-heal to matching snake
+        let targetId = activeId;
+        if (window.arenaSnakes && window.arenaSnakes.length > 0) {
+            const current = window.arenaSnakes.find(s => s.id === activeId);
+            if (!current) {
+                const byName = window.arenaSnakes.find(s => s.playerName && s.playerName === window.playerName && s.alive);
+                if (byName) {
+                    targetId = byName.id;
+                    setSnakeId(byName.id);
+                }
+            }
+        }
+
+        const url = `${window.ARENA_SERVICE_URL || 'http://localhost:8082'}/api/v1/arena/snakes/${targetId}/skill?active=true`;
+        if (window.makeApiCall) {
+            const res = await window.makeApiCall("PATCH", url);
+            if (!res.success) {
+                if (res.status === 404) {
+                    console.warn("[triggerSkill] Snake not found on arena server (404).");
+                    updateSkillStatusUi("[NOT IN ARENA]", "var(--crimson-hazard)");
+                    setTimeout(() => updateSkillStatusUi("[READY]", "var(--tactical-emerald)"), 2000);
+                    return;
+                }
+            }
+        }
+
         if (window.playSfx) window.playSfx('skill');
         skillActive = true;
         window.skillActive = true;
         skillActiveUntil = now + 3000;
         skillCooldownUntil = now + 3000 + 5000;
         updateSkillStatusUi("[ACTIVE: 3s]", "var(--tactical-emerald)");
-
-        const url = `${window.ARENA_SERVICE_URL || 'http://localhost:8082'}/api/v1/arena/snakes/${snakeId}/skill?active=true`;
-        if (window.makeApiCall) await window.makeApiCall("PATCH", url);
 
         if (skillTimerInterval) clearInterval(skillTimerInterval);
         skillTimerInterval = setInterval(() => {
@@ -358,8 +403,9 @@ window.SnakeArena = window.SnakeArena || {};
                 if (skillActive) {
                     skillActive = false;
                     window.skillActive = false;
-                    if (window.makeApiCall) {
-                        window.makeApiCall("PATCH", `${window.ARENA_SERVICE_URL || 'http://localhost:8082'}/api/v1/arena/snakes/${snakeId}/skill?active=false`, null, true);
+                    const curId = window.snakeId || snakeId || sessionStorage.getItem("activeSnakeId");
+                    if (window.makeApiCall && curId) {
+                        window.makeApiCall("PATCH", `${window.ARENA_SERVICE_URL || 'http://localhost:8082'}/api/v1/arena/snakes/${curId}/skill?active=false`, null, true);
                     }
                 }
                 const cdLeft = Math.ceil((skillCooldownUntil - cur) / 1000);
@@ -388,23 +434,40 @@ window.SnakeArena = window.SnakeArena || {};
     }
 
     function renderLeaderboard(leaderboard) {
-        const list = document.getElementById("leaderboardList");
-        if (!list) return;
+        const container = document.getElementById("leaderboardContainer") || document.getElementById("leaderboardList");
+        if (!container) return;
 
-        if (!leaderboard || leaderboard.length === 0) {
-            list.innerHTML = `<div style="color:var(--text-dim); font-size:0.7rem; text-align:center; padding:10px;">Belum ada serpent aktif</div>`;
+        let entries = (leaderboard && leaderboard.length > 0) ? [...leaderboard] : [];
+        if (entries.length === 0 && window.arenaSnakes && window.arenaSnakes.length > 0) {
+            entries = window.arenaSnakes.map(s => ({
+                snakeId: s.id,
+                playerName: s.playerName,
+                snakeType: s.snakeType,
+                score: s.score || 0
+            }));
+        }
+
+        if (entries.length === 0) {
+            container.innerHTML = `<div class="lb-item" style="color:var(--text-dim); justify-content:center;">(Menunggu pemain join...)</div>`;
             return;
         }
 
-        list.innerHTML = leaderboard.slice(0, 5).map((s, idx) => {
-            const isUser = (s.id === snakeId);
+        // Sort descending by score
+        entries.sort((a, b) => (b.score || 0) - (a.score || 0));
+
+        const curSnakeId = window.snakeId || snakeId || sessionStorage.getItem("activeSnakeId");
+
+        container.innerHTML = entries.slice(0, 10).map((s, idx) => {
+            const isUser = (s.snakeId === curSnakeId || s.id === curSnakeId || (window.playerName && s.playerName === window.playerName));
+            const color = s.color || (s.snakeType === "VIPER" ? "var(--tactical-emerald)" : (s.snakeType === "PYTHON" ? "var(--cyber-cyan)" : "var(--solar-amber)"));
+            const rankBadge = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx + 1}`;
             return `
                 <div class="lb-item ${isUser ? 'user-snake' : ''}">
-                    <span style="display:flex; align-items:center; gap:8px;">
-                        <b style="color:var(--solar-amber);">#${idx + 1}</b>
-                        <span style="color:${s.color || '#fff'}; font-weight:700;">${s.playerName}${isUser ? ' (YOU)' : ''}</span>
+                    <span style="display:flex; align-items:center; gap:6px;">
+                        <b style="color:var(--solar-amber); min-width:20px;">${rankBadge}</b>
+                        <span style="color:${color}; font-weight:700;">${s.playerName}${isUser ? ' (ANDA)' : ''}</span>
                     </span>
-                    <span style="font-weight:700; color:#cbd5e1;">${s.score} pts</span>
+                    <span style="font-weight:700; color:#cbd5e1;">${s.score || 0} pts</span>
                 </div>
             `;
         }).join("");
@@ -427,7 +490,7 @@ window.SnakeArena = window.SnakeArena || {};
 
     // Keyboard controls
     window.addEventListener("keydown", (e) => {
-        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) {
+        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "e", "E", "f", "F"].includes(e.key)) {
             if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA")) {
                 return;
             }
@@ -456,6 +519,10 @@ window.SnakeArena = window.SnakeArena || {};
                 changeDir(1, 0);
                 break;
             case " ":
+            case "e":
+            case "E":
+            case "f":
+            case "F":
                 triggerSkill();
                 break;
         }
@@ -544,6 +611,7 @@ window.SnakeArena = window.SnakeArena || {};
         changeDir,
         triggerSkill,
         updateSkillStatusUi,
+        setSnakeId,
         renderLeaderboard,
         cleanupCurrentSnake
     };
@@ -558,6 +626,7 @@ window.SnakeArena = window.SnakeArena || {};
     window.gameRunning = gameRunning;
     window.skillActive = skillActive;
     window.backgroundWorker = backgroundWorker;
+    window.setSnakeId = setSnakeId;
     window.selectOverlayClass = selectOverlayClass;
     window.selectSidebarClass = selectSidebarClass;
     window.validateAndStartGame = validateAndStartGame;
