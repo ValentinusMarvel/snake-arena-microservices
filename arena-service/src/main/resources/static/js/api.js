@@ -178,6 +178,41 @@ window.SnakeArena = window.SnakeArena || {};
         return (name + suffix).substring(0, 20);
     }
 
+    function buildV2ClassProfile(className) {
+        const cls = (className || "VIPER").toUpperCase();
+        if (cls === "PYTHON") {
+            return {
+                className: "PYTHON",
+                passiveEffect: "THICK_BODY",
+                activeAbility: {
+                    name: "Apple Magnet",
+                    cooldownSeconds: 7,
+                    speedMultiplier: 1.3
+                }
+            };
+        } else if (cls === "COBRA") {
+            return {
+                className: "COBRA",
+                passiveEffect: "GOLDEN_SENSE",
+                activeAbility: {
+                    name: "Poison Spit",
+                    cooldownSeconds: 6,
+                    speedMultiplier: 1.5
+                }
+            };
+        } else {
+            return {
+                className: "VIPER",
+                passiveEffect: "POISON_TRAIL",
+                activeAbility: {
+                    name: "Venom Dash",
+                    cooldownSeconds: 5,
+                    speedMultiplier: 1.8
+                }
+            };
+        }
+    }
+
     function lookupPlayerByName(name) {
         if (nameLookupTimer) clearTimeout(nameLookupTimer);
         const clean = (name || "").trim();
@@ -277,12 +312,7 @@ window.SnakeArena = window.SnakeArena || {};
         } else {
             const buildV2Payload = (uname) => ({
                 username: uname,
-                classProfile: {
-                    className: currentClass,
-                    armor: currentClass === "PYTHON" ? 85 : 40,
-                    handling: currentClass === "COBRA" ? 90 : 60,
-                    radarRange: 45
-                }
+                classProfile: buildV2ClassProfile(currentClass)
             });
             res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v2/players`, buildV2Payload(rawName), false, btn);
             if (!res.success && res.status === 400) {
@@ -375,57 +405,112 @@ window.SnakeArena = window.SnakeArena || {};
         return res;
     }
 
-    // 3. PUT: Update Player Profile (Lobby) OR Live Serpent Skin (In-Game)
+    // 3. PUT: Update Player Profile (Lobby) OR Live Serpent Skin / Loadout (In-Game)
     async function apiUpdatePlayerProfile() {
         if (window.playSfx) window.playSfx('click');
         const btn = document.getElementById("btnUpdateLoadout");
 
         if (window.gameRunning && window.snakeId) {
-            // In-Game PUT: Update live serpent skin
-            const skinPayload = {
-                snakeType: window.selectedClass || "VIPER",
-                color: window.selectedColor || "#00e575"
+            // In-Game PUT: Update live serpent skin/loadout in arena
+            const classes = ["VIPER", "PYTHON", "COBRA"];
+            const colors = { VIPER: "#00e575", PYTHON: "#00b8ff", COBRA: "#f59e0b" };
+            const currentCls = (window.selectedClass || "VIPER").toUpperCase();
+            const nextClsIdx = (classes.indexOf(currentCls) + 1) % classes.length;
+            const nextClass = classes[nextClsIdx];
+            const nextColor = colors[nextClass];
+
+            const loadoutPayload = {
+                snakeType: nextClass,
+                color: nextColor
             };
-            const res = await makeApiCall("PUT", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${window.snakeId}/skin`, skinPayload, false, btn);
-            if (res.success) {
+            const res = await makeApiCall("PUT", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${window.snakeId}/loadout`, loadoutPayload, false, btn);
+            if (res.success && res.data) {
+                window.selectedClass = nextClass;
+                window.selectedColor = nextColor;
                 const hudC = document.getElementById("hudClass");
                 if (hudC) {
-                    hudC.innerText = window.selectedClass;
-                    hudC.style.color = window.selectedColor;
+                    hudC.innerText = nextClass;
+                    hudC.style.color = nextColor;
                 }
+                if (window.arenaSnakes) {
+                    const activeSnake = window.arenaSnakes.find(s => s.id === window.snakeId);
+                    if (activeSnake) {
+                        activeSnake.snakeType = nextClass;
+                        activeSnake.color = nextColor;
+                    }
+                }
+                logApi("INFO", `/arena/snakes/${window.snakeId}/loadout`, 200, null, {
+                    message: `Loadout ular berhasil diubah live ke ${nextClass} (${nextColor}) via PUT.`,
+                    snakeId: window.snakeId
+                });
             }
             return res;
         }
 
         // Lobby PUT: Update player profile
         const targetId = registeredPlayerId || window.playerId;
+        if (!targetId) {
+            logApi("INFO", "/players/profile", 400, null, { error: "ID Pemain belum terdaftar. Silakan daftar akun (POST) terlebih dahulu." });
+            return;
+        }
+
         const inpS = document.getElementById("inputPlayerName");
-        const rawName = (inpS ? inpS.value.trim() : "") || window.playerName || "PilotRenamed";
-        const currentClass = window.selectedClass || "VIPER";
+        const currentInput = inpS ? inpS.value.trim() : "";
+
+        // Cycle tactical class so change is visibly and functionally demonstrated
+        const classes = ["VIPER", "PYTHON", "COBRA"];
+        const colors = { VIPER: "#00e575", PYTHON: "#00b8ff", COBRA: "#f59e0b" };
+        const currentCls = (window.selectedClass || "VIPER").toUpperCase();
+        const nextClsIdx = (classes.indexOf(currentCls) + 1) % classes.length;
+        const nextClass = classes[nextClsIdx];
+        const nextColor = colors[nextClass];
+
+        let updatedName;
+        if (currentInput && currentInput !== window.playerName) {
+            updatedName = getSafeUsername(currentInput);
+        } else {
+            const base = (window.playerName || "Pilot").replace(/_U\d+$/, "");
+            updatedName = getSafeUsername(base, `_U${Math.floor(10 + Math.random() * 90)}`);
+        }
 
         let payload;
         if (currentVersion === "v1") {
-            payload = { username: rawName, snakeType: currentClass };
+            payload = { username: updatedName, snakeType: nextClass };
         } else {
             payload = {
-                username: rawName,
-                classProfile: {
-                    className: currentClass,
-                    armor: currentClass === "PYTHON" ? 95 : 50,
-                    handling: currentClass === "COBRA" ? 95 : 70,
-                    radarRange: 50
-                }
+                username: updatedName,
+                classProfile: buildV2ClassProfile(nextClass)
             };
         }
 
         const res = await makeApiCall("PUT", `${PLAYER_SERVICE_URL}/api/${currentVersion}/players/${targetId}`, payload, false, btn);
         if (res.success && res.data) {
             window.playerName = res.data.username;
+            window.selectedClass = nextClass;
+            window.selectedColor = nextColor;
             updatePlayerIdBadge(res.data.id);
+
+            if (inpS) inpS.value = res.data.username;
             const inpO = document.getElementById("overlayPlayerName");
             if (inpO) inpO.value = res.data.username;
             const hudP = document.getElementById("hudPlayer");
             if (hudP) hudP.innerText = res.data.username;
+            const hudC = document.getElementById("hudClass");
+            if (hudC) {
+                hudC.innerText = nextClass;
+                hudC.style.color = nextColor;
+            }
+
+            if (window.SnakeArena && window.SnakeArena.App && window.SnakeArena.App.selectSidebarClass) {
+                window.SnakeArena.App.selectSidebarClass(nextClass, nextColor, false);
+            } else if (window.selectSidebarClass) {
+                window.selectSidebarClass(nextClass, nextColor, false);
+            }
+
+            logApi("INFO", `/players/${targetId}/updated`, 200, null, {
+                message: `Profil pemain berhasil diupdate (PUT). Tipe: ${nextClass}, Callsign: ${res.data.username}`,
+                data: res.data
+            });
         }
         return res;
     }
@@ -436,21 +521,44 @@ window.SnakeArena = window.SnakeArena || {};
         const btn = document.getElementById("btnPatchStats");
 
         if (window.gameRunning && window.snakeId) {
-            // In-Game PATCH: Simulate eating apple
-            const res = await makeApiCall("PATCH", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${window.snakeId}/eat?points=10`, null, false, btn);
+            // In-Game PATCH: Consume apple in arena
+            let targetAppleId = "APL-1";
+            if (window.arenaApples && window.arenaApples.length > 0) {
+                targetAppleId = window.arenaApples[0].id;
+            }
+            const res = await makeApiCall("PATCH", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${window.snakeId}/eat`, { appleId: targetAppleId }, false, btn);
             if (res.success && res.data) {
                 if (window.playSfx) window.playSfx('apple');
-                window.score = res.data.score || (window.score + 10);
+                window.score = res.data.score || ((window.score || 0) + 10);
                 const hudS = document.getElementById("hudScore");
                 if (hudS) hudS.innerText = window.score;
+                await fetchArenaState();
+                logApi("INFO", `/arena/snakes/${window.snakeId}/eat`, 200, null, {
+                    message: `Apel '${targetAppleId}' berhasil dimakan via PATCH. Skor: ${window.score}`,
+                    bodyLength: res.data.body ? res.data.body.length : 0
+                });
             }
             return res;
         }
 
-        // Lobby PATCH: Partial update status
+        // Lobby PATCH: Partial update player stats (v1 and v2)
         const targetId = registeredPlayerId || window.playerId;
-        const patchPayload = { status: "ACTIVE_OPERATOR", lastPing: Date.now() };
-        return await makeApiCall("PATCH", `${PLAYER_SERVICE_URL}/api/${currentVersion}/players/${targetId}/status`, patchPayload, false, btn);
+        if (!targetId) {
+            logApi("INFO", "/players/stats", 400, null, { error: "ID Pemain belum terdaftar. Silakan daftar akun (POST) terlebih dahulu." });
+            return;
+        }
+        const currentScore = window.score || 0;
+        const newScore = currentScore + 75;
+        const patchPayload = { score: newScore, matchCompleted: false };
+        const res = await makeApiCall("PATCH", `${PLAYER_SERVICE_URL}/api/${currentVersion}/players/${targetId}/stats`, patchPayload, false, btn);
+        if (res.success && res.data) {
+            window.highScore = res.data.highScore;
+            logApi("INFO", `/players/${targetId}/stats`, 200, null, {
+                message: `Statistik pemain parsial berhasil diperbarui via PATCH! HighScore: ${res.data.highScore}`,
+                tier: res.data.playerTier || res.data.tier || undefined
+            });
+        }
+        return res;
     }
 
     // 5. DELETE: Eject from Arena (In-Game) OR Delete Account (Lobby)

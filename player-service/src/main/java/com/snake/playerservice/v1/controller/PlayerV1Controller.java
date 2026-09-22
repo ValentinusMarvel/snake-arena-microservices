@@ -92,6 +92,11 @@ public class PlayerV1Controller {
     public ResponseEntity<PlayerV1Output> updatePlayer(@PathVariable String id, @Valid @RequestBody PlayerV1Input input) {
         PlayerEntity entity = repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Pemain dengan ID '" + id + "' tidak ditemukan"));
+        repository.findByUsername(input.username()).ifPresent(existing -> {
+            if (!existing.getId().equals(id)) {
+                throw new IllegalArgumentException("Username '" + input.username() + "' sudah digunakan oleh pemain lain");
+            }
+        });
         entity.setUsername(input.username());
         entity.setSnakeType(input.snakeType().toUpperCase());
         entity.setSpeed(calculateSpeed(input.snakeType()));

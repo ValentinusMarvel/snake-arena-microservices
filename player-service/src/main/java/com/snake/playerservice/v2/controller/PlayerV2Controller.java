@@ -3,6 +3,7 @@ package com.snake.playerservice.v2.controller;
 import com.snake.playerservice.domain.PlayerEntity;
 import com.snake.playerservice.domain.PlayerRepository;
 import com.snake.playerservice.exception.EntityNotFoundException;
+import com.snake.playerservice.v1.dto.PlayerStatsUpdateInput;
 import com.snake.playerservice.v2.dto.AbilityInput;
 import com.snake.playerservice.v2.dto.ClassProfileInput;
 import com.snake.playerservice.v2.dto.PlayerV2Input;
@@ -103,8 +104,31 @@ public class PlayerV2Controller {
     public ResponseEntity<PlayerV2Output> updatePlayerV2(@PathVariable String id, @Valid @RequestBody PlayerV2Input input) {
         PlayerEntity entity = repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Pemain dengan ID '" + id + "' tidak ditemukan"));
+        repository.findByUsername(input.username()).ifPresent(existing -> {
+            if (!existing.getId().equals(id)) {
+                throw new IllegalArgumentException("Username '" + input.username() + "' sudah digunakan oleh pemain lain");
+            }
+        });
         entity.setUsername(input.username());
         entity.setSnakeType(input.classProfile().className().toUpperCase());
+        PlayerEntity updated = repository.save(entity);
+        return ResponseEntity.ok(toOutputV2(updated));
+    }
+
+    @PatchMapping("/{id}/stats")
+    @Operation(summary = "Modifikasi parsial skor dan jumlah match v2 (v2 PATCH)", responses = {
+            @ApiResponse(responseCode = "200", description = "Skor berhasil diperbarui"),
+            @ApiResponse(responseCode = "404", description = "Pemain tidak ditemukan")
+    })
+    public ResponseEntity<PlayerV2Output> updateStatsV2(@PathVariable String id, @Valid @RequestBody PlayerStatsUpdateInput input) {
+        PlayerEntity entity = repository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Pemain dengan ID '" + id + "' tidak ditemukan"));
+        if (input.score() > entity.getHighScore()) {
+            entity.setHighScore(input.score());
+        }
+        if (input.matchCompleted()) {
+            entity.setTotalMatches(entity.getTotalMatches() + 1);
+        }
         PlayerEntity updated = repository.save(entity);
         return ResponseEntity.ok(toOutputV2(updated));
     }

@@ -39,4 +39,12 @@ public class GlobalExceptionHandler {
         problem.setTitle("Invalid Request Content");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
     }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ProblemDetail> handleDataIntegrity(org.springframework.dao.DataIntegrityViolationException ex) {
+        String detail = ex.getRootCause() != null ? ex.getRootCause().getMessage() : ex.getMessage();
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Pelanggaran integritas basis data / username duplikat: " + detail);
+        problem.setTitle("Data Integrity Violation");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+    }
 }
