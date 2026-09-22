@@ -1,0 +1,60 @@
+/* ==========================================================================
+   Snake Arena Design Tokens, Global CSS Variables & Base Resets
+   ========================================================================== */
+
+                :root {
+            /* Matte Industrial & High-Density Engineering Tokens */
+            --bg-canvas: #0a0c12;
+            --bg-chassis: #11141c;
+            --bg-panel: #151922;
+            --bg-panel-elevated: #1a202c;
+            --bg-inset: #0d1017;
+            
+            --border-chassis: rgba(255, 255, 255, 0.08);
+            --border-highlight: rgba(255, 255, 255, 0.16);
+            --border-accent: rgba(16, 185, 129, 0.35);
+
+            /* Calibrated Semantic Accents */
+            --tactical-emerald: #10b981;
+            --cyber-cyan: #38bdf8;
+            --solar-amber: #f59e0b;
+            --crimson-hazard: #ef4444;
+            --arcane-purple: #8b5cf6;
+
+            --text-lead: #f8fafc;
+            --text-body: #94a3b8;
+            --text-dim: #64748b;
+            --text-code: #38bdf8;
+
+            /* REST Method Badges */
+            --method-get: #38bdf8;
+            --method-post: #10b981;
+            --method-put: #f59e0b;
+            --method-patch: #8b5cf6;
+            --method-delete: #ef4444;
+
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            touch-action: manipulation;
+        }
+
+        body {
+            background-color: var(--bg-canvas);
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+            background-size: 32px 32px;
+            color: var(--text-lead);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
