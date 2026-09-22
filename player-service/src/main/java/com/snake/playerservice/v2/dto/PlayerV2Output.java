@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 public record PlayerV2Output(
         @Schema(example = "PL-101") String id,
-        @Schema(example = "Marvel") String username,
+        @Schema(example = "PlayerOne") String username,
         ClassProfileInput classProfile,
         @Schema(example = "150") int highScore,
         @Schema(example = "3") int totalMatches,

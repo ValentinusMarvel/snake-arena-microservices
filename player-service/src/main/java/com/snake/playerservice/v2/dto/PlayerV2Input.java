@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record PlayerV2Input(
         @NotBlank(message = "Username tidak boleh kosong")
-        @Schema(example = "Marvel") String username,
+        @Schema(example = "PlayerOne") String username,
 
         @NotNull(message = "classProfile wajib ada pada API v2 (Breaking Change)")
         @Valid ClassProfileInput classProfile

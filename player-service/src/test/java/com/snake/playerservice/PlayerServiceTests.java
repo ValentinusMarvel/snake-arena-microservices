@@ -31,14 +31,14 @@ class PlayerServiceTests {
     @Test
     @DisplayName("Test v1 POST - Berhasil membuat pemain baru (201 Created)")
     void testCreatePlayerV1() throws Exception {
-        PlayerV1Input input = new PlayerV1Input("MarvelViper", "VIPER");
+        PlayerV1Input input = new PlayerV1Input("PlayerViper", "VIPER");
 
         mockMvc.perform(post("/api/v1/players")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(input)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", notNullValue()))
-                .andExpect(jsonPath("$.username", is("MarvelViper")))
+                .andExpect(jsonPath("$.username", is("PlayerViper")))
                 .andExpect(jsonPath("$.snakeType", is("VIPER")))
                 .andExpect(jsonPath("$.speed", is(7)));
     }

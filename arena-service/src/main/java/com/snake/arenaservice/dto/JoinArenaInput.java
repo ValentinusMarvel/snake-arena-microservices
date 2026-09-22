@@ -8,7 +8,7 @@ public record JoinArenaInput(
         @Schema(example = "PL-101") String playerId,
 
         @NotBlank(message = "playerName wajib diisi")
-        @Schema(example = "Marvel") String playerName,
+        @Schema(example = "PlayerOne") String playerName,
 
         @NotBlank(message = "snakeType wajib diisi (VIPER, PYTHON, COBRA)")
         @Schema(example = "VIPER") String snakeType,

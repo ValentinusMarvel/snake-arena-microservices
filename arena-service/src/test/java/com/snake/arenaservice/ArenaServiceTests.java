@@ -42,13 +42,13 @@ class ArenaServiceTests {
         doNothing().when(playerServiceClient).syncPlayerScore(anyString(), anyInt(), anyBoolean());
 
         // 1. POST join arena
-        JoinArenaInput joinInput = new JoinArenaInput("PL-101", "Marvel", "VIPER", "#00ff88");
+        JoinArenaInput joinInput = new JoinArenaInput("PL-101", "PlayerOne", "VIPER", "#00ff88");
         String joinRes = mockMvc.perform(post("/api/v1/arena/snakes")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(joinInput)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", notNullValue()))
-                .andExpect(jsonPath("$.playerName", is("Marvel")))
+                .andExpect(jsonPath("$.playerName", is("PlayerOne")))
                 .andExpect(jsonPath("$.snakeType", is("VIPER")))
                 .andReturn().getResponse().getContentAsString();
 
@@ -64,7 +64,7 @@ class ArenaServiceTests {
         // 3. GET snake by ID
         mockMvc.perform(get("/api/v1/arena/snakes/" + snakeId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.playerName", is("Marvel")));
+                .andExpect(jsonPath("$.playerName", is("PlayerOne")));
 
         // 4. PUT loadout
         LoadoutUpdateInput loadout = new LoadoutUpdateInput("PYTHON", "#00d4ff");
