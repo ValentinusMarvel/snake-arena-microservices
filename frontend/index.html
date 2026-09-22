@@ -6,24 +6,42 @@
     <title>Snake Arena: Clash of Serpents | Enterprise Microservices Game</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,700&family=JetBrains+Mono:wght@400;500;700;800&family=Outfit:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-base: #0a0d14;
-            --bg-card: rgba(18, 24, 38, 0.75);
-            --border-card: rgba(255, 255, 255, 0.08);
-            --neon-green: #00ff88;
-            --neon-cyan: #00d4ff;
-            --neon-gold: #ffd700;
-            --neon-red: #ff3366;
-            --neon-purple: #a855f7;
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
+            /* Aerospace Cybernetic Design Tokens */
+            --bg-void: #06080d;
+            --bg-chassis: #0b0f17;
+            --bg-panel: #101520;
+            --bg-panel-elevated: #161c2b;
+            --bg-inset: #070a10;
+            
+            --border-chassis: rgba(255, 255, 255, 0.08);
+            --border-highlight: rgba(255, 255, 255, 0.16);
+            --border-accent: rgba(0, 229, 117, 0.4);
+
+            /* Signal Accents - Functional Tactical Hierarchy */
+            --tactical-emerald: #00e575;
+            --emerald-glow: rgba(0, 229, 117, 0.25);
+            --cyber-cyan: #00b8ff;
+            --cyan-glow: rgba(0, 184, 255, 0.25);
+            --solar-amber: #f59e0b;
+            --amber-glow: rgba(245, 158, 11, 0.25);
+            --crimson-hazard: #ff3355;
+            --hazard-glow: rgba(255, 51, 85, 0.3);
+            --arcane-purple: #9d4edd;
+
+            --text-lead: #f8fafc;
+            --text-body: #94a3b8;
+            --text-dim: #64748b;
+            --text-code: #38bdf8;
+
+            /* REST Method Badges */
             --method-get: #38bdf8;
-            --method-post: #22c55e;
+            --method-post: #00e575;
             --method-put: #f59e0b;
-            --method-patch: #8b5cf6;
-            --method-delete: #ef4444;
+            --method-patch: #c084fc;
+            --method-delete: #ff3355;
         }
 
         * {
@@ -34,26 +52,26 @@
         }
 
         body {
-            background-color: var(--bg-base);
+            background-color: var(--bg-void);
             background-image: 
-                radial-gradient(circle at 15% 20%, rgba(0, 255, 136, 0.06) 0%, transparent 40%),
-                radial-gradient(circle at 85% 80%, rgba(0, 212, 255, 0.06) 0%, transparent 40%),
-                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-            background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
-            color: var(--text-main);
-            font-family: 'Outfit', sans-serif;
+                radial-gradient(ellipse at 50% 0%, rgba(0, 184, 255, 0.04) 0%, transparent 60%),
+                linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+            background-size: 100% 100%, 28px 28px, 28px 28px;
+            color: var(--text-lead);
+            font-family: 'Outfit', -apple-system, sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
         }
 
+        /* Top Cockpit Telemetry Bar */
         header {
-            background: rgba(10, 13, 20, 0.85);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border-card);
-            padding: 10px 20px;
+            background: rgba(11, 15, 23, 0.95);
+            border-bottom: 1px solid var(--border-highlight);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            padding: 8px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -61,7 +79,7 @@
             top: 0;
             z-index: 100;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px;
         }
 
         .brand-container {
@@ -70,130 +88,223 @@
             gap: 12px;
         }
 
-        .brand-icon {
+        .brand-emblem {
             width: 36px;
             height: 36px;
-            background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
-            border-radius: 10px;
+            background: linear-gradient(135deg, #0e141f, #161e2d);
+            border: 1px solid var(--tactical-emerald);
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
-            box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+            box-shadow: 0 0 12px var(--emerald-glow), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            color: var(--tactical-emerald);
         }
 
         .brand-title h1 {
-            font-size: 1.05rem;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            background: linear-gradient(90deg, #fff, #9ca3af);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-family: 'Chakra Petch', 'Syne', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: #ffffff;
+            line-height: 1.1;
         }
 
         .brand-title p {
-            font-size: 0.72rem;
-            color: var(--neon-green);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.68rem;
+            color: var(--tactical-emerald);
             font-weight: 600;
+            letter-spacing: 0.5px;
             display: flex;
             align-items: center;
             gap: 6px;
+            margin-top: 2px;
         }
 
         .brand-title p::before {
             content: '';
             width: 6px;
             height: 6px;
-            border-radius: 50%;
-            background: var(--neon-green);
-            box-shadow: 0 0 8px var(--neon-green);
+            background: var(--tactical-emerald);
+            box-shadow: 0 0 8px var(--tactical-emerald);
             display: inline-block;
+            animation: pulseLed 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseLed {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.85); }
+        }
+
+        .header-center-telemetry {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-chassis);
+            border-radius: 4px;
+            padding: 4px 12px;
+        }
+
+        .service-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-body);
+        }
+
+        .service-pill .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--tactical-emerald);
+            box-shadow: 0 0 8px var(--tactical-emerald);
         }
 
         .author-badge {
             display: flex;
             align-items: center;
             gap: 10px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--border-card);
-            padding: 5px 12px;
-            border-radius: 9999px;
+            background: #0f141f;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 5px 14px;
+            border-radius: 4px;
             font-size: 0.8rem;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
         }
 
         .author-badge .student-name {
             font-weight: 700;
-            color: #fff;
+            color: #ffffff;
+            letter-spacing: 0.3px;
         }
 
         .author-badge .student-nim {
             font-family: 'JetBrains Mono', monospace;
-            color: var(--neon-cyan);
-            font-size: 0.75rem;
+            color: var(--cyber-cyan);
+            font-size: 0.76rem;
+            font-weight: 600;
+        }
+
+        .author-badge .student-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--solar-amber);
+            border-left: 1px solid rgba(255, 255, 255, 0.15);
+            padding-left: 8px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-sound-toggle {
+            background: #141a27;
+            color: var(--text-lead);
+            border: 1px solid var(--border-highlight);
+            border-bottom: 2px solid #080b11;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-sound-toggle:hover {
+            border-color: var(--tactical-emerald);
+            color: var(--tactical-emerald);
         }
 
         .swagger-links {
             display: flex;
-            gap: 8px;
+            gap: 6px;
         }
 
         .btn-docs {
-            background: rgba(0, 212, 255, 0.1);
-            color: var(--neon-cyan);
-            border: 1px solid rgba(0, 212, 255, 0.25);
+            background: #141a27;
+            color: var(--cyber-cyan);
+            border: 1px solid rgba(0, 184, 255, 0.3);
+            border-bottom: 2px solid #080b11;
             padding: 5px 10px;
-            border-radius: 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 0.72rem;
             font-weight: 600;
             text-decoration: none;
             display: flex;
             align-items: center;
             gap: 5px;
-            transition: all 0.2s ease;
+            transition: all 0.15s ease;
         }
 
         .btn-docs:hover {
-            background: rgba(0, 212, 255, 0.2);
-            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
-            transform: translateY(-1px);
+            background: rgba(0, 184, 255, 0.15);
+            border-color: var(--cyber-cyan);
+            box-shadow: 0 0 10px var(--cyan-glow);
         }
 
+        /* 3-Column Chassis Console Grid */
         .app-container {
             display: grid;
-            grid-template-columns: 310px 1fr 380px;
+            grid-template-columns: 320px 1fr 390px;
             gap: 16px;
             padding: 16px;
             flex: 1;
-            max-width: 1700px;
+            max-width: 1750px;
             margin: 0 auto;
             width: 100%;
         }
 
-        .panel-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-card);
-            border-radius: 16px;
+        /* Tactile Hardware Chassis Panels */
+        .chassis-panel {
+            background: var(--bg-chassis);
+            border: 1px solid var(--border-chassis);
+            border-top: 1px solid var(--border-highlight);
+            border-radius: 6px;
             padding: 16px;
-            backdrop-filter: blur(16px);
             display: flex;
             flex-direction: column;
             gap: 14px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            position: relative;
         }
 
-        .panel-title {
-            font-size: 0.9rem;
+        .module-header {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 0.82rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: #fff;
+            letter-spacing: 1px;
+            color: #ffffff;
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding-bottom: 8px;
-            border-bottom: 1px solid var(--border-card);
+            border-bottom: 1px solid var(--border-chassis);
         }
 
+        .module-index {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--tactical-emerald);
+            background: rgba(0, 229, 117, 0.1);
+            padding: 1px 6px;
+            border-radius: 3px;
+            border: 1px solid rgba(0, 229, 117, 0.2);
+        }
+
+        /* Form Inputs */
         .input-group {
             display: flex;
             flex-direction: column;
@@ -201,35 +312,40 @@
         }
 
         .input-group label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             font-weight: 600;
         }
 
         .input-text {
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid var(--border-card);
-            border-radius: 8px;
+            background: var(--bg-inset);
+            border: 1px solid var(--border-chassis);
+            border-radius: 4px;
             padding: 9px 12px;
-            color: #fff;
-            font-family: 'Outfit', sans-serif;
+            color: #ffffff;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 0.85rem;
             outline: none;
             transition: all 0.2s;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
         }
 
         .input-text:focus {
-            border-color: var(--neon-green);
-            box-shadow: 0 0 10px rgba(0, 255, 136, 0.25);
+            border-color: var(--tactical-emerald);
+            box-shadow: 0 0 10px var(--emerald-glow), inset 0 2px 4px rgba(0, 0, 0, 0.5);
         }
 
         .input-text:disabled {
-            background: rgba(0, 0, 0, 0.6);
-            border-color: rgba(255, 255, 255, 0.05);
-            color: var(--text-muted);
+            background: #090c13;
+            border-color: rgba(255, 255, 255, 0.04);
+            color: var(--text-dim);
             cursor: not-allowed;
         }
 
+        /* Class Selector Cards */
         .class-selector {
             display: flex;
             flex-direction: column;
@@ -237,29 +353,32 @@
         }
 
         .class-card {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border-card);
-            border-radius: 10px;
-            padding: 10px;
+            background: #0e131d;
+            border: 1px solid var(--border-chassis);
+            border-left: 3px solid transparent;
+            border-radius: 4px;
+            padding: 10px 12px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.15s ease;
             position: relative;
         }
 
         .class-card:hover {
-            border-color: rgba(255, 255, 255, 0.2);
+            border-color: var(--border-highlight);
+            background: #131926;
         }
 
         .class-card.selected {
-            border-color: var(--card-accent, var(--neon-green));
-            background: rgba(255, 255, 255, 0.05);
-            box-shadow: 0 0 14px rgba(0, 255, 136, 0.15);
+            background: #141c2a;
+            border-left-color: var(--class-accent, var(--tactical-emerald));
+            border-color: rgba(255, 255, 255, 0.16);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
         }
 
         .class-card.locked {
-            opacity: 0.55;
+            opacity: 0.5;
             cursor: not-allowed;
-            filter: grayscale(0.2);
+            filter: grayscale(0.4);
         }
 
         .class-header {
@@ -270,94 +389,112 @@
         }
 
         .class-name {
+            font-family: 'Chakra Petch', sans-serif;
             font-weight: 700;
-            font-size: 0.85rem;
+            font-size: 0.88rem;
             display: flex;
             align-items: center;
             gap: 6px;
+            color: #ffffff;
+            letter-spacing: 0.5px;
         }
 
         .class-badge {
-            font-size: 0.65rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.62rem;
             padding: 2px 6px;
-            border-radius: 999px;
-            font-weight: 600;
+            border-radius: 3px;
+            font-weight: 700;
             text-transform: uppercase;
+            letter-spacing: 0.4px;
         }
 
         .class-desc {
             font-size: 0.72rem;
-            color: var(--text-muted);
-            line-height: 1.35;
+            color: var(--text-body);
+            line-height: 1.4;
         }
 
-        .class-viper { --card-accent: var(--neon-green); }
-        .class-viper .class-badge { background: rgba(0, 255, 136, 0.15); color: var(--neon-green); }
+        .class-viper { --class-accent: var(--tactical-emerald); }
+        .class-viper .class-badge { background: rgba(0, 229, 117, 0.15); color: var(--tactical-emerald); border: 1px solid rgba(0, 229, 117, 0.3); }
 
-        .class-python { --card-accent: var(--neon-cyan); }
-        .class-python .class-badge { background: rgba(0, 212, 255, 0.15); color: var(--neon-cyan); }
+        .class-python { --class-accent: var(--cyber-cyan); }
+        .class-python .class-badge { background: rgba(0, 184, 255, 0.15); color: var(--cyber-cyan); border: 1px solid rgba(0, 184, 255, 0.3); }
 
-        .class-cobra { --card-accent: var(--neon-gold); }
-        .class-cobra .class-badge { background: rgba(255, 215, 0, 0.15); color: var(--neon-gold); }
+        .class-cobra { --class-accent: var(--solar-amber); }
+        .class-cobra .class-badge { background: rgba(245, 158, 11, 0.15); color: var(--solar-amber); border: 1px solid rgba(245, 158, 11, 0.3); }
 
+        /* Tactile Mechanical Action Buttons */
         .api-actions {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 7px;
         }
 
         .action-btn {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--border-card);
-            color: #fff;
+            background: #121824;
+            border: 1px solid var(--border-highlight);
+            border-bottom: 3px solid #080b11;
+            color: #ffffff;
             padding: 8px 12px;
-            border-radius: 8px;
-            font-family: 'Outfit', sans-serif;
+            border-radius: 4px;
+            font-family: 'Chakra Petch', 'Outfit', sans-serif;
             font-size: 0.78rem;
             font-weight: 600;
+            letter-spacing: 0.3px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            transition: all 0.2s ease;
+            transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
         .action-btn:hover:not(:disabled) {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.2);
-            transform: translateX(2px);
+            background: #172030;
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .action-btn:active:not(:disabled) {
+            transform: translateY(2px);
+            border-bottom-width: 1px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
         }
 
         .action-btn:disabled {
-            opacity: 0.45;
+            opacity: 0.4;
             cursor: not-allowed;
+            border-bottom-width: 1px;
         }
 
         .method-tag {
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.65rem;
-            font-weight: 700;
-            padding: 2px 5px;
-            border-radius: 4px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 3px;
+            letter-spacing: 0.5px;
         }
 
-        .tag-get { background: rgba(56, 189, 248, 0.15); color: var(--method-get); }
-        .tag-post { background: rgba(34, 197, 94, 0.15); color: var(--method-post); }
-        .tag-put { background: rgba(245, 158, 11, 0.15); color: var(--method-put); }
-        .tag-patch { background: rgba(139, 92, 246, 0.15); color: var(--method-patch); }
-        .tag-delete { background: rgba(239, 68, 68, 0.15); color: var(--method-delete); }
+        .tag-get { background: rgba(56, 189, 248, 0.15); color: var(--method-get); border: 1px solid rgba(56, 189, 248, 0.3); }
+        .tag-post { background: rgba(0, 229, 117, 0.15); color: var(--method-post); border: 1px solid rgba(0, 229, 117, 0.3); }
+        .tag-put { background: rgba(245, 158, 11, 0.15); color: var(--method-put); border: 1px solid rgba(245, 158, 11, 0.3); }
+        .tag-patch { background: rgba(192, 132, 252, 0.15); color: var(--method-patch); border: 1px solid rgba(192, 132, 252, 0.3); }
+        .tag-delete { background: rgba(255, 51, 85, 0.15); color: var(--method-delete); border: 1px solid rgba(255, 51, 85, 0.3); }
 
+        /* Version Switcher */
         .version-switcher {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
+            background: var(--bg-inset);
+            border-radius: 4px;
             padding: 8px;
-            border: 1px dashed rgba(255, 255, 255, 0.12);
+            border: 1px solid var(--border-chassis);
         }
 
         .version-header {
-            font-size: 0.72rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
             font-weight: 700;
-            color: var(--neon-purple);
+            color: var(--arcane-purple);
             margin-bottom: 6px;
             display: flex;
             align-items: center;
@@ -372,41 +509,57 @@
 
         .btn-ver {
             padding: 5px 8px;
-            border-radius: 6px;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 0.72rem;
             font-weight: 600;
-            border: 1px solid var(--border-card);
-            background: rgba(255, 255, 255, 0.03);
-            color: var(--text-muted);
+            border: 1px solid var(--border-chassis);
+            border-bottom: 2px solid #080b11;
+            background: #111722;
+            color: var(--text-dim);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.15s;
         }
 
         .btn-ver.active {
-            background: var(--neon-purple);
-            color: #fff;
-            border-color: var(--neon-purple);
-            box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+            background: var(--arcane-purple);
+            color: #ffffff;
+            border-color: var(--arcane-purple);
+            box-shadow: 0 0 10px rgba(157, 78, 221, 0.4);
+        }
+
+        .btn-ver:active {
+            transform: translateY(1px);
+            border-bottom-width: 1px;
         }
 
         .btn-test-break {
             margin-top: 6px;
             width: 100%;
-            background: rgba(239, 68, 68, 0.15);
-            color: var(--neon-red);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            padding: 5px;
-            border-radius: 6px;
+            background: rgba(255, 51, 85, 0.1);
+            color: var(--crimson-hazard);
+            border: 1px solid rgba(255, 51, 85, 0.3);
+            border-bottom: 2px solid #0a0305;
+            padding: 6px;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 0.7rem;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.15s;
         }
 
         .btn-test-break:hover {
-            background: rgba(239, 68, 68, 0.25);
+            background: rgba(255, 51, 85, 0.2);
+            border-color: var(--crimson-hazard);
         }
 
+        .btn-test-break:active {
+            transform: translateY(1px);
+            border-bottom-width: 1px;
+        }
+
+        /* Center Column: Arena HUD & Canvas */
         .arena-container {
             display: flex;
             flex-direction: column;
@@ -419,42 +572,87 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: var(--bg-card);
-            border: 1px solid var(--border-card);
-            border-radius: 12px;
-            padding: 8px 16px;
+            background: var(--bg-chassis);
+            border: 1px solid var(--border-chassis);
+            border-top: 1px solid var(--border-highlight);
+            border-radius: 6px;
+            padding: 10px 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
         }
 
         .hud-stat {
             display: flex;
             flex-direction: column;
             align-items: center;
+            position: relative;
+        }
+
+        .hud-stat:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            right: -16px;
+            top: 20%;
+            height: 60%;
+            width: 1px;
+            background: rgba(255, 255, 255, 0.08);
         }
 
         .hud-label {
+            font-family: 'JetBrains Mono', monospace;
             font-size: 0.62rem;
             text-transform: uppercase;
-            color: var(--text-muted);
-            letter-spacing: 0.5px;
+            color: var(--text-dim);
+            letter-spacing: 0.8px;
+            font-weight: 700;
         }
 
         .hud-val {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-top: 2px;
         }
 
-        .canvas-wrapper {
+        /* Canvas Enclosure */
+        .canvas-enclosure {
             position: relative;
-            border-radius: 16px;
-            overflow: hidden;
-            border: 2px solid rgba(0, 255, 136, 0.25);
-            box-shadow: 0 0 30px rgba(0, 255, 136, 0.12);
-            background: #06090e;
+            background: #05070b;
+            border: 2px solid #161f30;
+            border-radius: 6px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), inset 0 0 40px rgba(0, 0, 0, 0.9);
             width: 100%;
             max-width: 600px;
             aspect-ratio: 1 / 1;
+            overflow: hidden;
+        }
+
+        .caliper-corner {
+            position: absolute;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.62rem;
+            color: rgba(255, 255, 255, 0.25);
+            pointer-events: none;
+            z-index: 5;
+            user-select: none;
+        }
+        .caliper-tl { top: 6px; left: 8px; }
+        .caliper-tr { top: 6px; right: 8px; }
+        .caliper-bl { bottom: 6px; left: 8px; }
+        .caliper-br { bottom: 6px; right: 8px; }
+
+        .scanlines {
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.12) 0px,
+                rgba(0, 0, 0, 0.12) 1px,
+                transparent 1px,
+                transparent 3px
+            );
+            pointer-events: none;
+            z-index: 6;
         }
 
         canvas {
@@ -463,18 +661,18 @@
             display: block;
         }
 
-        /* Overlay Modal */
+        /* Game Overlay Screen */
         .game-overlay {
             position: absolute;
             inset: 0;
-            background: rgba(6, 9, 14, 0.92);
-            backdrop-filter: blur(10px);
+            background: rgba(6, 9, 14, 0.94);
+            backdrop-filter: blur(8px);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            z-index: 10;
+            gap: 14px;
+            z-index: 20;
             padding: 24px;
             text-align: center;
         }
@@ -484,14 +682,16 @@
         }
 
         .game-overlay h2 {
-            font-size: 1.5rem;
-            font-weight: 800;
-            letter-spacing: -0.5px;
+            font-family: 'Chakra Petch', 'Syne', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
 
         .overlay-form {
             width: 100%;
-            max-width: 360px;
+            max-width: 370px;
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -499,38 +699,41 @@
         }
 
         .overlay-input-label {
-            font-size: 0.75rem;
-            color: var(--neon-cyan);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--cyber-cyan);
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.6px;
         }
 
         .overlay-input {
-            background: rgba(0, 0, 0, 0.6);
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            border-radius: 8px;
+            background: #080c14;
+            border: 1px solid rgba(0, 184, 255, 0.3);
+            border-radius: 4px;
             padding: 10px 14px;
-            color: #fff;
-            font-family: 'Outfit', sans-serif;
+            color: #ffffff;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 0.9rem;
             outline: none;
             transition: all 0.2s;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
         }
 
         .overlay-input:focus {
-            border-color: var(--neon-green);
-            box-shadow: 0 0 12px rgba(0, 255, 136, 0.3);
+            border-color: var(--tactical-emerald);
+            box-shadow: 0 0 12px var(--emerald-glow), inset 0 2px 4px rgba(0, 0, 0, 0.6);
         }
 
         .overlay-input.error {
-            border-color: var(--neon-red);
-            box-shadow: 0 0 12px rgba(255, 51, 102, 0.4);
+            border-color: var(--crimson-hazard);
+            box-shadow: 0 0 12px var(--hazard-glow);
         }
 
         .validation-msg {
-            color: var(--neon-red);
-            font-size: 0.72rem;
+            color: var(--crimson-hazard);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
             font-weight: 600;
             display: none;
         }
@@ -542,59 +745,114 @@
         }
 
         .overlay-class-opt {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border-card);
-            border-radius: 8px;
+            background: #0f1420;
+            border: 1px solid var(--border-chassis);
+            border-radius: 4px;
             padding: 8px 4px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.15s;
         }
 
         .overlay-class-opt:hover {
-            border-color: rgba(255, 255, 255, 0.2);
+            border-color: var(--border-highlight);
+            background: #141b2b;
         }
 
         .overlay-class-opt.active {
-            border-color: var(--opt-color, var(--neon-green));
-            background: rgba(255, 255, 255, 0.08);
-            box-shadow: 0 0 10px rgba(0, 255, 136, 0.25);
+            border-color: var(--opt-color, var(--tactical-emerald));
+            background: #182236;
+            box-shadow: 0 0 10px rgba(0, 229, 117, 0.2);
         }
 
         .overlay-class-opt .opt-title {
+            font-family: 'Chakra Petch', sans-serif;
             font-size: 0.8rem;
             font-weight: 700;
-            color: #fff;
+            color: #ffffff;
             display: block;
         }
 
         .overlay-class-opt .opt-sub {
-            font-size: 0.65rem;
-            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.62rem;
+            color: var(--text-dim);
             display: block;
+            margin-top: 2px;
         }
 
-        .btn-start {
-            background: linear-gradient(135deg, var(--neon-green), #00b359);
-            color: #000;
-            font-weight: 800;
-            padding: 12px 28px;
-            border-radius: 10px;
+        /* High-Impact Deploy Button */
+        .btn-deploy {
+            background: var(--tactical-emerald);
+            color: #06090f;
+            font-family: 'Chakra Petch', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 12px 24px;
+            border-radius: 4px;
             border: none;
-            font-size: 0.95rem;
+            border-bottom: 3px solid #00994d;
             cursor: pointer;
-            box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
-            transition: all 0.2s ease;
-            margin-top: 4px;
+            box-shadow: 0 0 20px var(--emerald-glow);
+            transition: all 0.1s ease;
+            margin-top: 6px;
             width: 100%;
         }
 
-        .btn-start:hover {
-            transform: scale(1.02);
-            box-shadow: 0 0 30px rgba(0, 255, 136, 0.7);
+        .btn-deploy:hover {
+            background: #12f584;
+            box-shadow: 0 0 28px rgba(0, 229, 117, 0.4);
         }
 
-        /* Mobile Controls */
+        .btn-deploy:active {
+            transform: translateY(2px);
+            border-bottom-width: 1px;
+        }
+
+        /* Apple Legend Bar */
+        .apple-legend-bar {
+            display: flex;
+            gap: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            align-items: center;
+            background: var(--bg-chassis);
+            padding: 5px 16px;
+            border-radius: 4px;
+            border: 1px solid var(--border-chassis);
+        }
+
+        /* Controls Hint Bar */
+        .controls-hint-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            background: var(--bg-chassis);
+            border: 1px solid var(--border-chassis);
+            border-radius: 4px;
+            padding: 6px 16px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+
+        kbd {
+            background: #161e2e;
+            color: var(--cyber-cyan);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-bottom: 2px solid #0a0d14;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+        }
+
+        /* Mobile Touch Controls */
         .touch-controls {
             display: none;
             gap: 20px;
@@ -613,51 +871,103 @@
         }
 
         .d-btn {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--border-card);
-            border-radius: 10px;
-            color: #fff;
+            background: #141a27;
+            border: 1px solid var(--border-highlight);
+            border-bottom: 3px solid #080b11;
+            border-radius: 4px;
+            color: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             user-select: none;
-            -webkit-user-select: none;
         }
 
         .d-btn:active {
-            background: rgba(0, 255, 136, 0.35);
+            transform: translateY(2px);
+            border-bottom-width: 1px;
+            background: var(--emerald-glow);
         }
 
         .btn-skill-touch {
-            width: 80px;
-            height: 80px;
+            width: 76px;
+            height: 76px;
             border-radius: 50%;
-            background: radial-gradient(circle, var(--neon-purple), #6b21a8);
-            border: 2px solid rgba(255, 255, 255, 0.25);
-            color: #fff;
+            background: radial-gradient(circle, var(--arcane-purple), #581c87);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: #ffffff;
+            font-family: 'Chakra Petch', sans-serif;
             font-weight: 800;
-            font-size: 0.8rem;
+            font-size: 0.82rem;
             cursor: pointer;
-            box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+            box-shadow: 0 0 20px rgba(157, 78, 221, 0.5);
         }
 
-        .inspector-panel {
+        .btn-skill-touch:active {
+            transform: scale(0.95);
+        }
+
+        /* Right Column: Telemetry & REST Terminal */
+        .terminal-panel {
             height: 100%;
             display: flex;
             flex-direction: column;
             gap: 12px;
         }
 
-        .inspector-badge {
-            background: rgba(0, 255, 136, 0.1);
-            color: var(--neon-green);
+        .terminal-badge {
+            background: rgba(0, 229, 117, 0.1);
+            color: var(--tactical-emerald);
+            font-family: 'JetBrains Mono', monospace;
             font-size: 0.65rem;
             padding: 2px 8px;
-            border-radius: 999px;
+            border-radius: 3px;
+            border: 1px solid rgba(0, 229, 117, 0.25);
             font-weight: 700;
         }
 
+        .leaderboard-box {
+            background: var(--bg-inset);
+            border-radius: 4px;
+            padding: 10px;
+            border: 1px solid var(--border-chassis);
+        }
+
+        .lb-header {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .leaderboard-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .lb-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 10px;
+            background: #0f1420;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            border-left: 2px solid transparent;
+        }
+
+        .lb-item.user-snake {
+            border-left-color: var(--tactical-emerald);
+            background: #141f2e;
+            box-shadow: inset 0 0 12px rgba(0, 229, 117, 0.08);
+        }
+
+        /* Real-Time Log Feed */
         .api-logs {
             flex: 1;
             overflow-y: auto;
@@ -674,24 +984,24 @@
 
         .api-logs::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
+            border-radius: 3px;
         }
 
         .log-entry {
-            background: rgba(0, 0, 0, 0.35);
-            border: 1px solid var(--border-card);
-            border-radius: 8px;
+            background: var(--bg-inset);
+            border: 1px solid var(--border-chassis);
+            border-radius: 3px;
             padding: 8px;
             display: flex;
             flex-direction: column;
             gap: 4px;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
-            animation: slideIn 0.25s ease-out;
+            font-size: 0.68rem;
+            animation: slideIn 0.2s ease-out;
         }
 
         @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-8px); }
+            from { opacity: 0; transform: translateY(-6px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
@@ -708,51 +1018,33 @@
         }
 
         .log-status {
-            font-weight: 700;
+            font-weight: 800;
             padding: 1px 5px;
-            border-radius: 4px;
+            border-radius: 3px;
         }
 
         .status-200, .status-201, .status-204 {
-            background: rgba(34, 197, 94, 0.2);
-            color: #4ade80;
+            background: rgba(0, 229, 117, 0.15);
+            color: var(--tactical-emerald);
+            border: 1px solid rgba(0, 229, 117, 0.3);
         }
 
         .status-400, .status-404, .status-500 {
-            background: rgba(239, 68, 68, 0.2);
-            color: #f87171;
+            background: rgba(255, 51, 85, 0.15);
+            color: var(--crimson-hazard);
+            border: 1px solid rgba(255, 51, 85, 0.3);
         }
 
         .log-json {
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 4px;
+            background: #05070a;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
             padding: 6px;
             color: #94a3b8;
-            font-size: 0.65rem;
+            font-size: 0.64rem;
             white-space: pre-wrap;
             max-height: 80px;
             overflow-y: auto;
-        }
-
-        .leaderboard-list {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .lb-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 5px 8px;
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 6px;
-            font-size: 0.72rem;
-        }
-
-        .lb-item.user-snake {
-            border-left: 3px solid var(--neon-green);
-            background: rgba(0, 255, 136, 0.06);
         }
 
         @media (max-width: 1100px) {
@@ -767,92 +1059,119 @@
 </head>
 <body>
 
+    <!-- Cockpit Telemetry Banner -->
     <header>
         <div class="brand-container">
-            <div class="brand-icon">🐍</div>
+            <div class="brand-emblem">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2c-4 0-8 3.5-8 8 0 3 2 5.5 5 6.5L7 21l3-1 2 2 2-2 3 1-2-4.5c3-1 5-3.5 5-6.5 0-4.5-4-8-8-8z"/>
+                    <circle cx="9" cy="9" r="1.2" fill="currentColor"/>
+                    <circle cx="15" cy="9" r="1.2" fill="currentColor"/>
+                </svg>
+            </div>
             <div class="brand-title">
                 <h1>SNAKE ARENA: CLASH OF SERPENTS</h1>
-                <p>Enterprise Distributed Microservices Architecture</p>
+                <p>ENTERPRISE DISTRIBUTED MICROSERVICES</p>
+            </div>
+        </div>
+
+        <div class="header-center-telemetry">
+            <div class="service-pill">
+                <span class="dot"></span>
+                <span>ARENA :8082 [LIVE]</span>
+            </div>
+            <span style="color:rgba(255,255,255,0.15)">|</span>
+            <div class="service-pill">
+                <span class="dot"></span>
+                <span>PLAYER :8081 [LIVE]</span>
             </div>
         </div>
 
         <div class="author-badge">
             <span class="student-name">Valentinus Marvel</span>
             <span class="student-nim">245150201111027</span>
+            <span class="student-tag">ABL-2024</span>
         </div>
 
-        <div class="swagger-links">
-            <a id="linkSwaggerPlayer" href="#" target="_blank" class="btn-docs">
-                <span>📘 Player API (8081)</span>
-            </a>
-            <a id="linkSwaggerArena" href="#" target="_blank" class="btn-docs">
-                <span>⚔️ Arena API (8082)</span>
-            </a>
+        <div class="header-actions">
+            <button id="btnSoundToggle" class="btn-sound-toggle" onclick="toggleSound()">
+                <span id="soundText">SFX: [ON]</span>
+            </button>
+            <div class="swagger-links">
+                <a id="linkSwaggerPlayer" href="#" target="_blank" class="btn-docs">
+                    <span>[DOCS] PLAYER API</span>
+                </a>
+                <a id="linkSwaggerArena" href="#" target="_blank" class="btn-docs">
+                    <span>[DOCS] ARENA API</span>
+                </a>
+            </div>
         </div>
     </header>
 
+    <!-- Main 3-Column Console Interface -->
     <div class="app-container">
 
         <!-- Left Column: Controls & API Operations -->
-        <div class="panel-card">
-            <div class="panel-title">
-                <span>Konfigurasi Pemain</span>
-                <span id="playerBadge" style="font-size:0.7rem; color:var(--text-muted)">LOBBY</span>
+        <div class="chassis-panel">
+            <div class="module-header">
+                <span>[01] SYSTEM CONFIG & PROFILE</span>
+                <span class="module-index" id="playerBadge">LOBBY</span>
             </div>
 
             <div class="input-group">
-                <label for="inputPlayerName">Nama Pemain Aktif:</label>
-                <input type="text" id="inputPlayerName" class="input-text" placeholder="Wajib diisi di dialog start..." disabled>
+                <label for="inputPlayerName">PILOT CALLSIGN:</label>
+                <input type="text" id="inputPlayerName" class="input-text" placeholder="Daftar melalui Start Dialog..." disabled>
             </div>
 
-            <div class="panel-title" style="margin-top:2px;">
-                <span>Kelas Ular</span>
-                <span id="classLockNotice" style="font-size:0.65rem; color:var(--neon-cyan)">Pilih di Start Dialog</span>
+            <div class="module-header" style="margin-top:2px;">
+                <span>SERPENT CHASSIS CLASS</span>
+                <span id="classLockNotice" style="font-size:0.65rem; color:var(--cyber-cyan); font-family:'JetBrains Mono';">PILIH DI DIALOG</span>
             </div>
 
             <div class="class-selector" id="sidebarClassSelector">
-                <div class="class-card class-viper selected" data-class="VIPER" onclick="selectSidebarClass('VIPER', '#00ff88', true)">
+                <div class="class-card class-viper selected" data-class="VIPER" onclick="selectSidebarClass('VIPER', '#00e575', true)">
                     <div class="class-header">
-                        <span class="class-name">⚡ Viper</span>
-                        <span class="class-badge">Agile</span>
+                        <span class="class-name">◈ VIPER</span>
+                        <span class="class-badge">AGILE RECON</span>
                     </div>
-                    <p class="class-desc">Passive: Poison Trail. Kecepatan dasar tinggi (+20%). Cocok untuk memotong jalur musuh secara agresif.</p>
+                    <p class="class-desc">Passive: Poison Trail. Kecepatan akselerasi +20%. Optimal untuk memotong trajektori lawan secara agresif.</p>
                 </div>
 
-                <div class="class-card class-python" data-class="PYTHON" onclick="selectSidebarClass('PYTHON', '#00d4ff', true)">
+                <div class="class-card class-python" data-class="PYTHON" onclick="selectSidebarClass('PYTHON', '#00b8ff', true)">
                     <div class="class-header">
-                        <span class="class-name">🛡️ Python</span>
-                        <span class="class-badge">Tank</span>
+                        <span class="class-name">◈ PYTHON</span>
+                        <span class="class-badge">HEAVY CHASSIS</span>
                     </div>
-                    <p class="class-desc">Passive: Thick Scales. Tahan benturan tubuh lawan saat skill aktif shield menyala.</p>
+                    <p class="class-desc">Passive: Thick Scales. Menyerap impak benturan tubuh lawan saat kemampuan forcefield aktif.</p>
                 </div>
 
-                <div class="class-card class-cobra" data-class="COBRA" onclick="selectSidebarClass('COBRA', '#ffd700', true)">
+                <div class="class-card class-cobra" data-class="COBRA" onclick="selectSidebarClass('COBRA', '#f59e0b', true)">
                     <div class="class-header">
-                        <span class="class-name">👑 Cobra</span>
-                        <span class="class-badge">Specialist</span>
+                        <span class="class-name">◈ COBRA</span>
+                        <span class="class-badge">RESOURCE SPEC</span>
                     </div>
-                    <p class="class-desc">Passive: Golden Touch. Memperoleh +30 poin ekstra dari setiap Golden Apple di arena.</p>
+                    <p class="class-desc">Passive: Golden Touch. Memperoleh +50 poin dari setiap Golden Apple di dalam arena.</p>
                 </div>
             </div>
 
+            <!-- Version Switcher Module -->
             <div class="version-switcher">
                 <div class="version-header">
-                    <span>API Versioning Demo</span>
-                    <span id="currentVerLabel">v1 (Active)</span>
+                    <span>API CONTRACT VERSIONING</span>
+                    <span id="currentVerLabel">v1 (Flat DTO)</span>
                 </div>
                 <div class="version-toggles">
-                    <button class="btn-ver active" id="btnV1" onclick="switchVersion('v1')">v1 (Flat DTO)</button>
+                    <button class="btn-ver active" id="btnV1" onclick="switchVersion('v1')">v1 (Flat)</button>
                     <button class="btn-ver" id="btnV2" onclick="switchVersion('v2')">v2 (ClassProfile)</button>
                 </div>
                 <button class="btn-test-break" onclick="triggerBreakingChangeTest()">
-                    💥 Test Breaking Change (Send v1 to v2)
+                    RUN BREAKING TEST (v1 ➔ v2)
                 </button>
             </div>
 
-            <div class="panel-title" style="margin-top:2px;">
-                <span>CRUD REST Operations</span>
-                <span id="registeredIdBadge" style="font-size:0.68rem; color:var(--neon-green); font-family:'JetBrains Mono';">No ID</span>
+            <div class="module-header" style="margin-top:2px;">
+                <span>CRUD REST OPERATIONS</span>
+                <span id="registeredIdBadge" style="font-size:0.68rem; color:var(--tactical-emerald); font-family:'JetBrains Mono';">NO ID</span>
             </div>
 
             <div class="api-actions">
@@ -879,85 +1198,92 @@
             </div>
         </div>
 
-        <!-- Center Column: Arena Canvas -->
+        <!-- Center Column: Arena HUD & Monitor Canvas -->
         <div class="arena-container">
             <div class="arena-hud">
                 <div class="hud-stat">
-                    <span class="hud-label">Player</span>
+                    <span class="hud-label">PILOT</span>
                     <span class="hud-val" id="hudPlayer" style="font-size:0.95rem; color:#cbd5e1;">(Belum Join)</span>
                 </div>
                 <div class="hud-stat">
-                    <span class="hud-label">Class</span>
-                    <span class="hud-val" id="hudClass" style="color:var(--neon-green)">VIPER</span>
+                    <span class="hud-label">CLASS</span>
+                    <span class="hud-val" id="hudClass" style="color:var(--tactical-emerald)">VIPER</span>
                 </div>
                 <div class="hud-stat">
-                    <span class="hud-label">Skill</span>
-                    <span class="hud-val" id="hudSkillStatus" style="color:var(--neon-green); font-size:0.85rem; font-weight:700;">⚡ READY</span>
+                    <span class="hud-label">ABILITY</span>
+                    <span class="hud-val" id="hudSkillStatus" style="color:var(--tactical-emerald); font-size:0.85rem; font-weight:700;">[READY]</span>
                 </div>
                 <div class="hud-stat">
-                    <span class="hud-label">Skor</span>
+                    <span class="hud-label">SCORE</span>
                     <span class="hud-val" id="hudScore">0</span>
                 </div>
                 <div class="hud-stat">
-                    <span class="hud-label">Arena Players</span>
-                    <span class="hud-val" id="hudPlayersCount" style="color:var(--neon-cyan)">0 / 16</span>
+                    <span class="hud-label">ARENA LOAD</span>
+                    <span class="hud-val" id="hudPlayersCount" style="color:var(--cyber-cyan)">0 / 16</span>
                 </div>
             </div>
 
-            <!-- Legend Makanan Apel -->
-            <div style="display:flex; gap:16px; font-size:0.75rem; align-items:center; background:rgba(255,255,255,0.03); padding:4px 14px; border-radius:999px; border:1px solid var(--border-card);">
-                <span style="display:flex; align-items:center; gap:5px; color:#ff4d79;">
-                    <span style="width:10px; height:10px; border-radius:50%; background:#ff3366; display:inline-block; box-shadow:0 0 8px #ff3366;"></span>
+            <!-- Apple Legend Bar -->
+            <div class="apple-legend-bar">
+                <span style="display:flex; align-items:center; gap:6px; color:#ff4d79;">
+                    <span style="width:8px; height:8px; border-radius:50%; background:#ff3355; box-shadow:0 0 8px #ff3355;"></span>
                     <b>Apel Normal:</b> +10 pts
                 </span>
                 <span style="color:rgba(255,255,255,0.15)">|</span>
-                <span style="display:flex; align-items:center; gap:5px; color:#ffd700;">
-                    <span style="width:10px; height:10px; border-radius:50%; background:#ffd700; display:inline-block; box-shadow:0 0 10px #ffd700;"></span>
-                    <b>Apel Emas (★):</b> +30 pts <span style="font-size:0.68rem; color:#fde047;">(+50 Cobra)</span>
+                <span style="display:flex; align-items:center; gap:6px; color:#fbbf24;">
+                    <span style="width:8px; height:8px; border-radius:50%; background:#fbbf24; box-shadow:0 0 10px #fbbf24;"></span>
+                    <b>Golden Apple [CORE]:</b> +30 pts <span style="font-size:0.65rem; color:#fde047;">(+50 Cobra)</span>
                 </span>
             </div>
 
-            <div class="canvas-wrapper">
+            <!-- Physical Arcade Monitor Enclosure -->
+            <div class="canvas-enclosure" id="canvasEnclosure">
+                <span class="caliper-corner caliper-tl">┌ [00, 00]</span>
+                <span class="caliper-corner caliper-tr">[29, 00] ┐</span>
+                <span class="caliper-corner caliper-bl">└ [00, 29]</span>
+                <span class="caliper-corner caliper-br">[29, 29] ┘</span>
+                <div class="scanlines"></div>
+
                 <canvas id="gameCanvas" width="600" height="600"></canvas>
                 
-                <!-- Mandatory Start / Respawn Overlay Modal -->
+                <!-- Tactical Start / Respawn Screen -->
                 <div class="game-overlay" id="gameOverlay">
-                    <h2 id="overlayTitle">MASUK KE ARENA PERTANDINGAN</h2>
-                    <p id="overlaySubtitle" style="color:var(--text-muted); font-size:0.8rem; max-width:340px;">
-                        Lengkapi nickname dan tentukan kelas ularmu sebelum bertempur di arena!
+                    <h2 id="overlayTitle">SYSTEM DEPLOYMENT // ARENA COMBAT</h2>
+                    <p id="overlaySubtitle" style="color:var(--text-body); font-size:0.8rem; max-width:340px; line-height:1.4;">
+                        Konfirmasi identitas callsign dan tentukan chassis serpent sebelum memulai deployment!
                     </p>
 
                     <div class="overlay-form">
-                        <label class="overlay-input-label" for="overlayPlayerName">Nama / Call Sign Pemain (Wajib):</label>
-                        <input type="text" id="overlayPlayerName" class="overlay-input" placeholder="Ketik nickname (contoh: ShadowViper, Ghost, Striker)..." maxlength="16" autofocus>
-                        <div class="validation-msg" id="nameValidationMsg">⚠️ Nickname wajib diisi sebelum masuk ke arena!</div>
+                        <label class="overlay-input-label" for="overlayPlayerName">PILOT CALLSIGN (WAJIB):</label>
+                        <input type="text" id="overlayPlayerName" class="overlay-input" placeholder="Ketik callsign unik..." maxlength="16" autofocus>
+                        <div class="validation-msg" id="nameValidationMsg">[ERR_REQUIRED] Callsign wajib diisi sebelum deployment!</div>
 
-                        <label class="overlay-input-label" style="margin-top:4px;">Pilih Tipe Kelas Ular (Wajib):</label>
+                        <label class="overlay-input-label" style="margin-top:4px;">PILIH SPESIFIKASI CHASSIS:</label>
                         <div class="overlay-classes">
-                            <div class="overlay-class-opt active" style="--opt-color:var(--neon-green);" onclick="selectOverlayClass('VIPER', '#00ff88', this)">
-                                <span class="opt-title" style="color:var(--neon-green)">⚡ Viper</span>
+                            <div class="overlay-class-opt active" style="--opt-color:var(--tactical-emerald);" onclick="selectOverlayClass('VIPER', '#00e575', this)">
+                                <span class="opt-title" style="color:var(--tactical-emerald)">◈ VIPER</span>
                                 <span class="opt-sub">Agile Speed</span>
                             </div>
-                            <div class="overlay-class-opt" style="--opt-color:var(--neon-cyan);" onclick="selectOverlayClass('PYTHON', '#00d4ff', this)">
-                                <span class="opt-title" style="color:var(--neon-cyan)">🛡️ Python</span>
+                            <div class="overlay-class-opt" style="--opt-color:var(--cyber-cyan);" onclick="selectOverlayClass('PYTHON', '#00b8ff', this)">
+                                <span class="opt-title" style="color:var(--cyber-cyan)">◈ PYTHON</span>
                                 <span class="opt-sub">Tank Armor</span>
                             </div>
-                            <div class="overlay-class-opt" style="--opt-color:var(--neon-gold);" onclick="selectOverlayClass('COBRA', '#ffd700', this)">
-                                <span class="opt-title" style="color:var(--neon-gold)">👑 Cobra</span>
+                            <div class="overlay-class-opt" style="--opt-color:var(--solar-amber);" onclick="selectOverlayClass('COBRA', '#f59e0b', this)">
+                                <span class="opt-title" style="color:var(--solar-amber)">◈ COBRA</span>
                                 <span class="opt-sub">Gold Touch</span>
                             </div>
                         </div>
 
-                        <button class="btn-start" onclick="validateAndStartGame()">MASUK KE ARENA</button>
+                        <button class="btn-deploy" onclick="validateAndStartGame()">DEPLOY KE ARENA</button>
                     </div>
                 </div>
             </div>
 
             <!-- Visual Control Guide for PC & Mobile -->
-            <div style="display:flex; justify-content:center; align-items:center; gap:12px; font-size:0.75rem; color:var(--text-muted); background:rgba(255,255,255,0.02); border:1px solid var(--border-card); border-radius:8px; padding:6px 14px; margin-top:6px; flex-wrap:wrap;">
-                <span>🎮 <b>Arah:</b> <kbd style="background:#1e293b; color:#38bdf8; padding:2px 6px; border-radius:4px; font-family:'JetBrains Mono';">W A S D</kbd> / <kbd style="background:#1e293b; color:#38bdf8; padding:2px 6px; border-radius:4px; font-family:'JetBrains Mono';">▲ ◀ ▼ ▶</kbd></span>
-                <span style="color:rgba(255,255,255,0.2)">|</span>
-                <span>⚡ <b>Aktifkan Skill:</b> <kbd style="background:#1e293b; color:var(--neon-green); padding:2px 8px; border-radius:4px; font-family:'JetBrains Mono'; font-weight:700;">SPASI</kbd> atau <kbd style="background:#1e293b; color:var(--neon-green); padding:2px 6px; border-radius:4px; font-family:'JetBrains Mono';">E</kbd> / <kbd style="background:#1e293b; color:var(--neon-green); padding:2px 6px; border-radius:4px; font-family:'JetBrains Mono';">F</kbd></span>
+            <div class="controls-hint-bar">
+                <span><b>NAVIGASI:</b> <kbd>W A S D</kbd> / <kbd>▲ ◀ ▼ ▶</kbd></span>
+                <span style="color:rgba(255,255,255,0.15)">|</span>
+                <span><b>OVERDRIVE:</b> <kbd>SPASI</kbd> / <kbd>E</kbd> / <kbd>F</kbd></span>
             </div>
 
             <div class="touch-controls">
@@ -973,28 +1299,28 @@
             </div>
         </div>
 
-        <!-- Right Column: Live REST API Inspector -->
-        <div class="panel-card inspector-panel">
-            <div class="panel-title">
-                <span>Live REST Inspector</span>
-                <span class="inspector-badge">Real-Time HTTP</span>
+        <!-- Right Column: Telemetry & REST Terminal -->
+        <div class="chassis-panel terminal-panel">
+            <div class="module-header">
+                <span>[03] TELEMETRY & LOGIC ANALYZER</span>
+                <span class="terminal-badge">LIVE 100ms</span>
             </div>
 
-            <div style="background:rgba(0,0,0,0.25); border-radius:8px; padding:10px; border:1px solid var(--border-card);">
-                <div style="font-size:0.72rem; color:var(--text-muted); font-weight:700; margin-bottom:6px; display:flex; justify-content:space-between;">
-                    <span>LIVE ARENA LEADERBOARD</span>
-                    <span style="color:var(--neon-cyan)">Maks: 16 Pemain</span>
+            <div class="leaderboard-box">
+                <div class="lb-header">
+                    <span>LIVE LEADERBOARD CLASSIFICATION</span>
+                    <span style="color:var(--cyber-cyan)">MAX: 16 PILOTS</span>
                 </div>
                 <div class="leaderboard-list" id="leaderboardContainer">
                     <div class="lb-item">
-                        <span>(Menunggu pertandingan dimulai...)</span>
+                        <span>(Menunggu deployment...)</span>
                     </div>
                 </div>
             </div>
 
-            <div class="panel-title" style="margin-top:4px;">
-                <span>HTTP Traffic Log</span>
-                <button onclick="clearLogs()" style="background:none; border:none; color:var(--text-muted); font-size:0.7rem; cursor:pointer;">Clear</button>
+            <div class="module-header" style="margin-top:2px;">
+                <span>REAL-TIME HTTP LOG FEED</span>
+                <button onclick="clearLogs()" style="background:none; border:none; color:var(--text-dim); font-family:'JetBrains Mono'; font-size:0.7rem; cursor:pointer;">[CLEAR]</button>
             </div>
 
             <div class="api-logs" id="apiLogs"></div>
@@ -1012,9 +1338,9 @@
 
         let currentVersion = "v1";
         let selectedClass = "VIPER";
-        let selectedColor = "#00ff88";
-        // Ensure each Chrome window / tab is an independent player!
-        // Combining window.name with sessionStorage guarantees unique player ID per window/tab
+        let selectedColor = "#00e575";
+        
+        // Multi-window / tab independence with Web Worker Heartbeat
         if (!window.name || !window.name.startsWith("WIN_")) {
             window.name = "WIN_" + Math.random().toString(36).substring(2, 9);
         }
@@ -1035,25 +1361,124 @@
 
         let arenaSnakes = [];
         let arenaApples = [];
+        let prevScore = 0;
 
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         const gridSize = 30;
         const tileSize = canvas.width / gridSize;
 
-        // Web Worker ticker & direct background heartbeat: 100% immune to Chrome tab/window throttling
+        // Web Audio API Micro-Synthesizer
+        let soundEnabled = true;
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume().catch(() => {});
+            }
+            return audioCtx;
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const textEl = document.getElementById("soundText");
+            if (soundEnabled) {
+                textEl.innerText = "SFX: [ON]";
+                playSfx('click');
+            } else {
+                textEl.innerText = "SFX: [OFF]";
+            }
+        }
+
+        function playSfx(type) {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const now = ctx.currentTime;
+
+                if (type === 'click') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(150, now + 0.04);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.04);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.045);
+                } else if (type === 'apple') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(587, now);
+                    osc.frequency.setValueAtTime(880, now + 0.06);
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.14);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === 'golden') {
+                    const freqs = [523, 659, 1046];
+                    freqs.forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+                        gain.gain.setValueAtTime(0.2, now + idx * 0.05);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.05 + 0.18);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + idx * 0.05);
+                        osc.stop(now + idx * 0.05 + 0.19);
+                    });
+                } else if (type === 'skill') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(260, now);
+                    osc.frequency.exponentialRampToValueAtTime(950, now + 0.18);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.22);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.23);
+                } else if (type === 'death') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(140, now);
+                    osc.frequency.exponentialRampToValueAtTime(35, now + 0.25);
+                    gain.gain.setValueAtTime(0.22, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.26);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.27);
+                }
+            } catch (e) {}
+        }
+
+        // Web Worker ticker & direct background heartbeat
         const workerBlob = new Blob([`
             let count = 0;
             let currentSnakeId = null;
             let arenaUrl = '';
 
-            // 1. Tick every 100ms for state polling
             setInterval(() => {
                 count++;
                 postMessage({ type: 'tick' });
 
-                // 2. Direct Web Worker heartbeat every 1500ms (15 ticks):
-                // Runs on a dedicated OS background thread, 100% immune to Chrome tab/window throttling!
                 if (count % 15 === 0 && currentSnakeId && arenaUrl) {
                     fetch(arenaUrl + '/api/v1/arena/snakes/' + currentSnakeId + '/heartbeat', {
                         method: 'PATCH',
@@ -1082,13 +1507,13 @@
         };
 
         function selectOverlayClass(className, color, el) {
-            if (gameRunning) return; // Locked while playing
+            if (gameRunning) return;
+            playSfx('click');
             selectedClass = className;
             selectedColor = color;
             document.querySelectorAll('.overlay-class-opt').forEach(opt => opt.classList.remove('active'));
             el.classList.add('active');
 
-            // Sync with sidebar cards
             document.querySelectorAll('#sidebarClassSelector .class-card').forEach(c => {
                 c.classList.toggle('selected', c.dataset.class === className);
             });
@@ -1097,24 +1522,24 @@
         }
 
         async function validateAndStartGame() {
+            playSfx('click');
             const input = document.getElementById("overlayPlayerName");
             const val = input.value.trim();
             const valMsg = document.getElementById("nameValidationMsg");
 
             if (!val) {
                 input.classList.add("error");
-                valMsg.innerText = "⚠️ Nickname wajib diisi sebelum masuk ke arena!";
+                valMsg.innerText = "[ERR_REQUIRED] Callsign wajib diisi sebelum deployment!";
                 valMsg.style.display = "block";
                 input.focus();
                 return;
             }
 
-            const startBtn = document.querySelector(".btn-start");
+            const startBtn = document.querySelector(".btn-deploy");
             const originalText = startBtn.innerText;
-            startBtn.innerText = "Memeriksa Nama & Masuk...";
+            startBtn.innerText = "CONNECTING LINK...";
             startBtn.disabled = true;
 
-            // Auto-register player profile in Player Service if not registered yet
             if (!registeredPlayerId) {
                 try {
                     const regPayload = { username: val, snakeType: selectedClass };
@@ -1126,7 +1551,6 @@
                 } catch (e) {}
             }
 
-            // Hubungi Arena Service untuk join / spawn ular
             const joinPayload = {
                 playerId: registeredPlayerId || playerId,
                 playerName: val,
@@ -1139,18 +1563,16 @@
             startBtn.disabled = false;
 
             if (!res.success) {
-                // Nama sudah digunakan oleh pemain lain atau input tidak valid
                 input.classList.add("error");
-                const errMsg = (res.data && res.data.detail) ? res.data.detail : `Nama '${val}' sudah digunakan oleh pemain lain di arena! Silakan pilih nama lain.`;
-                valMsg.innerText = `⚠️ ${errMsg}`;
+                const errMsg = (res.data && res.data.detail) ? res.data.detail : `Callsign '${val}' sudah aktif di arena. Silakan pilih callsign lain.`;
+                valMsg.innerText = `[ERR_DUPLICATE_CALLSIGN] ${errMsg}`;
                 valMsg.style.display = "block";
                 input.select();
                 input.focus();
-                alert(`⚠️ Peringatan Nama Duplikat:\n${errMsg}`);
+                alert(`[ERR_DUPLICATE_CALLSIGN]\n${errMsg}`);
                 return;
             }
 
-            // Berhasil join arena: Sembunyikan overlay dan mulai permainan
             input.classList.remove("error");
             valMsg.style.display = "none";
             playerName = val;
@@ -1162,6 +1584,7 @@
             document.getElementById("gameOverlay").classList.add("hidden");
             gameRunning = true;
             score = 0;
+            prevScore = 0;
             document.getElementById("hudScore").innerText = "0";
             lockInGameControls(true);
 
@@ -1180,16 +1603,14 @@
         }
 
         function lockInGameControls(locked) {
-            // Lock/Unlock name and class change
             document.getElementById("inputPlayerName").disabled = true;
-            document.getElementById("classLockNotice").innerText = locked ? "🔒 Terkunci saat Bermain" : "Pilih di Start Dialog";
-            document.getElementById("classLockNotice").style.color = locked ? "var(--neon-gold)" : "var(--text-muted)";
+            document.getElementById("classLockNotice").innerText = locked ? "TERKUNCI IN-GAME" : "PILIH DI DIALOG";
+            document.getElementById("classLockNotice").style.color = locked ? "var(--solar-amber)" : "var(--cyber-cyan)";
 
             document.querySelectorAll('#sidebarClassSelector .class-card').forEach(c => {
                 c.classList.toggle('locked', locked);
             });
 
-            // Dynamically update REST operation button labels based on Lobby vs In-Game state
             const elPost = document.getElementById("labelBtnPost");
             if (elPost) elPost.innerText = locked ? "Spawn Ular Baru" : "Daftar Akun (Lobby)";
 
@@ -1207,12 +1628,13 @@
         }
 
         function endGame(reason) {
+            playSfx('death');
             gameRunning = false;
             skillActive = false;
             skillActiveUntil = 0;
             skillCooldownUntil = 0;
             if (skillTimerInterval) { clearInterval(skillTimerInterval); skillTimerInterval = null; }
-            updateSkillStatusUi("⚡ READY", "var(--neon-green)");
+            updateSkillStatusUi("[READY]", "var(--tactical-emerald)");
             sessionStorage.removeItem("activeSnakeId");
             if (backgroundWorker) {
                 backgroundWorker.postMessage({ type: 'clearSnake' });
@@ -1221,13 +1643,13 @@
             lockInGameControls(false);
 
             document.getElementById("gameOverlay").classList.remove("hidden");
-            document.getElementById("overlayTitle").innerText = "💥 TERELIMINASI!";
-            document.getElementById("overlayTitle").style.color = "var(--neon-red)";
+            document.getElementById("overlayTitle").innerText = "STATUS: HULL BREACH // ELIMINATED";
+            document.getElementById("overlayTitle").style.color = "var(--crimson-hazard)";
             document.getElementById("overlaySubtitle").innerHTML = `
-                <span style="color:var(--neon-red); font-weight:700;">${reason || "Ular Anda gugur di arena!"}</span><br>
-                Skor akhir: <b>${score} pts</b>. Ubah nama atau kelas ular di bawah jika ingin berganti strategi!
+                <span style="color:var(--crimson-hazard); font-weight:700;">${reason || "Serpent mengalami impak fatal!"}</span><br>
+                Skor akhir: <b>${score} pts</b>. Konfigurasi ulang callsign atau chassis untuk re-deployment.
             `;
-            document.querySelector(".btn-start").innerText = "RESPAWN & MASUK KE ARENA";
+            document.querySelector(".btn-deploy").innerText = "RE-DEPLOY KE ARENA";
         }
 
         function logApi(method, endpoint, status, reqBody, resBody) {
@@ -1292,10 +1714,16 @@
                 if (snakeId && gameRunning) {
                     const mySnake = arenaSnakes.find(s => s.id === snakeId);
                     if (!mySnake || !mySnake.alive) {
-                        endGame("Ular Anda TERELIMINASI karena menabrak badan lawan / badan sendiri!");
+                        endGame("Serpent Anda tereliminasi karena menabrak rintangan atau badan lawan.");
                         return;
                     } else {
                         score = mySnake.score;
+                        if (score > prevScore) {
+                            const diff = score - prevScore;
+                            if (diff >= 30) playSfx('golden');
+                            else playSfx('apple');
+                            prevScore = score;
+                        }
                         document.getElementById("hudScore").innerText = score;
                     }
                 }
@@ -1311,30 +1739,32 @@
             const container = document.getElementById("leaderboardContainer");
             if (!container) return;
             if (!leaderboard || leaderboard.length === 0) {
-                container.innerHTML = `<div class="lb-item"><span>(Menunggu pertandingan dimulai...)</span></div>`;
+                container.innerHTML = `<div class="lb-item"><span>(Menunggu deployment...)</span></div>`;
                 return;
             }
             container.innerHTML = leaderboard.slice(0, 5).map((entry, idx) => {
                 const isMySnake = (snakeId && (entry.snakeId === snakeId || entry.id === snakeId)) || (playerName && entry.playerName === playerName);
                 return `
                     <div class="lb-item ${isMySnake ? 'user-snake' : ''}">
-                        <span>${idx + 1}. ${entry.playerName} (${entry.snakeType})</span>
-                        <span style="font-family:'JetBrains Mono'; font-weight:700; color:${isMySnake ? 'var(--neon-green)' : 'var(--text-muted)'}">${entry.score} pts</span>
+                        <span>${idx + 1}. ${entry.playerName} [${entry.snakeType}]</span>
+                        <span style="font-weight:700; color:${isMySnake ? 'var(--tactical-emerald)' : 'var(--text-dim)'}">${entry.score} pts</span>
                     </div>
                 `;
             }).join("");
         }
 
         function switchVersion(version) {
+            playSfx('click');
             currentVersion = version;
             document.getElementById("btnV1").classList.toggle("active", version === "v1");
             document.getElementById("btnV2").classList.toggle("active", version === "v2");
-            document.getElementById("currentVerLabel").innerText = version + " (Active)";
+            document.getElementById("currentVerLabel").innerText = version === "v1" ? "v1 (Flat DTO)" : "v2 (ClassProfile)";
         }
 
         async function triggerBreakingChangeTest() {
+            playSfx('click');
             const v1Payload = {
-                username: playerName || "TestUser",
+                username: playerName || "PilotTest",
                 snakeType: selectedClass,
                 speed: 14
             };
@@ -1342,39 +1772,38 @@
             await makeApiCall("POST", endpoint, v1Payload);
         }
 
-        // Helper to update the ID badge in the UI
         function updatePlayerIdBadge(id) {
             registeredPlayerId = id;
             const badge = document.getElementById("registeredIdBadge");
             if (badge) {
-                badge.innerText = id ? id : "No ID";
-                badge.style.color = id ? "var(--neon-green)" : "var(--text-muted)";
+                badge.innerText = id ? id : "NO ID";
+                badge.style.color = id ? "var(--tactical-emerald)" : "var(--text-dim)";
             }
         }
 
         let registeredPlayerId = null;
 
         function getSafeUsername(base, suffix = "") {
-            let name = (base && base.trim()) ? base.trim() : "Player";
+            let name = (base && base.trim()) ? base.trim() : "Pilot";
             name = name.replace(/[^a-zA-Z0-9_]/g, "");
             const maxBase = 20 - suffix.length;
             if (name.length > maxBase) {
                 name = name.substring(0, maxBase);
             }
             if (name.length < 3) {
-                name = (name + "Hero").substring(0, maxBase);
+                name = (name + "Ace").substring(0, maxBase);
             }
             return (name + suffix).substring(0, 20);
         }
 
-        // 1. POST: Create / Register Player in Player Service AND Spawn Snake in Arena
+        // 1. POST: Register Player in Player Service AND/OR Spawn in Arena
         async function apiCreatePlayer() {
+            playSfx('click');
             let rawName = document.getElementById("overlayPlayerName").value.trim() || 
                           document.getElementById("inputPlayerName").value.trim() || 
                           playerName || 
-                          ("Player_" + Math.floor(100 + Math.random() * 900));
+                          ("Pilot_" + Math.floor(100 + Math.random() * 900));
             
-            // Register in Player Service
             let res;
             if (currentVersion === "v1") {
                 const payload = { username: rawName, snakeType: selectedClass };
@@ -1414,7 +1843,6 @@
                 document.getElementById("hudPlayer").style.color = "#ffffff";
             }
 
-            // If already in-game, also spawn a new active snake into Arena Service
             if (gameRunning && snakeId) {
                 const joinPayload = {
                     playerId: registeredPlayerId || playerId,
@@ -1436,10 +1864,8 @@
                     await fetchArenaState();
                 }
             } else {
-                // In Lobby (Out-of-Game): Player account registered in Player Service.
-                // Stays in Lobby so the user can freely demo Lobby GET/PUT/PATCH/DELETE without being forced into the arena!
                 logApi("INFO", "/lobby/player-registered", 200, null, {
-                    message: `Pemain '${playerName || rawName}' berhasil didaftarkan di Player Service (Lobby). Tekan 'MASUK KE ARENA' jika ingin bertanding.`,
+                    message: `Akun '${playerName || rawName}' terdaftar di Player Service (Lobby). Tekan 'DEPLOY KE ARENA' untuk bertanding.`,
                     playerId: registeredPlayerId || playerId
                 });
             }
@@ -1447,12 +1873,12 @@
             return res;
         }
 
-        // 2. GET: Read Player Profile (or All Players if no ID yet)
         function selectSidebarClass(className, color, fromUserClick = false) {
             if (gameRunning && fromUserClick) {
-                alert("Ganti kelas hanya diperbolehkan saat berada di lobby/di luar arena.");
+                alert("Ganti kelas hanya diperbolehkan saat berada di lobby / di luar arena.");
                 return;
             }
+            playSfx('click');
             selectedClass = className;
             selectedColor = color;
 
@@ -1460,7 +1886,6 @@
                 c.classList.toggle('selected', c.dataset.class === className);
             });
 
-            // Sinkronkan juga pilihan di dialog start overlay
             document.querySelectorAll('.overlay-class-opt').forEach(opt => {
                 opt.classList.toggle('active', opt.innerText.includes(className));
             });
@@ -1469,11 +1894,11 @@
             document.getElementById("hudClass").style.color = color;
         }
 
-        // 2. GET: Read Player Profile (or All Players if no ID yet)
+        // 2. GET: Read Player Profile & In-Game Telemetry
         async function apiFetchPlayer() {
+            playSfx('click');
             let targetId = registeredPlayerId || (playerId && !playerId.startsWith("PL-RANDOM") ? playerId : null);
 
-            // If no registered ID, query /api/{version}/players collection to auto-discover
             if (!targetId) {
                 const listRes = await makeApiCall("GET", `${PLAYER_SERVICE_URL}/api/${currentVersion}/players`);
                 if (listRes.success && Array.isArray(listRes.data) && listRes.data.length > 0) {
@@ -1486,7 +1911,6 @@
                     document.getElementById("hudPlayer").innerText = playerName;
                     document.getElementById("hudPlayer").style.color = "#ffffff";
                 } else {
-                    // No players exist yet: auto-register one first!
                     const createRes = await apiCreatePlayer();
                     targetId = (createRes.data && createRes.data.id) ? createRes.data.id : null;
                 }
@@ -1498,14 +1922,12 @@
                 if (res.success && res.data) {
                     const fetchedClass = res.data.snakeType || (res.data.classProfile && res.data.classProfile.className);
                     if (fetchedClass) {
-                        const colorMap = { "VIPER": "#00ff88", "PYTHON": "#00d4ff", "COBRA": "#ffd700" };
-                        // Pass false so programmatic GET never triggers user-click alert!
+                        const colorMap = { "VIPER": "#00e575", "PYTHON": "#00b8ff", "COBRA": "#f59e0b" };
                         selectSidebarClass(fetchedClass, colorMap[fetchedClass] || "#ffffff", false);
                     }
                 }
             }
 
-            // Jika sedang bertanding di dalam arena, ambil juga data ular & snapshot terkini (GET in-game)
             if (snakeId && gameRunning) {
                 const snakeRes = await makeApiCall("GET", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}`);
                 if (snakeRes.success && snakeRes.data) {
@@ -1516,11 +1938,11 @@
             }
         }
 
-        // 3. PUT: Update Player Profile (Mengganti Username DAN Tipe Kelas Ular)
+        // 3. PUT: Update Player Profile & Live Serpent Skin
         async function apiUpdatePlayerProfile() {
+            playSfx('click');
             let targetId = registeredPlayerId || (playerId && !playerId.startsWith("PL-RANDOM") ? playerId : null);
 
-            // Auto-register first if no ID
             if (!targetId) {
                 const createRes = await apiCreatePlayer();
                 targetId = (createRes.data && createRes.data.id) ? createRes.data.id : null;
@@ -1531,10 +1953,8 @@
                 const suffix = `_U${Math.floor(10 + Math.random() * 90)}`;
                 const cleanName = getSafeUsername(rawName, suffix);
 
-                // Rotasi kelas ular ke tipe berikutnya (VIPER -> PYTHON -> COBRA -> VIPER)
-                // agar efek PUT mengganti kelas ular dan username terlihat secara nyata di DB dan UI
                 const classRotation = ["VIPER", "PYTHON", "COBRA"];
-                const colorMap = { "VIPER": "#00ff88", "PYTHON": "#00d4ff", "COBRA": "#ffd700" };
+                const colorMap = { "VIPER": "#00e575", "PYTHON": "#00b8ff", "COBRA": "#f59e0b" };
                 const nextIdx = (classRotation.indexOf(selectedClass) + 1) % classRotation.length;
                 selectedClass = classRotation[nextIdx];
                 selectedColor = colorMap[selectedClass];
@@ -1567,7 +1987,6 @@
                     document.getElementById("inputPlayerName").value = playerName;
                     document.getElementById("hudPlayer").innerText = playerName;
 
-                    // Update UI kelas di HUD dan sorot card kelas baru di sidebar
                     document.getElementById("hudClass").innerText = selectedClass;
                     document.getElementById("hudClass").style.color = selectedColor;
 
@@ -1575,13 +1994,11 @@
                         c.classList.toggle('selected', c.dataset.class === selectedClass);
                     });
 
-                    // Sinkronkan juga pilihan overlay
                     document.querySelectorAll('.overlay-class-opt').forEach(opt => {
                         opt.classList.toggle('active', opt.innerText.includes(selectedClass));
                     });
                 }
 
-                // If currently playing in arena, also update live snake loadout
                 if (snakeId && gameRunning) {
                     const arenaPayload = { snakeType: selectedClass, color: selectedColor };
                     await makeApiCall("PUT", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}/loadout`, arenaPayload);
@@ -1589,14 +2006,14 @@
             }
         }
 
+        // 4. PATCH: Eat Apple (In-Game) or Patch Profile Stats (Lobby)
         async function apiPartialUpdate() {
+            playSfx('click');
             if (snakeId && gameRunning) {
-                // In Arena: Eat nearest apple or trigger manual bite via PATCH
                 const appleId = (arenaApples.length > 0) ? arenaApples[0].id : "APL-1";
                 await makeApiCall("PATCH", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}/eat`, { appleId: appleId });
                 fetchArenaState();
             } else {
-                // In Lobby: Partial stats update in Player Service
                 let targetId = registeredPlayerId || (playerId && !playerId.startsWith("PL-RANDOM") ? playerId : null);
                 if (!targetId) {
                     const createRes = await apiCreatePlayer();
@@ -1609,21 +2026,20 @@
             }
         }
 
-        // 5. DELETE: Delete Player Account from Player Service & Leave Arena
+        // 5. DELETE: Eject from Arena / Delete Account
         async function apiDeletePlayer() {
+            playSfx('click');
             let targetId = registeredPlayerId || (playerId && !playerId.startsWith("PL-RANDOM") ? playerId : null);
 
-            // If in arena, leave arena first
             if (snakeId && gameRunning) {
                 if (backgroundWorker) {
                     backgroundWorker.postMessage({ type: 'clearSnake' });
                 }
                 await makeApiCall("DELETE", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}`);
-                endGame("Anda telah meninggalkan arena pertandingan.");
+                endGame("Pilot telah melakukan manual eject dari arena.");
                 return;
             }
 
-            // Outside arena / Lobby: Delete player account from Player Service
             if (targetId) {
                 const res = await makeApiCall("DELETE", `${PLAYER_SERVICE_URL}/api/${currentVersion}/players/${targetId}`);
                 if (res.status === 204 || res.success) {
@@ -1633,12 +2049,12 @@
                     sessionStorage.setItem(tabInstanceKey, playerId);
                     document.getElementById("inputPlayerName").value = "";
                     document.getElementById("hudPlayer").innerText = "(Belum Join)";
-                    document.getElementById("hudPlayer").style.color = "var(--text-muted)";
+                    document.getElementById("hudPlayer").style.color = "var(--text-dim)";
                 }
             } else {
                 if (snakeId) {
                     await makeApiCall("DELETE", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}`);
-                    endGame("Anda telah meninggalkan arena pertandingan.");
+                    endGame("Pilot telah melakukan manual eject dari arena.");
                 }
             }
         }
@@ -1699,22 +2115,19 @@
             if (!snakeId || !gameRunning) return;
             const now = Date.now();
 
-            if (skillActive) {
-                // Sedang aktif: tidak perlu klik ulang
-                return;
-            }
+            if (skillActive) return;
 
             if (now < skillCooldownUntil) {
                 const sec = Math.ceil((skillCooldownUntil - now) / 1000);
-                updateSkillStatusUi(`⏳ CD (${sec}s)`, "var(--neon-gold)");
+                updateSkillStatusUi(`[RECHARGE: ${sec}s]`, "var(--solar-amber)");
                 return;
             }
 
-            // Durasi Aktif 3 Detik + Masa Cooldown 5 Detik
+            playSfx('skill');
             skillActive = true;
             skillActiveUntil = now + 3000;
             skillCooldownUntil = now + 3000 + 5000;
-            updateSkillStatusUi("⚡ AKTIF (3s)", "var(--neon-green)");
+            updateSkillStatusUi("[ACTIVE: 3s]", "var(--tactical-emerald)");
 
             const url = `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}/skill?active=true`;
             await makeApiCall("PATCH", url);
@@ -1724,19 +2137,19 @@
                 const cur = Date.now();
                 if (cur < skillActiveUntil) {
                     const left = Math.ceil((skillActiveUntil - cur) / 1000);
-                    updateSkillStatusUi(`⚡ AKTIF (${left}s)`, "var(--neon-green)");
+                    updateSkillStatusUi(`[ACTIVE: ${left}s]`, "var(--tactical-emerald)");
                 } else if (cur < skillCooldownUntil) {
                     if (skillActive) {
                         skillActive = false;
                         makeApiCall("PATCH", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${snakeId}/skill?active=false`, null, true);
                     }
                     const cdLeft = Math.ceil((skillCooldownUntil - cur) / 1000);
-                    updateSkillStatusUi(`⏳ CD (${cdLeft}s)`, "var(--neon-gold)");
+                    updateSkillStatusUi(`[RECHARGE: ${cdLeft}s]`, "var(--solar-amber)");
                 } else {
                     skillActive = false;
                     clearInterval(skillTimerInterval);
                     skillTimerInterval = null;
-                    updateSkillStatusUi("⚡ READY", "var(--neon-green)");
+                    updateSkillStatusUi("[READY]", "var(--tactical-emerald)");
                 }
             }, 250);
         }
@@ -1749,8 +2162,8 @@
             }
             const touchBtn = document.querySelector(".btn-skill-touch");
             if (touchBtn) {
-                touchBtn.innerText = text.includes("AKTIF") ? "AKTIF" : (text.includes("CD") ? text : "SKILL");
-                touchBtn.style.opacity = text.includes("CD") ? "0.5" : "1";
+                touchBtn.innerText = text.includes("ACTIVE") ? "ACTIVE" : (text.includes("RECHARGE") ? "CD" : "SKILL");
+                touchBtn.style.opacity = text.includes("RECHARGE") ? "0.5" : "1";
             }
         }
 
@@ -1759,26 +2172,29 @@
             requestAnimationFrame(renderLoop);
         }
 
+        // ==========================================
+        // Tactical Canvas 2D Rendering Engine
+        // ==========================================
         function render() {
-            // Dynamic canvas glowing border when player skill is active
-            const canvasEl = document.getElementById("gameCanvas");
-            if (canvasEl) {
+            const enclosureEl = document.getElementById("canvasEnclosure");
+            if (enclosureEl) {
                 if (gameRunning && skillActive) {
-                    const cColor = selectedClass === "PYTHON" ? "rgba(0, 240, 255, 0.5)" : 
-                                  (selectedClass === "COBRA" ? "rgba(255, 215, 0, 0.5)" : "rgba(0, 255, 136, 0.5)");
-                    canvasEl.style.boxShadow = `0 0 35px ${cColor}, inset 0 0 25px ${cColor}`;
-                    canvasEl.style.borderColor = selectedColor;
+                    const cColor = selectedClass === "PYTHON" ? "rgba(0, 184, 255, 0.6)" : 
+                                  (selectedClass === "COBRA" ? "rgba(245, 158, 11, 0.6)" : "rgba(0, 229, 117, 0.6)");
+                    enclosureEl.style.boxShadow = `0 0 35px ${cColor}, inset 0 0 25px ${cColor}`;
+                    enclosureEl.style.borderColor = selectedColor;
                 } else {
-                    canvasEl.style.boxShadow = "0 8px 32px rgba(0, 0, 0, 0.5)";
-                    canvasEl.style.borderColor = "var(--border-card)";
+                    enclosureEl.style.boxShadow = "0 20px 50px rgba(0, 0, 0, 0.8), inset 0 0 40px rgba(0, 0, 0, 0.9)";
+                    enclosureEl.style.borderColor = "#161f30";
                 }
             }
 
-            ctx.fillStyle = "#06090e";
+            // Dark Void Chassis Canvas
+            ctx.fillStyle = "#05070b";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Grid lines
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+            // Subtle Technical Coordinate Grid
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.025)";
             ctx.lineWidth = 1;
             for (let i = 0; i <= gridSize; i++) {
                 ctx.beginPath();
@@ -1792,201 +2208,270 @@
                 ctx.stroke();
             }
 
-            // Apples: Sangat berbeda secara visual antara Normal vs Golden
+            // Perimeter Hazard Warning Lines
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+
             const now = Date.now();
+
+            // 1. RENDER APPLES / COLLECTIBLES
             arenaApples.forEach(apple => {
                 const cx = (apple.x + 0.5) * tileSize;
                 const cy = (apple.y + 0.5) * tileSize;
 
                 if (apple.type === "GOLDEN") {
-                    // GOLDEN APPLE (30 pts): Berdenyut (pulsing), aura emas, tanda bintang, & partikel kilau
-                    const pulse = Math.sin(now / 180) * 2.2;
-                    const r = tileSize * 0.44 + pulse;
+                    // GOLDEN APPLE: Radiant Core + Rotating Micro-Diamonds
+                    const pulse = Math.sin(now / 160) * 1.8;
+                    const r = tileSize * 0.42 + pulse;
 
                     ctx.save();
-                    // Outer golden glowing halo
-                    ctx.shadowBlur = 24;
-                    ctx.shadowColor = "#ffd700";
-                    ctx.strokeStyle = "rgba(255, 215, 0, 0.75)";
-                    ctx.lineWidth = 1.8;
+                    // Radiant Aura
+                    const haloGrad = ctx.createRadialGradient(cx, cy, r * 0.4, cx, cy, r * 1.8);
+                    haloGrad.addColorStop(0, "rgba(245, 158, 11, 0.35)");
+                    haloGrad.addColorStop(1, "rgba(245, 158, 11, 0)");
+                    ctx.fillStyle = haloGrad;
                     ctx.beginPath();
-                    ctx.arc(cx, cy, r + 3.5, 0, Math.PI * 2);
-                    ctx.stroke();
+                    ctx.arc(cx, cy, r * 1.8, 0, Math.PI * 2);
+                    ctx.fill();
 
-                    // Shiny royal gold radial gradient
+                    // Gold Jewel Body
                     const grad = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.1, cx, cy, r);
                     grad.addColorStop(0, "#ffffff");
-                    grad.addColorStop(0.3, "#fff37a");
-                    grad.addColorStop(0.75, "#ffd700");
-                    grad.addColorStop(1, "#b8860b");
+                    grad.addColorStop(0.25, "#fef08a");
+                    grad.addColorStop(0.7, "#f59e0b");
+                    grad.addColorStop(1, "#b45309");
 
                     ctx.fillStyle = grad;
                     ctx.beginPath();
                     ctx.arc(cx, cy, r, 0, Math.PI * 2);
                     ctx.fill();
 
-                    // Star symbol di tengah apel emas
-                    ctx.shadowBlur = 0;
+                    // Center Geometric Gold Core Diamond (Vector Graphic, No Text Star)
                     ctx.fillStyle = "#78350f";
-                    ctx.font = `bold ${Math.round(tileSize * 0.46)}px 'Outfit'`;
-                    ctx.textAlign = "center";
-                    ctx.textBaseline = "middle";
-                    ctx.fillText("★", cx, cy + 1);
+                    const coreR = r * 0.45;
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy - coreR);
+                    ctx.lineTo(cx + coreR, cy);
+                    ctx.lineTo(cx, cy + coreR);
+                    ctx.lineTo(cx - coreR, cy);
+                    ctx.closePath();
+                    ctx.fill();
 
-                    // 4 Titik kilau (sparkles) berputar mengelilingi apel emas
-                    const angle = (now / 450) % (Math.PI * 2);
+                    // 4 Rotating Diamond Micro-Satellites
+                    const angle = (now / 400) % (Math.PI * 2);
                     ctx.fillStyle = "#ffffff";
                     for (let i = 0; i < 4; i++) {
                         const a = angle + (i * Math.PI / 2);
                         const sx = cx + Math.cos(a) * (r + 4.5);
                         const sy = cy + Math.sin(a) * (r + 4.5);
-                        ctx.beginPath();
-                        ctx.arc(sx, sy, 1.8, 0, Math.PI * 2);
-                        ctx.fill();
+                        ctx.save();
+                        ctx.translate(sx, sy);
+                        ctx.rotate(a + Math.PI / 4);
+                        ctx.fillRect(-1.5, -1.5, 3, 3);
+                        ctx.restore();
                     }
                     ctx.restore();
 
                 } else {
-                    // NORMAL APPLE (10 pts): Merah delima neon klasik dengan daun hijau segar di atasnya
-                    const r = tileSize * 0.36;
+                    // NORMAL APPLE: Polished Ruby Gem with Emerald Stem Leaf
+                    const r = tileSize * 0.35;
                     ctx.save();
-                    ctx.shadowBlur = 12;
-                    ctx.shadowColor = "#ff3366";
 
-                    const grad = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.1, cx, cy, r);
-                    grad.addColorStop(0, "#ff809b");
-                    grad.addColorStop(0.7, "#ff3366");
-                    grad.addColorStop(1, "#991b1b");
+                    // Subtle Ground Glow
+                    const haloGrad = ctx.createRadialGradient(cx, cy, r * 0.3, cx, cy, r * 1.4);
+                    haloGrad.addColorStop(0, "rgba(255, 51, 85, 0.25)");
+                    haloGrad.addColorStop(1, "rgba(255, 51, 85, 0)");
+                    ctx.fillStyle = haloGrad;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r * 1.4, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Ruby Gem Gradient
+                    const grad = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.08, cx, cy, r);
+                    grad.addColorStop(0, "#ff8099");
+                    grad.addColorStop(0.65, "#ff3355");
+                    grad.addColorStop(1, "#990022");
 
                     ctx.fillStyle = grad;
                     ctx.beginPath();
                     ctx.arc(cx, cy, r, 0, Math.PI * 2);
                     ctx.fill();
 
-                    // Tangkai & daun hijau kecil
-                    ctx.shadowBlur = 0;
-                    ctx.fillStyle = "#00ff88";
+                    // Emerald Stem Leaf
+                    ctx.fillStyle = "#00e575";
                     ctx.beginPath();
-                    ctx.ellipse(cx + 2.5, cy - r, 3.2, 1.8, Math.PI / 4, 0, Math.PI * 2);
+                    ctx.ellipse(cx + 2.5, cy - r, 3, 1.6, Math.PI / 4, 0, Math.PI * 2);
                     ctx.fill();
 
                     ctx.restore();
                 }
             });
 
-            // Snakes
+            // 2. RENDER SNAKES: Directional Head, Eyes, & Segmented Exoskeleton
             arenaSnakes.forEach(s => {
                 if (!s.alive || !s.segments || s.segments.length === 0) return;
 
                 const isMe = (s.id === snakeId);
                 const isSkillOn = isMe ? skillActive : (s.skillActive || false);
-                const sColor = s.color || "#00d4ff";
+                const sColor = s.color || "#00b8ff";
                 const head = s.segments[0];
                 const headCx = head.x * tileSize + tileSize / 2;
                 const headCy = head.y * tileSize + tileSize / 2;
-                const pulse = 1.0 + Math.sin(Date.now() / 110) * 0.18;
+                const pulse = 1.0 + Math.sin(now / 110) * 0.15;
 
-                // 1. HIGH-VISIBILITY SKILL AURA & FORCEFIELD
+                // Determine Direction Vector
+                let dir = s.direction || "UP";
+                if (s.segments.length > 1) {
+                    const neck = s.segments[1];
+                    if (head.x > neck.x) dir = "RIGHT";
+                    else if (head.x < neck.x) dir = "LEFT";
+                    else if (head.y > neck.y) dir = "DOWN";
+                    else if (head.y < neck.y) dir = "UP";
+                }
+
+                // A. SKILL FORCEFIELD / AURA
                 if (isSkillOn) {
                     ctx.save();
-                    const shieldColor = s.snakeType === "PYTHON" ? "#00f0ff" : 
-                                       (s.snakeType === "COBRA" ? "#ffd700" : "#00ff88");
-                    const shieldRgba = s.snakeType === "PYTHON" ? "rgba(0, 240, 255, 0.28)" : 
-                                      (s.snakeType === "COBRA" ? "rgba(255, 215, 0, 0.28)" : "rgba(0, 255, 136, 0.28)");
+                    const shieldColor = s.snakeType === "PYTHON" ? "#00b8ff" : 
+                                       (s.snakeType === "COBRA" ? "#f59e0b" : "#00e575");
+                    const shieldRgba = s.snakeType === "PYTHON" ? "rgba(0, 184, 255, 0.22)" : 
+                                      (s.snakeType === "COBRA" ? "rgba(245, 158, 11, 0.22)" : "rgba(0, 229, 117, 0.22)");
 
-                    // A. Glowing translucent energy trail around all body segments
+                    // Trail Forcefield
                     s.segments.forEach(seg => {
-                        ctx.shadowBlur = 20 * pulse;
-                        ctx.shadowColor = shieldColor;
                         ctx.fillStyle = shieldRgba;
                         ctx.beginPath();
-                        ctx.arc(seg.x * tileSize + tileSize / 2, seg.y * tileSize + tileSize / 2, tileSize * 0.95 * pulse, 0, Math.PI * 2);
+                        ctx.arc(seg.x * tileSize + tileSize / 2, seg.y * tileSize + tileSize / 2, tileSize * 0.85 * pulse, 0, Math.PI * 2);
                         ctx.fill();
                     });
 
-                    // B. Spherical Forcefield Bubble around Head
-                    ctx.shadowBlur = 30 * pulse;
-                    ctx.shadowColor = shieldColor;
+                    // Cockpit Bubble Shield
                     ctx.strokeStyle = shieldColor;
-                    ctx.lineWidth = 3;
+                    ctx.lineWidth = 2.5;
                     ctx.beginPath();
-                    ctx.arc(headCx, headCy, tileSize * 1.35 * pulse, 0, Math.PI * 2);
+                    ctx.arc(headCx, headCy, tileSize * 1.25 * pulse, 0, Math.PI * 2);
                     ctx.stroke();
 
-                    // C. Rotating Cyber Energy Dash Ring
-                    const rotAngle = (Date.now() / 250) % (Math.PI * 2);
-                    ctx.setLineDash([5, 5]);
-                    ctx.lineWidth = 2;
+                    // Rotating Tachometer Ring
+                    const rotAngle = (now / 220) % (Math.PI * 2);
+                    ctx.setLineDash([4, 4]);
+                    ctx.lineWidth = 1.5;
                     ctx.beginPath();
-                    ctx.arc(headCx, headCy, tileSize * 1.65 * pulse, rotAngle, rotAngle + Math.PI * 2);
+                    ctx.arc(headCx, headCy, tileSize * 1.55 * pulse, rotAngle, rotAngle + Math.PI * 2);
                     ctx.stroke();
                     ctx.setLineDash([]);
                     ctx.restore();
                 }
 
-                // 2. DRAW SNAKE BODY SEGMENTS
-                ctx.shadowBlur = isSkillOn ? (26 * pulse) : (isMe ? 14 : 8);
-                ctx.shadowColor = isSkillOn ? (s.snakeType === "PYTHON" ? "#00f0ff" : (s.snakeType === "COBRA" ? "#ffd700" : "#00ff88")) : sColor;
+                // B. DRAW BODY SEGMENTS (Tapered from neck to tail)
+                for (let i = s.segments.length - 1; i >= 1; i--) {
+                    const seg = s.segments[i];
+                    const scx = seg.x * tileSize + tileSize / 2;
+                    const scy = seg.y * tileSize + tileSize / 2;
 
-                s.segments.forEach((seg, sIdx) => {
-                    const isHead = (sIdx === 0);
-                    ctx.fillStyle = isHead ? "#ffffff" : sColor;
-                    ctx.beginPath();
-                    ctx.roundRect(seg.x * tileSize + 1, seg.y * tileSize + 1, tileSize - 2, tileSize - 2, isHead ? 6 : 4);
-                    ctx.fill();
+                    const taper = 0.55 + 0.33 * (1 - i / s.segments.length);
+                    const segRadius = (tileSize / 2) * taper;
 
-                    // Outer neon border if skill active
-                    if (isSkillOn) {
-                        ctx.strokeStyle = isHead ? "#ffffff" : (s.snakeType === "PYTHON" ? "#00f0ff" : (s.snakeType === "COBRA" ? "#ffd700" : "#00ff88"));
-                        ctx.lineWidth = isHead ? 2.5 : 1.5;
-                        ctx.stroke();
-                    }
-                });
-
-                // 3. FLOATING BADGE & NAME LABEL
-                ctx.shadowBlur = 0;
-                if (isSkillOn) {
                     ctx.save();
-                    const badgeText = s.snakeType === "PYTHON" ? "🛡️ ARMOR SHIELD" : 
-                                     (s.snakeType === "COBRA" ? "👑 GOLDEN SENSE" : "⚡ VENOM DASH");
-                    const badgeColor = s.snakeType === "PYTHON" ? "#00f0ff" : 
-                                      (s.snakeType === "COBRA" ? "#ffd700" : "#00ff88");
-                    ctx.font = "bold 9px 'JetBrains Mono', monospace";
-                    const tw = ctx.measureText(badgeText).width;
-                    const bx = headCx - tw / 2 - 6;
-                    const by = head.y * tileSize - 22;
-
-                    ctx.fillStyle = "rgba(10, 15, 26, 0.88)";
+                    ctx.fillStyle = sColor;
                     ctx.beginPath();
-                    ctx.roundRect(bx, by, tw + 12, 14, 4);
+                    ctx.arc(scx, scy, segRadius, 0, Math.PI * 2);
                     ctx.fill();
-                    ctx.strokeStyle = badgeColor;
-                    ctx.lineWidth = 1.2;
-                    ctx.stroke();
 
-                    ctx.fillStyle = badgeColor;
-                    ctx.fillText(badgeText, bx + 6, by + 10);
+                    // Inner Dorsal Core Highlight
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
+                    ctx.beginPath();
+                    ctx.arc(scx, scy, segRadius * 0.45, 0, Math.PI * 2);
+                    ctx.fill();
+
                     ctx.restore();
                 }
 
-                ctx.fillStyle = isMe ? "var(--neon-green)" : "#cbd5e1";
-                ctx.font = isMe ? "bold 11px 'Outfit'" : "10px 'Outfit'";
-                const label = isMe ? `${s.playerName} (You)` : s.playerName;
-                ctx.fillText(label, head.x * tileSize - 2, head.y * tileSize - (isSkillOn ? 26 : 4));
-            });
+                // C. DRAW DIRECTION-AWARE HEAD & LUMINOUS OPTIC EYES
+                ctx.save();
+                ctx.translate(headCx, headCy);
 
-            ctx.shadowBlur = 0;
+                let headAngle = 0;
+                if (dir === "DOWN") headAngle = Math.PI;
+                else if (dir === "LEFT") headAngle = -Math.PI / 2;
+                else if (dir === "RIGHT") headAngle = Math.PI / 2;
+                ctx.rotate(headAngle);
+
+                // Armored Head Shell (Pointing UP in local space)
+                const hr = tileSize * 0.48;
+                ctx.fillStyle = isMe ? "#ffffff" : sColor;
+                ctx.beginPath();
+                ctx.moveTo(0, -hr * 1.15); // Snout tip
+                ctx.lineTo(hr * 0.95, hr * 0.7);
+                ctx.quadraticCurveTo(0, hr * 0.4, -hr * 0.95, hr * 0.7);
+                ctx.closePath();
+                ctx.fill();
+
+                // Luminous Optic Eyes
+                const eyeX = hr * 0.42;
+                const eyeY = -hr * 0.25;
+                const eyeR = hr * 0.24;
+
+                [-1, 1].forEach(side => {
+                    const ex = side * eyeX;
+
+                    ctx.fillStyle = isMe ? "#06090f" : "#ffffff";
+                    ctx.beginPath();
+                    ctx.arc(ex, eyeY, eyeR, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = isMe ? "var(--tactical-emerald)" : "#000000";
+                    ctx.beginPath();
+                    ctx.arc(ex, eyeY - eyeR * 0.25, eyeR * 0.55, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                ctx.restore();
+
+                // D. FLOATING CALLSIGN & CLASS HUD BADGE
+                ctx.save();
+                ctx.textAlign = "center";
+
+                if (isSkillOn) {
+                    const badgeText = s.snakeType === "PYTHON" ? "[SHIELD]" : 
+                                     (s.snakeType === "COBRA" ? "[GOLD SENSE]" : "[OVERDRIVE]");
+                    const badgeColor = s.snakeType === "PYTHON" ? "#00b8ff" : 
+                                      (s.snakeType === "COBRA" ? "#f59e0b" : "#00e575");
+                    ctx.font = "bold 9px 'JetBrains Mono', monospace";
+                    const tw = ctx.measureText(badgeText).width;
+                    const by = head.y * tileSize - 22;
+
+                    ctx.fillStyle = "#0a0f1a";
+                    ctx.beginPath();
+                    ctx.roundRect(headCx - tw / 2 - 6, by, tw + 12, 14, 3);
+                    ctx.fill();
+                    ctx.strokeStyle = badgeColor;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    ctx.fillStyle = badgeColor;
+                    ctx.fillText(badgeText, headCx, by + 10);
+                }
+
+                ctx.font = isMe ? "bold 11px 'Chakra Petch', sans-serif" : "10px 'Chakra Petch', sans-serif";
+                ctx.fillStyle = isMe ? "#00e575" : "#cbd5e1";
+                const label = isMe ? `${s.playerName} (YOU)` : s.playerName;
+                ctx.fillText(label, headCx, head.y * tileSize - (isSkillOn ? 25 : 6));
+                ctx.restore();
+            });
         }
 
         requestAnimationFrame(renderLoop);
         fetchArenaState();
 
         logApi("INFO", "/system/init", 200, null, {
-            status: "ARENA_READY",
-            rules: ["Name & Class Locked In-Game", "No Apples on Death", "Balanced Max 6 Apples Pool", "PvP Collisions Active"]
+            status: "TACTICAL_CONSOLE_READY",
+            pilot: playerId,
+            audioEngine: "WebAudioSynth",
+            architecture: "Spring Boot Microservices"
         });
 
-        // Unload listener: Immediately eliminate snake only when user navigates away or closes tab
         function cleanupCurrentSnake() {
             const current = snakeId || sessionStorage.getItem("activeSnakeId");
             if (current) {

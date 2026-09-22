@@ -25,13 +25,14 @@ buildNumber.properties
 .mvn/timing.properties
 .mvn/wrapper/maven-wrapper.jar
 
-# IDEs
+# IDEs & Local Tooling
 .idea/
 *.iml
 .vscode/
 .settings/
 .project
 .classpath
+.agents/
 
 # OS files
 .DS_Store

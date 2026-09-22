@@ -1,105 +1,108 @@
-# Snake Arena: Clash of Serpents (Distributed Microservices REST API)
+# Snake Arena: Clash of Serpents
+### Distributed Microservices REST API & Real-Time Tactical Arena
 
-Proyek Tugas Mata Kuliah **Arsitektur Berbasis Layanan (ABL)**  
-Implementasi Arsitektur RESTful Microservices Terdistribusi dengan Game Arena Interaktif.
+Dokumentasi Tugas Mata Kuliah **Arsitektur Berbasis Layanan (ABL)**  
+Fakultas Ilmu Komputer, Universitas Brawijaya  
+Implementasi Arsitektur RESTful Microservices Terdistribusi dengan Game Engine Multi-Tenant Interaktif.
 
-- **Nama Mahasiswa:** Valentinus Marvel
+- **Penyusun:** Valentinus Marvel
 - **NIM:** 245150201111027
-- **Teknologi:** Java 21 / 22, Spring Boot 3.2.5, Spring MVC, Springdoc OpenAPI (Swagger 3), JUnit 5, H2 In-Memory DB, HTML5 Canvas, Vanilla CSS3 & JS.
+- **Teknologi Utama:** Java 21/22, Spring Boot 3.2.5, Spring MVC, Springdoc OpenAPI 3 (Swagger UI), Spring Data JPA, JUnit 5, MockMvc, H2 Database, HTML5 Canvas, Web Audio API Synthesizer, Web Worker Heartbeat.
 
 ---
 
-## 🏛️ Arsitektur Sistem
+## 1. Arsitektur Sistem & Komponen Terdistribusi
 
-Sistem mengadopsi arsitektur **Decoupled Microservices** yang terbagi menjadi dua service independen dan satu client antarmuka web game:
+Sistem mengadopsi arsitektur **Decoupled Microservices** yang memisahkan domain data pemain (*Identity & Persistence*) dengan simulasi komputasi arena (*Real-Time Match Engine*):
 
 ```mermaid
 graph TD
-    Client["Client Web / Mobile UI (HTML5 + REST Inspector)"] -->|"HTTP Port 8081"| PlayerService["Player Service (Port 8081)"]
-    Client -->|"HTTP Port 8082"| ArenaService["Arena Service (Port 8082)"]
+    Client["Client Web Console (HTML5 + REST Inspector)"] -->|"HTTP :8081"| PlayerService["Player Service (Port 8081)"]
+    Client -->|"HTTP :8082"| ArenaService["Arena Service (Port 8082)"]
     ArenaService -->|"Inter-Service HTTP Sync: PATCH /api/v1/players/:id/stats"| PlayerService
     PlayerService --> H2[("In-Memory H2 DB")]
-    ArenaService --> ArenaMem[("Concurrent Arena State")]
+    ArenaService --> ArenaMem[("Concurrent Server State")]
 ```
 
-### 1. `player-service` (Port 8081)
-- **Tanggung Jawab:** Manajemen identitas pemain, atribut kelas ular, catatan statistik pertandingan, dan histori skor tertinggi (high score).
+### 1.1 `player-service` (Port 8081)
+- **Tanggung Jawab:** Manajemen identitas pemain, registrasi profil, persistensi skor akumulasi, dan histori pertandingan.
 - **Database:** H2 In-Memory Database dengan Spring Data JPA.
-- **Fitur Khusus:** Penerapan **API Versioning (v1 dan v2)** dengan skema *Breaking Changes*.
-  - `v1`: Struktur data datar (`snakeType`, `speed`).
-  - `v2`: Memecah kompatibilitas lama dengan menghapus atribut flat dan mewajibkan objek `classProfile` tersarang (*nested*). Payload v1 akan ditolak dengan respons `400 Bad Request` (RFC 9457 ProblemDetail).
+- **Fitur Versioning:** Mengimplementasikan dua versi kontrak REST (`v1` dan `v2`) secara berdampingan. Versi 2 memberlakukan *breaking change* dengan skema payload tersarang (*nested DTO*).
 
-### 2. `arena-service` (Port 8082)
-- **Tanggung Jawab:** Manajemen sesi pertempuran (*match session*), pergerakan ular, koordinat apel (*food spawn*), deteksi tabrakan (*collision*), live leaderboard, dan aktivasi skill kelas.
-- **Static Web Host:** Melayani antarmuka game pada endpoint root `http://localhost:8082/`.
-- **Inter-Service Communication:** Menggunakan Spring `RestClient` non-blocking untuk memanggil `player-service` secara asinkron saat ular tereliminasi/keluar guna menyinkronkan skor akhir.
+### 1.2 `arena-service` (Port 8082)
+- **Tanggung Jawab:** Server-authoritative match loop (tick 250ms), pergerakan koordinat serpent, deteksi tabrakan (PvP & self-collision), generator apel seimbang (maks 6 apel aktif), dan penegakan batas kapasitas (maks 16 pemain).
+- **Static Host:** Melayani antarmuka web game pada root endpoint `http://localhost:8082/`.
+- **Inter-Service Communication:** Menggunakan Spring `RestClient` untuk memanggil `player-service` saat sesi ular berakhir guna mencatat skor secara terdistribusi.
 
-### 3. `frontend`
-- **Tanggung Jawab:** Web Client responsif (Desktop & Mobile) menggunakan HTML5 Canvas performa tinggi.
-- **Fitur Unggulan:** **Live REST API Inspector HUD** yang menampilkan riwayat request, metode HTTP (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`), payload JSON, response latency, dan status code secara real-time.
-
----
-
-## 📡 Ringkasan Endpoint & Metode HTTP Lengkap
-
-Sistem mengimplementasikan seluruh standar kata kerja HTTP (**GET, POST, PUT, PATCH, DELETE**):
-
-| Service | Method | Endpoint | Deskripsi |
-|---|---|---|---|
-| **Player** | `POST` | `/api/v1/players` | Registrasi pemain baru versi 1 (`201 Created`) |
-| **Player** | `POST` | `/api/v2/players` | Registrasi pemain baru versi 2 (`201 Created` / `400 Bad Request`) |
-| **Player** | `GET` | `/api/v1/players/{id}` | Mengambil data profil pemain versi 1 |
-| **Player** | `GET` | `/api/v2/players/{id}` | Mengambil data profil pemain versi 2 (`classProfile`) |
-| **Player** | `PUT` | `/api/v1/players/{id}` | Memperbarui seluruh profil pemain secara menyeluruh |
-| **Player** | `PATCH` | `/api/v1/players/{id}/stats` | Sinkronisasi skor dan match stats (digunakan oleh Arena Service) |
-| **Player** | `DELETE` | `/api/v1/players/{id}` | Menghapus data akun pemain (`204 No Content`) |
-| **Arena** | `POST` | `/api/v1/arena/snakes` | Pemain bergabung ke arena pertandingan (`201 Created`) |
-| **Arena** | `GET` | `/api/v1/arena/state` | Mengambil snapshot arena (posisi semua ular, apel, bot) |
-| **Arena** | `GET` | `/api/v1/arena/snakes/{id}` | Mengambil kondisi spesifik ular pemain |
-| **Arena** | `PUT` | `/api/v1/arena/snakes/{id}/loadout` | Mengganti kelas/skin ular di arena secara real-time |
-| **Arena** | `PATCH` | `/api/v1/arena/snakes/{id}/eat` | Memakan apel, menambah panjang badan dan skor |
-| **Arena** | `PATCH` | `/api/v1/arena/snakes/{id}/skill` | Mengaktifkan/mematikan skill kelas ular |
-| **Arena** | `DELETE` | `/api/v1/arena/snakes/{id}` | Keluar/mati di arena (`204 No Content` & inter-service sync) |
+### 1.3 `frontend` (Tactical Cyber-Cockpit)
+- **Tanggung Jawab:** Antarmuka visual web tanpa dependensi framework berat (Vanilla JS + CSS).
+- **Fitur Unggulan:** 
+  - Real-time HTTP Inspector log feed dengan visualisasi status HTTP dan payload JSON.
+  - Dedicated Web Worker thread untuk background state polling dan heartbeat yang kebal terhadap *tab throttling* browser.
+  - Web Audio API micro-synthesizer untuk umpan balik interaksi taktil percussive.
 
 ---
 
-## ⚡ Implementasi API Versioning & Breaking Changes
+## 2. Spesifikasi Endpoint & Kontrak REST HTTP
 
-Proyek ini mendemonstrasikan evolusi API perusahaan di mana versi 2 memperkenalkan perubahan struktur yang sengaja memutus kompatibilitas mundur (*breaking changes*):
+Sistem mengimplementasikan standar kata kerja HTTP (**GET, POST, PUT, PATCH, DELETE**) secara semantik:
 
-### Payload Versi 1 (Datar / Flat)
+| Service | Method | Endpoint Path | Status Code | Deskripsi Fungsional |
+|---|---|---|---|---|
+| **Player** | `POST` | `/api/v1/players` | `201 Created` | Registrasi akun pemain baru versi flat DTO |
+| **Player** | `POST` | `/api/v2/players` | `201 Created` / `400` | Registrasi akun versi 2 (wajib `classProfile`) |
+| **Player** | `GET` | `/api/v1/players/{id}` | `200 OK` | Mengambil profil pemain versi 1 |
+| **Player** | `GET` | `/api/v2/players/{id}` | `200 OK` | Mengambil profil pemain versi 2 |
+| **Player** | `PUT` | `/api/v1/players/{id}` | `200 OK` | Pembaruan menyeluruh profil pemain |
+| **Player** | `PATCH` | `/api/v1/players/{id}/stats` | `200 OK` | Pembaruan parsial statistik skor |
+| **Player** | `DELETE` | `/api/v1/players/{id}` | `204 No Content` | Menghapus entitas akun pemain |
+| **Arena** | `POST` | `/api/v1/arena/snakes` | `201 Created` | Deploy dan spawn serpent ke dalam arena |
+| **Arena** | `GET` | `/api/v1/arena/state` | `200 OK` | Mengambil snapshot komprehensif dunia arena |
+| **Arena** | `GET` | `/api/v1/arena/snakes/{id}` | `200 OK` | Mengambil telemetri kondisi serpent spesifik |
+| **Arena** | `PUT` | `/api/v1/arena/snakes/{id}/loadout` | `200 OK` | Memperbarui kelas/skin serpent saat aktif |
+| **Arena** | `PATCH` | `/api/v1/arena/snakes/{id}/eat` | `200 OK` | Perhitungan konsumsi apel dan poin |
+| **Arena** | `PATCH` | `/api/v1/arena/snakes/{id}/skill` | `200 OK` | Mengaktifkan kemampuan spesifik kelas |
+| **Arena** | `DELETE` | `/api/v1/arena/snakes/{id}` | `204 No Content` | Mengeluarkan serpent & memicu sinkronisasi skor |
+
+---
+
+## 3. Desain API Versioning & Breaking Changes
+
+Untuk memenuhi studi kasus evolusi arsitektur layanan, `player-service` mendemonstrasikan transisi versi kontrak API:
+
+### Kontrak Versi 1 (Flat Structure)
 ```json
 POST /api/v1/players
 Content-Type: application/json
 
 {
-  "username": "Marvel",
+  "username": "ViperAce",
   "snakeType": "VIPER",
   "speed": 12
 }
 ```
 
-### Payload Versi 2 (Objek Kelas Tersarang / Nested ClassProfile)
+### Kontrak Versi 2 (Hierarchical Nested Structure)
 ```json
 POST /api/v2/players
 Content-Type: application/json
 
 {
-  "username": "Marvel",
+  "username": "ViperAce",
   "classProfile": {
     "className": "VIPER",
     "passiveEffect": "Poison Trail",
     "activeAbility": {
-      "name": "Poison Sprint",
-      "cooldownSeconds": 8,
-      "multiplier": 1.5
+      "name": "Venom Dash",
+      "cooldownSeconds": 5,
+      "speedMultiplier": 1.8
     }
   }
 }
 ```
 
-> **Uji Breaking Changes:**  
-> Jika payload versi 1 dikirimkan ke endpoint `/api/v2/players`, server menolak request dengan status **400 Bad Request** disertai RFC 9457 ProblemDetail:
+> **Verifikasi Breaking Change:**  
+> Jika payload versi 1 dikirimkan ke endpoint `/api/v2/players`, server menolak permintaan dengan status code `400 Bad Request` sesuai spesifikasi RFC 9457 (Problem Details for HTTP APIs):
 > ```json
 > {
 >   "type": "about:blank",
@@ -111,123 +114,111 @@ Content-Type: application/json
 
 ---
 
-## 🎮 Karakteristik Kelas Ular (Snake Classes)
+## 4. Spesifikasi Kelas Serpent & Mekanika Arena
 
-1. **⚡ Viper (Agile)**
-   - *Passive:* Poison Trail. Kecepatan gerak dasar +20%.
-   - *Active:* Poison Sprint. Menambah kecepatan lari ekstra selama 5 detik.
-2. **🛡️ Python (Tank)**
-   - *Passive:* Thick Scales. Tahan benturan ringan pada tubuh sendiri.
-   - *Active:* Constrict Armor. Kebal terhadap eliminasi selama perisai aktif.
-3. **👑 Cobra (Specialist)**
-   - *Passive:* Golden Touch. Memperoleh +30 poin ekstra dari setiap Golden Apple.
-   - *Active:* Venom Spit. Memunculkan bonus apel emas di sekitar arena.
+Tiga kelas serpent dirancang dengan karakteristik taktikal yang berbeda:
+
+1. **CLASS 01 // VIPER (Agile Recon)**
+   - *Passive:* Poison Trail. Kecepatan akselerasi dasar +20%.
+   - *Active Ability:* Venom Dash. Akselerasi ledakan kecepatan tinggi selama 3 detik (cooldown 5 detik).
+2. **CLASS 02 // PYTHON (Armored Tank)**
+   - *Passive:* Thick Scales. Tahan benturan kontak badan serpent lawan.
+   - *Active Ability:* Forcefield Shield. Perisai elektromagnetik pelindung dari eliminasi kontak tubuh.
+3. **CLASS 03 // COBRA (Royal Specialist)**
+   - *Passive:* Golden Touch. Memperoleh +50 poin dari Golden Apple (dibanding 30 poin kelas lain).
+   - *Active Ability:* Golden Beacon. Mempercepat deteksi dan pemunculan apel emas di sekitar arena.
 
 ---
 
-## 📖 Dokumentasi Interaktif OpenAPI 3 (Swagger UI)
+## 5. Dokumentasi Interaktif OpenAPI 3 (Swagger UI)
 
-Setiap microservice dilengkapi dengan Springdoc OpenAPI 3. Akses antarmuka interaktif pada browser:
+Spesifikasi antarmuka terintegrasi dengan Springdoc OpenAPI:
 
 - **Player Service Swagger:** `http://localhost:8081/swagger-ui.html`
-  - Menyediakan dropdown selector untuk beralih antara spesifikasi **`v1-api`** dan **`v2-api`**.
+  - Menyediakan selektor dokumen untuk beralih antara definisi kontrak `v1-api` dan `v2-api`.
 - **Arena Service Swagger:** `http://localhost:8082/swagger-ui.html`
-  - Menyediakan pengujian langsung untuk endpoint arena session dan inter-service sync.
+  - Menyediakan eksplorasi langsung untuk endpoint simulasi arena dan status server.
 
 ---
 
-## 🧪 Pengujian Otomatis (Automated JUnit 5 Tests)
+## 6. Prosedur Pengujian Otomatis (Automated Test Suite)
 
-Proyek ini dilengkapi dengan rangkaian pengujian unit dan integrasi berbasis JUnit 5 & MockMvc untuk mendukung proses CI/CD:
+Proyek dilengkapi dengan pengujian unit dan integrasi berbasis JUnit 5 dan MockMvc:
 
 ### Menjalankan Test Player Service:
 ```bash
 cd player-service
 ./mvnw clean test
 ```
-*Hasil Pengujian:*
-- Verifikasi seluruh metode CRUD HTTP (`POST 201`, `GET 200`, `PUT 200`, `PATCH 200`, `DELETE 204`).
-- Verifikasi API v2 payload valid.
-- Verifikasi penolakan breaking change pada v2 (`400 Bad Request`).
-- Verifikasi RFC 9457 ProblemDetail exception handler.
+*Cakupan Pengujian:*
+- Verifikasi seluruh kata kerja REST (`POST 201`, `GET 200`, `PUT 200`, `PATCH 200`, `DELETE 204`).
+- Validasi skema v2 dan penolakan payload v1 (`400 Bad Request`).
+- Validasi RFC 9457 exception handling.
 
 ### Menjalankan Test Arena Service:
 ```bash
 cd arena-service
 ./mvnw clean test
 ```
-*Hasil Pengujian:*
-- Verifikasi lifecycle arena: Join (`POST`), Snapshot State (`GET`), Loadout (`PUT`), Eat Apple (`PATCH`), Leave/Sync (`DELETE`).
-- Verifikasi inter-service communication mock invocation (`PlayerServiceClient`).
-- Verifikasi validation constraint (`400 Bad Request`).
-- Verifikasi OpenAPI 3 spec availability.
+*Cakupan Pengujian:*
+- Siklus hidup serpent (Join, Snapshot State, Loadout, Eat Apple, Leave & Sync).
+- Verifikasi mock inter-service HTTP client invocation (`PlayerServiceClient`).
+- Uji isolasi tab/jendela independen dan Web Worker heartbeat.
 
 ---
 
-## 🚀 Panduan Menjalankan Sistem Secara Lokal
+## 7. Panduan Menjalankan Sistem Secara Lokal
 
 ### Prasyarat
-- Java Development Kit (JDK) versi 21 atau lebih baru.
-- Port 8081 dan 8082 tersedia di komputer lokal.
+- Java Development Kit (JDK) 21 atau lebih baru.
+- Port 8081 dan 8082 dalam kondisi bebas.
 
 ### Langkah 1: Jalankan Player Service
-Buka terminal baru:
 ```bash
 cd player-service
-./mvnw spring-boot:run
+./mvnw.cmd spring-boot:run
 ```
-Service akan aktif di `http://localhost:8081`.
+Service beroperasi pada `http://localhost:8081`.
 
 ### Langkah 2: Jalankan Arena Service
-Buka terminal kedua:
 ```bash
 cd arena-service
-./mvnw spring-boot:run
+./mvnw.cmd spring-boot:run
 ```
-Service akan aktif di `http://localhost:8082`.
+Service beroperasi pada `http://localhost:8082`.
 
-### Langkah 3: Buka Game Arena
-Buka browser dan kunjungi:
+### Langkah 3: Akses Antarmuka Game
+Buka browser dan arahkan ke:
 ```
 http://localhost:8082/
 ```
-Atau buka file `frontend/index.html` langsung di browser Anda.
 
 ---
 
-## 📂 Struktur Repositori
+## 8. Struktur Repositori
 
 ```
 snake-arena-microservices/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml               # GitHub Actions CI pipeline
-├── player-service/              # Microservice 1 (Port 8081)
+│       └── ci.yml               # GitHub Actions CI Pipeline
+├── player-service/              # Microservice Identity & Persistence (Port 8081)
 │   ├── pom.xml
-│   ├── mvnw / mvnw.cmd
-│   └── src/
-│       ├── main/java/com/snake/playerservice/
-│       │   ├── controller/      # PlayerControllerV1 & PlayerControllerV2
-│       │   ├── domain/          # Player entity & ClassProfile record
-│       │   ├── dto/             # DTO v1 vs v2
-│       │   ├── repository/      # Spring Data JPA PlayerRepository
-│       │   └── service/         # PlayerService business logic
-│       └── test/java/com/snake/playerservice/
-│           └── PlayerServiceTests.java
-├── arena-service/               # Microservice 2 (Port 8082)
+│   └── src/main/java/com/snake/playerservice/
+│       ├── controller/          # PlayerControllerV1 & PlayerControllerV2
+│       ├── domain/              # Entity & ClassProfile Records
+│       ├── dto/                 # Request & Response Contracts
+│       ├── repository/          # Spring Data JPA Repository
+│       └── service/             # Business Logic Layer
+├── arena-service/               # Microservice Real-Time Engine (Port 8082)
 │   ├── pom.xml
-│   ├── mvnw / mvnw.cmd
-│   └── src/
-│       ├── main/java/com/snake/arenaservice/
-│       │   ├── client/          # PlayerServiceClient (Inter-service HTTP)
-│       │   ├── controller/      # ArenaController
-│       │   ├── domain/          # ArenaState, Snake, Apple, Leaderboard
-│       │   └── service/         # ArenaManager gameplay engine
-│       ├── main/resources/
-│       │   └── static/index.html# Static Web Game UI & REST Inspector
-│       └── test/java/com/snake/arenaservice/
-│           └── ArenaServiceTests.java
+│   └── src/main/java/com/snake/arenaservice/
+│       ├── client/              # Inter-Service HTTP Client
+│       ├── controller/          # ArenaController
+│       ├── domain/              # World State, Snake, Apple
+│       ├── service/             # ArenaManager Collision & Tick Loop
+│       └── resources/static/    # Static Web UI & REST Inspector
 ├── frontend/
-│   └── index.html               # Source Web Game client
+│   └── index.html               # Source Web Game Client
 └── README.md
 ```
