@@ -149,25 +149,35 @@ window.SnakeArena = window.SnakeArena || {};
 
     function getDeviceProfile(baseName) {
         const cleanBase = (baseName || "Pilot").trim().replace(/#\d+$/, "");
-        const storageKey = "snake_player_profile_" + cleanBase.toLowerCase();
-        let saved = localStorage.getItem(storageKey);
+        const sessionKey = "snake_tab_profile_" + (window.name || "main") + "_" + cleanBase.toLowerCase();
+        let saved = sessionStorage.getItem(sessionKey);
         if (saved) {
             try {
                 const parsed = JSON.parse(saved);
                 if (parsed && parsed.tag) return parsed;
             } catch (e) {}
         }
-        const newTag = String(Math.floor(1000 + Math.random() * 9000));
+
+        // Hasilkan tag 4-digit baru yang tidak sedang aktif di arena
+        const activeNames = (window.arenaSnakes || []).map(s => (s.playerName || "").toLowerCase());
+        let newTag;
+        for (let i = 0; i < 50; i++) {
+            newTag = String(Math.floor(1000 + Math.random() * 9000));
+            const candidate = `${cleanBase.toLowerCase()}#${newTag}`;
+            if (!activeNames.includes(candidate)) {
+                break;
+            }
+        }
         const profile = { baseName: cleanBase, tag: newTag, playerId: null };
-        localStorage.setItem(storageKey, JSON.stringify(profile));
+        sessionStorage.setItem(sessionKey, JSON.stringify(profile));
         return profile;
     }
 
     function saveDeviceProfile(baseName, tag, pId) {
         const cleanBase = (baseName || "Pilot").trim().replace(/#\d+$/, "");
-        const storageKey = "snake_player_profile_" + cleanBase.toLowerCase();
+        const sessionKey = "snake_tab_profile_" + (window.name || "main") + "_" + cleanBase.toLowerCase();
         const profile = { baseName: cleanBase, tag: tag, playerId: pId };
-        localStorage.setItem(storageKey, JSON.stringify(profile));
+        sessionStorage.setItem(sessionKey, JSON.stringify(profile));
     }
 
     function updateTagBadges(nameVal) {
@@ -175,8 +185,6 @@ window.SnakeArena = window.SnakeArena || {};
         if (!cleanBase) {
             const elO = document.getElementById("overlayPlayerTag");
             if (elO) elO.innerText = "TAG: #????";
-            const elS = document.getElementById("inputTagSuffix");
-            if (elS) elS.innerText = "#????";
             const elSide = document.getElementById("sidebarPlayerTag");
             if (elSide) elSide.innerText = "TAG: #????";
             return null;
@@ -185,8 +193,6 @@ window.SnakeArena = window.SnakeArena || {};
         const tag = explicitTagMatch ? explicitTagMatch[1] : getDeviceProfile(cleanBase).tag;
         const elO = document.getElementById("overlayPlayerTag");
         if (elO) elO.innerText = `TAG: #${tag}`;
-        const elS = document.getElementById("inputTagSuffix");
-        if (elS) elS.innerText = `#${tag}`;
         const elSide = document.getElementById("sidebarPlayerTag");
         if (elSide) elSide.innerText = `TAG: #${tag}`;
         return tag;
@@ -199,7 +205,12 @@ window.SnakeArena = window.SnakeArena || {};
             snakeType: sClass,
             color: sColor
         };
-        return await window.makeApiCall("POST", `${window.ARENA_SERVICE_URL || 'http://localhost:8082'}/api/v1/arena/snakes`, joinPayload);
+        const res = await window.makeApiCall("POST", `${window.ARENA_SERVICE_URL || 'http://localhost:8082'}/api/v1/arena/snakes`, joinPayload);
+        if (res && res.success && res.data && res.data.playerName) {
+            playerName = res.data.playerName;
+            window.playerName = res.data.playerName;
+        }
+        return res;
     }
 
     async function validateAndStartGame() {

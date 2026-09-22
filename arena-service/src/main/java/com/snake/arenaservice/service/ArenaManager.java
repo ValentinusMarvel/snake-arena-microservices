@@ -85,20 +85,23 @@ public synchronized Snake joinArena(String playerId, String playerName, String s
             }
         }
 
-        // 2. Validasi Duplikasi Nama: Berikan peringatan jika nama sudah digunakan oleh pemain LAIN yang masih aktif
-        for (Snake existing : new ArrayList<>(snakes.values())) {
-            if (existing.isAlive() && existing.getPlayerName().equalsIgnoreCase(playerName)) {
-                if (!existing.getPlayerId().equalsIgnoreCase(playerId)) {
-                    // Jika pemain lain masih aktif (heartbeat dalam 5 detik terakhir)
-                    if (now - existing.getLastHeartbeatTime() <= 5000) {
-                        throw new IllegalArgumentException("Nama '" + playerName + "' sedang digunakan oleh pemain lain di arena! Silakan pilih nama lain.");
-                    } else {
-                        // Sesi pemain lain sudah disconnected / expired: bersihkan
-                        snakes.remove(existing.getId());
-                    }
+        // 2. Proteksi Duplikasi Nama: Jangan pernah membunuh ular pemain lain!
+        // Jika nama bertabrakan dengan pemain lain yang masih aktif, otomatis berikan tag unik baru.
+        String resolvedPlayerName = playerName;
+        boolean conflict;
+        do {
+            conflict = false;
+            for (Snake existing : snakes.values()) {
+                if (existing.isAlive() && !existing.getPlayerId().equalsIgnoreCase(playerId)
+                        && existing.getPlayerName().equalsIgnoreCase(resolvedPlayerName)) {
+                    conflict = true;
+                    String base = resolvedPlayerName.replaceAll("#\\d+$", "");
+                    int newTag = 1000 + random.nextInt(9000);
+                    resolvedPlayerName = base + "#" + newTag;
+                    break;
                 }
             }
-        }
+        } while (conflict);
 
         if (snakes.size() >= maxPlayers) {
             throw new IllegalStateException("Arena penuh! Maksimum " + maxPlayers + " pemain telah tercapai.");
@@ -122,9 +125,9 @@ public synchronized Snake joinArena(String playerId, String playerName, String s
         }
 
         String actualColor = color != null && !color.isBlank() ? color : getDefaultColor(snakeType);
-        Snake snake = new Snake(snakeId, playerId, playerName, snakeType.toUpperCase(), actualColor, segments, dir, score, true, false);
+        Snake snake = new Snake(snakeId, playerId, resolvedPlayerName, snakeType.toUpperCase(), actualColor, segments, dir, score, true, false);
         snakes.put(snakeId, snake);
-        log.info("Snake spawned: {} ({}) for player {} at ({},{}) [retainedPosition={}]", playerName, snakeId, playerId, segments.get(0).x(), segments.get(0).y(), existingSnake != null);
+        log.info("Snake spawned: {} ({}) for player {} at ({},{}) [retainedPosition={}]", resolvedPlayerName, snakeId, playerId, segments.get(0).x(), segments.get(0).y(), existingSnake != null);
         return snake;
     }
 

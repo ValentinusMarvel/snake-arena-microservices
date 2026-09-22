@@ -260,14 +260,11 @@
                     </p>
 
                     <div class="overlay-form">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                             <label class="overlay-input-label" for="overlayPlayerName" style="margin-bottom:0;">NAMA PEMAIN (WAJIB):</label>
                             <span id="overlayPlayerTag" style="font-size:0.75rem; font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--cyber-cyan); background:rgba(0,184,255,0.12); padding:2px 8px; border-radius:4px; border:1px solid rgba(0,184,255,0.3); letter-spacing:0.5px;">TAG: #????</span>
                         </div>
-                        <div style="position:relative; width:100%; margin-top:6px;">
-                            <input type="text" id="overlayPlayerName" class="overlay-input" placeholder="Ketik nama pemain..." maxlength="16" autofocus style="padding-right:75px;">
-                            <span id="inputTagSuffix" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); font-family:'JetBrains Mono',monospace; font-size:0.85rem; font-weight:700; color:var(--cyber-cyan); pointer-events:none; opacity:0.85;">#????</span>
-                        </div>
+                        <input type="text" id="overlayPlayerName" class="overlay-input" placeholder="Ketik nama pemain..." maxlength="16" autofocus>
                         <div class="validation-msg" id="nameValidationMsg">[ERR_REQUIRED] Nama pemain wajib diisi sebelum bermain!</div>
 
                         <label class="overlay-input-label" style="margin-top:4px;">PILIH TIPE ULAR:</label>
