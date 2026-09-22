@@ -165,6 +165,10 @@
             box-shadow: 0 0 8px var(--tactical-emerald);
         }
 
+        .team-roster-container {
+            position: relative;
+        }
+
         .author-badge {
             display: flex;
             align-items: center;
@@ -175,6 +179,14 @@
             border-radius: 4px;
             font-size: 0.8rem;
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .author-badge:hover {
+            border-color: var(--cyber-cyan);
+            background: #141b29;
         }
 
         .author-badge .student-name {
@@ -196,6 +208,151 @@
             color: var(--solar-amber);
             border-left: 1px solid rgba(255, 255, 255, 0.15);
             padding-left: 8px;
+        }
+
+        .team-roster-popover {
+            display: none;
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0d121c;
+            border: 1px solid var(--border-highlight);
+            border-radius: 6px;
+            padding: 12px;
+            width: 330px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 15px rgba(0,184,255,0.15);
+            z-index: 1000;
+        }
+
+        .team-roster-container:hover .team-roster-popover,
+        .team-roster-container:focus-within .team-roster-popover {
+            display: block;
+        }
+
+        .roster-popover-title {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--cyber-cyan);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .roster-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .roster-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            transition: background 0.15s ease;
+        }
+
+        .roster-card:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(0, 184, 255, 0.2);
+        }
+
+        .roster-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--solar-amber);
+            font-weight: 700;
+            width: 20px;
+        }
+
+        .roster-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .roster-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .roster-nim {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--cyber-cyan);
+        }
+
+        .telemetry-footer {
+            margin-top: 14px;
+            padding: 8px 16px;
+            background: #090d14;
+            border: 1px solid var(--border-chassis);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .footer-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--solar-amber);
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            padding: 2px 7px;
+            border-radius: 3px;
+            letter-spacing: 0.5px;
+        }
+
+        .footer-roster {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .member-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .member-chip .mc-name {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .member-chip .mc-nim {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--cyber-cyan);
+            font-size: 0.72rem;
+        }
+
+        .mc-divider {
+            color: rgba(255, 255, 255, 0.15);
+        }
+
+        .footer-meta {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.68rem;
+            color: var(--text-dim);
+            letter-spacing: 0.5px;
         }
 
         .header-actions {
@@ -1054,6 +1211,19 @@
             .touch-controls {
                 display: flex;
             }
+            .telemetry-footer {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            .footer-roster {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+            .mc-divider {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -1087,10 +1257,47 @@
             </div>
         </div>
 
-        <div class="author-badge">
-            <span class="student-name">Valentinus Marvel</span>
-            <span class="student-nim">245150201111027</span>
-            <span class="student-tag">ABL-2024</span>
+        <div class="team-roster-container" tabindex="0">
+            <div class="author-badge" title="Klik / Arahkan kursor untuk melihat Tim Pengembang">
+                <span class="student-name">TIM PENGEMBANG [4]</span>
+                <span class="student-tag">ABL</span>
+            </div>
+            <div class="team-roster-popover">
+                <div class="roster-popover-title">
+                    <span>TIM PENGEMBANG ABL</span>
+                    <span style="color:var(--text-dim); font-size:0.65rem;">FILKOM UB</span>
+                </div>
+                <div class="roster-list">
+                    <div class="roster-card">
+                        <span class="roster-num">01</span>
+                        <div class="roster-info">
+                            <span class="roster-name">Valentinus Marvel</span>
+                            <span class="roster-nim">245150201111027</span>
+                        </div>
+                    </div>
+                    <div class="roster-card">
+                        <span class="roster-num">02</span>
+                        <div class="roster-info">
+                            <span class="roster-name">Muhammad Raditya Arsyad</span>
+                            <span class="roster-nim">245150207111043</span>
+                        </div>
+                    </div>
+                    <div class="roster-card">
+                        <span class="roster-num">03</span>
+                        <div class="roster-info">
+                            <span class="roster-name">Muhamad Fahmi Siddiq Aqsha</span>
+                            <span class="roster-nim">245150200111030</span>
+                        </div>
+                    </div>
+                    <div class="roster-card">
+                        <span class="roster-num">04</span>
+                        <div class="roster-info">
+                            <span class="roster-name">Dafid Rosydan Hanif</span>
+                            <span class="roster-nim">245150200111029</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="header-actions">
@@ -1327,6 +1534,25 @@
         </div>
 
     </div>
+
+    <!-- Telemetry Footer Strip (Team Members) -->
+    <footer class="telemetry-footer">
+        <div class="footer-lead">
+            <span class="footer-badge">TIM PENGEMBANG ABL</span>
+        </div>
+        <div class="footer-roster">
+            <span class="member-chip"><span class="mc-name">Valentinus Marvel</span> <span class="mc-nim">(245150201111027)</span></span>
+            <span class="mc-divider">|</span>
+            <span class="member-chip"><span class="mc-name">Muhammad Raditya Arsyad</span> <span class="mc-nim">(245150207111043)</span></span>
+            <span class="mc-divider">|</span>
+            <span class="member-chip"><span class="mc-name">Muhamad Fahmi Siddiq Aqsha</span> <span class="mc-nim">(245150200111030)</span></span>
+            <span class="mc-divider">|</span>
+            <span class="member-chip"><span class="mc-name">Dafid Rosydan Hanif</span> <span class="mc-nim">(245150200111029)</span></span>
+        </div>
+        <div class="footer-meta">
+            <span>FILKOM UNIVERSITAS BRAWIJAYA</span>
+        </div>
+    </footer>
 
     <script>
         const currentHost = window.location.hostname || "localhost";

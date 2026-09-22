@@ -19,15 +19,19 @@ public class OpenApiConfig {
                         .description("""
                                 Layanan Manajemen Profil Pemain dan Kelas Ular (Snake Classes).
                                 
-                                **Nama:** Valentinus Marvel  
-                                **NIM:** 245150201111027  
+                                **Tim Pengembang:**
+                                - Valentinus Marvel (245150201111027)
+                                - Muhammad Raditya Arsyad (245150207111043)
+                                - Muhamad Fahmi Siddiq Aqsha (245150200111030)
+                                - Dafid Rosydan Hanif (245150200111029)
+                                
                                 **Mata Kuliah:** Arsitektur Berbasis Layanan (ABL)
                                 
                                 ### Fitur Versioning (Breaking Changes):
                                 - **v1 (Legacy API)**: Menggunakan struktur data flat untuk snakeType dan speed.
                                 - **v2 (Modern RPG)**: Menghapus snakeType dan speed, menggantikannya dengan nested object `classProfile` dengan skill cooldown & active modifiers.
                                 """)
-                        .contact(new Contact().name("Valentinus Marvel")));
+                        .contact(new Contact().name("Tim Pengembang ABL")));
     }
 
     @Bean

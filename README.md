@@ -5,8 +5,14 @@ Dokumentasi Tugas Mata Kuliah **Arsitektur Berbasis Layanan (ABL)**
 Fakultas Ilmu Komputer, Universitas Brawijaya  
 Implementasi Arsitektur RESTful Microservices Terdistribusi dengan Game Engine Multi-Tenant Interaktif.
 
-- **Penyusun:** Valentinus Marvel
-- **NIM:** 245150201111027
+### Tim Pengembang:
+| No. | Nama Mahasiswa | NIM |
+|:---:|:---|:---:|
+| 1 | Valentinus Marvel | 245150201111027 |
+| 2 | Muhammad Raditya Arsyad | 245150207111043 |
+| 3 | Muhamad Fahmi Siddiq Aqsha | 245150200111030 |
+| 4 | Dafid Rosydan Hanif | 245150200111029 |
+
 - **Teknologi Utama:** Java 21/22, Spring Boot 3.2.5, Spring MVC, Springdoc OpenAPI 3 (Swagger UI), Spring Data JPA, JUnit 5, MockMvc, H2 Database, HTML5 Canvas, Web Audio API Synthesizer, Web Worker Heartbeat.
 
 ---
