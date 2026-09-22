@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -1399,7 +1399,7 @@
             <div class="module-header" style="margin-top:2px;">
                 <div style="display:flex; flex-direction:column; gap:1px;">
                     <span>OPERASI REST API</span>
-                    <span style="font-size:0.65rem; color:var(--text-dim); font-weight:500;">(PLAYER SERVICE)</span>
+                    <span id="apiModuleSubtitle" style="font-size:0.65rem; color:var(--text-dim); font-weight:500;">(PLAYER SERVICE)</span>
                 </div>
                 <span id="registeredIdBadge" style="font-size:0.68rem; color:var(--text-dim); font-family:'JetBrains Mono';">Nomor ID</span>
             </div>
@@ -1916,6 +1916,9 @@
 
             const elDel = document.getElementById("labelBtnDelete");
             if (elDel) elDel.innerText = locked ? "Keluar Arena (DELETE)" : "Hapus Akun (Lobby)";
+
+            const elSub = document.getElementById("apiModuleSubtitle");
+            if (elSub) elSub.innerText = locked ? "(ARENA SERVICE)" : "(PLAYER SERVICE)";
         }
 
         function endGame(reason) {
@@ -2065,11 +2068,6 @@
 
         function updatePlayerIdBadge(id) {
             registeredPlayerId = id;
-            if (id) {
-                sessionStorage.setItem("snakeArenaRegisteredId", id);
-            } else {
-                sessionStorage.removeItem("snakeArenaRegisteredId");
-            }
             const badge = document.getElementById("registeredIdBadge");
             if (badge) {
                 badge.innerText = id ? id : "Nomor ID";
@@ -2077,7 +2075,7 @@
             }
         }
 
-        let registeredPlayerId = sessionStorage.getItem("snakeArenaRegisteredId") || null;
+        let registeredPlayerId = null;
 
         function getSafeUsername(base, suffix = "") {
             let name = (base && base.trim()) ? base.trim() : "Pilot";
@@ -2092,79 +2090,17 @@
             return (name + suffix).substring(0, 20);
         }
 
-        // 1. POST: Register Player in Player Service AND/OR Spawn in Arena
+        // 1. POST: Register Player in Player Service (Lobby) OR Spawn Ular Baru (In-Game)
         async function apiCreatePlayer() {
             playSfx('click');
-            let rawName = document.getElementById("overlayPlayerName").value.trim() || 
-                          document.getElementById("inputPlayerName").value.trim() || 
-                          playerName || 
-                          ("Pilot_" + Math.floor(100 + Math.random() * 900));
-            
-            let res;
-            if (currentVersion === "v1") {
-                const payload = { username: rawName, snakeType: selectedClass };
-                res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v1/players`, payload);
-                if (!res.success && res.status === 400) {
-                    const listRes = await makeApiCall("GET", `${PLAYER_SERVICE_URL}/api/v1/players`, null, true);
-                    let foundExisting = false;
-                    if (listRes.success && Array.isArray(listRes.data)) {
-                        const existing = listRes.data.find(p => p.username && p.username.toLowerCase() === rawName.toLowerCase());
-                        if (existing && existing.id) {
-                            res = { success: true, status: 200, data: existing };
-                            foundExisting = true;
-                        }
-                    }
-                    if (!foundExisting) {
-                        const safeName = getSafeUsername(rawName, `_${Math.floor(10 + Math.random() * 90)}`);
-                        res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v1/players`, { username: safeName, snakeType: selectedClass });
-                    }
-                }
-            } else {
-                const payload = {
-                    username: rawName,
-                    classProfile: {
-                        className: selectedClass,
-                        passiveEffect: selectedClass === "VIPER" ? "POISON_TRAIL" : (selectedClass === "PYTHON" ? "THICK_BODY" : "GOLDEN_SENSE"),
-                        activeAbility: {
-                            name: selectedClass === "VIPER" ? "Venom Dash" : (selectedClass === "PYTHON" ? "Apple Magnet" : "Poison Spit"),
-                            cooldownSeconds: 5,
-                            speedMultiplier: 1.8
-                        }
-                    }
-                };
-                res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v2/players`, payload);
-                if (!res.success && res.status === 400) {
-                    const listRes = await makeApiCall("GET", `${PLAYER_SERVICE_URL}/api/v1/players`, null, true);
-                    let foundExisting = false;
-                    if (listRes.success && Array.isArray(listRes.data)) {
-                        const existing = listRes.data.find(p => p.username && p.username.toLowerCase() === rawName.toLowerCase());
-                        if (existing && existing.id) {
-                            res = { success: true, status: 200, data: existing };
-                            foundExisting = true;
-                        }
-                    }
-                    if (!foundExisting) {
-                        const safeName = getSafeUsername(rawName, `_${Math.floor(10 + Math.random() * 90)}`);
-                        payload.username = safeName;
-                        res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v2/players`, payload);
-                    }
-                }
-            }
 
-            if (res.success && res.data && res.data.id) {
-                updatePlayerIdBadge(res.data.id);
-                playerId = res.data.id;
-                playerName = res.data.username;
-                document.getElementById("inputPlayerName").value = playerName;
-                document.getElementById("overlayPlayerName").value = playerName;
-                document.getElementById("hudPlayer").innerText = playerName;
-                document.getElementById("hudPlayer").style.color = "#ffffff";
-            }
-
+            // In-Game POST: Spawn Ular Baru dengan callsign unik non-duplikat
             if (gameRunning && snakeId) {
+                const baseName = playerName || "Serpent";
+                const uniqueCallsign = getSafeUsername(baseName, `_${Math.floor(10 + Math.random() * 90)}`);
                 const joinPayload = {
                     playerId: registeredPlayerId || playerId,
-                    playerName: playerName || rawName,
+                    playerName: uniqueCallsign,
                     snakeType: selectedClass,
                     color: selectedColor
                 };
@@ -2180,11 +2116,60 @@
                         });
                     }
                     await fetchArenaState();
+                    logApi("INFO", "/arena/snake-spawned", 200, null, {
+                        message: `Ular baru '${uniqueCallsign}' berhasil di-spawn ke dalam arena.`,
+                        snakeId: snakeId
+                    });
+                }
+                return arenaRes;
+            }
+
+            // Lobby POST: Mendaftarkan akun pemain baru ke Player Service
+            let rawName = document.getElementById("overlayPlayerName").value.trim() || 
+                          document.getElementById("inputPlayerName").value.trim() || 
+                          playerName || 
+                          ("Pilot_" + Math.floor(100 + Math.random() * 900));
+            
+            let res;
+            if (currentVersion === "v1") {
+                const payload = { username: rawName, snakeType: selectedClass };
+                res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v1/players`, payload);
+                if (!res.success && res.status === 400) {
+                    // Jika username sudah terdaftar, otomatis cari nama non-duplikat agar pemain baru tetap berhasil dibuat di database
+                    const safeName = getSafeUsername(rawName, `_${Math.floor(10 + Math.random() * 90)}`);
+                    res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v1/players`, { username: safeName, snakeType: selectedClass });
                 }
             } else {
+                const buildV2Payload = (uname) => ({
+                    username: uname,
+                    classProfile: {
+                        className: selectedClass,
+                        passiveEffect: selectedClass === "VIPER" ? "POISON_TRAIL" : (selectedClass === "PYTHON" ? "THICK_BODY" : "GOLDEN_SENSE"),
+                        activeAbility: {
+                            name: selectedClass === "VIPER" ? "Venom Dash" : (selectedClass === "PYTHON" ? "Apple Magnet" : "Poison Spit"),
+                            cooldownSeconds: 5,
+                            speedMultiplier: 1.8
+                        }
+                    }
+                });
+                res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v2/players`, buildV2Payload(rawName));
+                if (!res.success && res.status === 400) {
+                    const safeName = getSafeUsername(rawName, `_${Math.floor(10 + Math.random() * 90)}`);
+                    res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v2/players`, buildV2Payload(safeName));
+                }
+            }
+
+            if (res.success && res.data && res.data.id) {
+                updatePlayerIdBadge(res.data.id);
+                playerId = res.data.id;
+                playerName = res.data.username;
+                document.getElementById("inputPlayerName").value = playerName;
+                document.getElementById("overlayPlayerName").value = playerName;
+                document.getElementById("hudPlayer").innerText = playerName;
+                document.getElementById("hudPlayer").style.color = "#ffffff";
                 logApi("INFO", "/lobby/player-registered", 200, null, {
-                    message: `Akun '${playerName || rawName}' terdaftar di Player Service (Lobby). Tekan 'MASUK KE ARENA' untuk bertanding.`,
-                    playerId: registeredPlayerId || playerId
+                    message: `Akun '${playerName}' terdaftar di Player Service (Lobby). Tekan 'MASUK KE ARENA' untuk bertanding.`,
+                    playerId: res.data.id
                 });
             }
 
@@ -2781,15 +2766,51 @@
         requestAnimationFrame(renderLoop);
         fetchArenaState();
 
-        // 1. Synchronize Sidebar Input and Overlay Input in Realtime
+        // 1. Real-Time Input Synchronization & Instant Player ID Lookup (e.g. from Swagger)
+        let nameLookupTimer = null;
+        function lookupPlayerByName(name) {
+            if (nameLookupTimer) clearTimeout(nameLookupTimer);
+            const clean = (name || "").trim();
+            if (!clean) {
+                updatePlayerIdBadge(null);
+                return;
+            }
+            nameLookupTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch(`${PLAYER_SERVICE_URL}/api/v1/players`);
+                    if (res.ok) {
+                        const list = await res.json();
+                        if (Array.isArray(list)) {
+                            const found = list.find(p => p.username && p.username.toLowerCase() === clean.toLowerCase());
+                            if (found && found.id) {
+                                updatePlayerIdBadge(found.id);
+                                playerId = found.id;
+                                playerName = found.username;
+                                document.getElementById("hudPlayer").innerText = playerName;
+                                document.getElementById("hudPlayer").style.color = "#ffffff";
+                                return;
+                            }
+                        }
+                    }
+                    updatePlayerIdBadge(null);
+                } catch(e) {}
+            }, 300);
+        }
+
         const elInpSidebar = document.getElementById("inputPlayerName");
         const elInpOverlay = document.getElementById("overlayPlayerName");
         if (elInpSidebar && elInpOverlay) {
+            // Kolom input dipastikan kosong pada awal load agar instruksi placeholder terlihat
+            elInpSidebar.value = "";
+            elInpOverlay.value = "";
+
             elInpSidebar.addEventListener("input", (e) => {
                 elInpOverlay.value = e.target.value;
+                lookupPlayerByName(e.target.value);
             });
             elInpOverlay.addEventListener("input", (e) => {
                 elInpSidebar.value = e.target.value;
+                lookupPlayerByName(e.target.value);
             });
             elInpOverlay.addEventListener("keydown", (e) => {
                 if (e.key === "Enter") {
@@ -2803,23 +2824,8 @@
             });
         }
 
-        // 2. Initialize Player ID Badge & Saved Profile
-        if (registeredPlayerId) {
-            updatePlayerIdBadge(registeredPlayerId);
-            fetch(`${PLAYER_SERVICE_URL}/api/v1/players/${registeredPlayerId}`)
-                .then(r => r.ok ? r.json() : null)
-                .then(data => {
-                    if (data && data.username) {
-                        playerName = data.username;
-                        if (elInpSidebar) elInpSidebar.value = playerName;
-                        if (elInpOverlay) elInpOverlay.value = playerName;
-                        document.getElementById("hudPlayer").innerText = playerName;
-                        document.getElementById("hudPlayer").style.color = "#ffffff";
-                    }
-                }).catch(() => {});
-        } else {
-            updatePlayerIdBadge(null);
-        }
+        // 2. Initialize ID Badge secara bersih tanpa auto-fill
+        updatePlayerIdBadge(null);
 
         logApi("INFO", "/system/init", 200, null, {
             status: "TACTICAL_CONSOLE_READY",
