@@ -1355,7 +1355,7 @@
 
             <div class="input-group">
                 <label for="inputPlayerName">NAMA PEMAIN:</label>
-                <input type="text" id="inputPlayerName" class="input-text" placeholder="Pilih saat mulai permainan..." disabled>
+                <input type="text" id="inputPlayerName" class="input-text" placeholder="Ketik nama pemain...">
             </div>
 
             <div class="module-header" style="margin-top:2px;">
@@ -1404,12 +1404,12 @@
                 </button>
             </div>
 
-            <div class="module-header" style="margin-top:2px; align-items:flex-start;">
+            <div class="module-header" style="margin-top:2px;">
                 <div style="display:flex; flex-direction:column; gap:1px;">
                     <span>OPERASI REST API</span>
                     <span style="font-size:0.65rem; color:var(--text-dim); font-weight:500;">(PLAYER SERVICE)</span>
                 </div>
-                <span id="registeredIdBadge" style="font-size:0.65rem; color:var(--text-dim); font-family:'JetBrains Mono'; text-align:right; line-height:1.2;">Nomor<br>ID</span>
+                <span id="registeredIdBadge" style="font-size:0.68rem; color:var(--text-dim); font-family:'JetBrains Mono';">Nomor ID</span>
             </div>
 
             <div class="api-actions">
@@ -1804,15 +1804,50 @@
             startBtn.innerText = "CONNECTING LINK...";
             startBtn.disabled = true;
 
-            if (!registeredPlayerId) {
-                try {
-                    const regPayload = { username: val, snakeType: selectedClass };
-                    const regRes = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v1/players`, regPayload, true);
-                    if (regRes.success && regRes.data && regRes.data.id) {
-                        updatePlayerIdBadge(regRes.data.id);
-                        playerId = regRes.data.id;
+            // Immediately register or read Player ID from Player Service
+            try {
+                let targetId = registeredPlayerId;
+                if (!targetId || (playerName && playerName.toLowerCase() !== val.toLowerCase())) {
+                    let regPayload;
+                    if (currentVersion === "v1") {
+                        regPayload = { username: val, snakeType: selectedClass };
+                    } else {
+                        regPayload = {
+                            username: val,
+                            classProfile: {
+                                className: selectedClass,
+                                passiveEffect: selectedClass === "VIPER" ? "POISON_TRAIL" : (selectedClass === "PYTHON" ? "THICK_BODY" : "GOLDEN_SENSE"),
+                                activeAbility: {
+                                    name: selectedClass === "VIPER" ? "Venom Dash" : (selectedClass === "PYTHON" ? "Apple Magnet" : "Poison Spit"),
+                                    cooldownSeconds: 5,
+                                    speedMultiplier: 1.8
+                                }
+                            }
+                        };
                     }
-                } catch (e) {}
+
+                    const regRes = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/${currentVersion}/players`, regPayload);
+                    if (regRes.success && regRes.data && regRes.data.id) {
+                        targetId = regRes.data.id;
+                    } else {
+                        // Username already exists in Player Service; immediately query to read existing ID
+                        const listRes = await makeApiCall("GET", `${PLAYER_SERVICE_URL}/api/v1/players`);
+                        if (listRes.success && Array.isArray(listRes.data)) {
+                            const existing = listRes.data.find(p => p.username && p.username.toLowerCase() === val.toLowerCase());
+                            if (existing && existing.id) {
+                                targetId = existing.id;
+                            }
+                        }
+                    }
+                }
+
+                if (targetId) {
+                    updatePlayerIdBadge(targetId);
+                    playerId = targetId;
+                    registeredPlayerId = targetId;
+                }
+            } catch (err) {
+                console.error("Player registration sync error:", err);
             }
 
             const joinPayload = {
@@ -1867,7 +1902,7 @@
         }
 
         function lockInGameControls(locked) {
-            document.getElementById("inputPlayerName").disabled = true;
+            document.getElementById("inputPlayerName").disabled = locked;
             document.getElementById("classLockNotice").innerText = locked ? "TERKUNCI IN-GAME" : "PILIH DI DIALOG";
             document.getElementById("classLockNotice").style.color = locked ? "var(--solar-amber)" : "var(--cyber-cyan)";
 
@@ -2038,14 +2073,19 @@
 
         function updatePlayerIdBadge(id) {
             registeredPlayerId = id;
+            if (id) {
+                sessionStorage.setItem("snakeArenaRegisteredId", id);
+            } else {
+                sessionStorage.removeItem("snakeArenaRegisteredId");
+            }
             const badge = document.getElementById("registeredIdBadge");
             if (badge) {
-                badge.innerHTML = id ? id : "Nomor<br>ID";
+                badge.innerText = id ? id : "Nomor ID";
                 badge.style.color = id ? "var(--tactical-emerald)" : "var(--text-dim)";
             }
         }
 
-        let registeredPlayerId = null;
+        let registeredPlayerId = sessionStorage.getItem("snakeArenaRegisteredId") || null;
 
         function getSafeUsername(base, suffix = "") {
             let name = (base && base.trim()) ? base.trim() : "Pilot";
@@ -2073,8 +2113,19 @@
                 const payload = { username: rawName, snakeType: selectedClass };
                 res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v1/players`, payload);
                 if (!res.success && res.status === 400) {
-                    const safeName = getSafeUsername(rawName, `_${Math.floor(10 + Math.random() * 90)}`);
-                    res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v1/players`, { username: safeName, snakeType: selectedClass });
+                    const listRes = await makeApiCall("GET", `${PLAYER_SERVICE_URL}/api/v1/players`, null, true);
+                    let foundExisting = false;
+                    if (listRes.success && Array.isArray(listRes.data)) {
+                        const existing = listRes.data.find(p => p.username && p.username.toLowerCase() === rawName.toLowerCase());
+                        if (existing && existing.id) {
+                            res = { success: true, status: 200, data: existing };
+                            foundExisting = true;
+                        }
+                    }
+                    if (!foundExisting) {
+                        const safeName = getSafeUsername(rawName, `_${Math.floor(10 + Math.random() * 90)}`);
+                        res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v1/players`, { username: safeName, snakeType: selectedClass });
+                    }
                 }
             } else {
                 const payload = {
@@ -2091,9 +2142,20 @@
                 };
                 res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v2/players`, payload);
                 if (!res.success && res.status === 400) {
-                    const safeName = getSafeUsername(rawName, `_${Math.floor(10 + Math.random() * 90)}`);
-                    payload.username = safeName;
-                    res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v2/players`, payload);
+                    const listRes = await makeApiCall("GET", `${PLAYER_SERVICE_URL}/api/v1/players`, null, true);
+                    let foundExisting = false;
+                    if (listRes.success && Array.isArray(listRes.data)) {
+                        const existing = listRes.data.find(p => p.username && p.username.toLowerCase() === rawName.toLowerCase());
+                        if (existing && existing.id) {
+                            res = { success: true, status: 200, data: existing };
+                            foundExisting = true;
+                        }
+                    }
+                    if (!foundExisting) {
+                        const safeName = getSafeUsername(rawName, `_${Math.floor(10 + Math.random() * 90)}`);
+                        payload.username = safeName;
+                        res = await makeApiCall("POST", `${PLAYER_SERVICE_URL}/api/v2/players`, payload);
+                    }
                 }
             }
 
@@ -2727,9 +2789,49 @@
         requestAnimationFrame(renderLoop);
         fetchArenaState();
 
+        // 1. Synchronize Sidebar Input and Overlay Input in Realtime
+        const elInpSidebar = document.getElementById("inputPlayerName");
+        const elInpOverlay = document.getElementById("overlayPlayerName");
+        if (elInpSidebar && elInpOverlay) {
+            elInpSidebar.addEventListener("input", (e) => {
+                elInpOverlay.value = e.target.value;
+            });
+            elInpOverlay.addEventListener("input", (e) => {
+                elInpSidebar.value = e.target.value;
+            });
+            elInpOverlay.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    validateAndStartGame();
+                }
+            });
+            elInpSidebar.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    validateAndStartGame();
+                }
+            });
+        }
+
+        // 2. Initialize Player ID Badge & Saved Profile
+        if (registeredPlayerId) {
+            updatePlayerIdBadge(registeredPlayerId);
+            fetch(`${PLAYER_SERVICE_URL}/api/v1/players/${registeredPlayerId}`)
+                .then(r => r.ok ? r.json() : null)
+                .then(data => {
+                    if (data && data.username) {
+                        playerName = data.username;
+                        if (elInpSidebar) elInpSidebar.value = playerName;
+                        if (elInpOverlay) elInpOverlay.value = playerName;
+                        document.getElementById("hudPlayer").innerText = playerName;
+                        document.getElementById("hudPlayer").style.color = "#ffffff";
+                    }
+                }).catch(() => {});
+        } else {
+            updatePlayerIdBadge(null);
+        }
+
         logApi("INFO", "/system/init", 200, null, {
             status: "TACTICAL_CONSOLE_READY",
-            pilot: playerId,
+            pilot: registeredPlayerId || playerId,
             audioEngine: "WebAudioSynth",
             architecture: "Spring Boot Microservices"
         });
