@@ -268,7 +268,7 @@ window.SnakeArena = window.SnakeArena || {};
                 playerId: registeredPlayerId || window.playerId,
                 playerName: currentCallsign,
                 snakeType: window.selectedClass || "VIPER",
-                color: window.selectedColor || "#00e575"
+                color: window.selectedColor || "#059669"
             };
             const arenaRes = await makeApiCall("POST", `${ARENA_SERVICE_URL}/api/v1/arena/snakes`, joinPayload, false, btn);
             if (arenaRes.success && arenaRes.data) {
@@ -438,7 +438,7 @@ window.SnakeArena = window.SnakeArena || {};
         if (window.gameRunning && window.snakeId) {
             // In-Game PUT: Update live serpent skin/loadout in arena
             const classes = ["VIPER", "PYTHON", "COBRA"];
-            const colors = { VIPER: "#00e575", PYTHON: "#00b8ff", COBRA: "#f59e0b" };
+            const colors = { VIPER: "#059669", PYTHON: "#0284c7", COBRA: "#d97706" };
             const currentCls = (window.selectedClass || "VIPER").toUpperCase();
             const nextClsIdx = (classes.indexOf(currentCls) + 1) % classes.length;
             const nextClass = classes[nextClsIdx];
@@ -484,7 +484,7 @@ window.SnakeArena = window.SnakeArena || {};
 
         // Cycle tactical class so change is visibly and functionally demonstrated
         const classes = ["VIPER", "PYTHON", "COBRA"];
-        const colors = { VIPER: "#00e575", PYTHON: "#00b8ff", COBRA: "#f59e0b" };
+        const colors = { VIPER: "#059669", PYTHON: "#0284c7", COBRA: "#d97706" };
         const currentCls = (window.selectedClass || "VIPER").toUpperCase();
         const nextClsIdx = (classes.indexOf(currentCls) + 1) % classes.length;
         const nextClass = classes[nextClsIdx];

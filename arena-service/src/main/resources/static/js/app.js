@@ -26,7 +26,7 @@ window.SnakeArena = window.SnakeArena || {};
 
     let playerName = "";
     let selectedClass = "VIPER";
-    let selectedColor = "#00e575";
+    let selectedColor = "#059669";
     let snakeId = null;
     let score = 0;
     let skillActive = false;
@@ -731,4 +731,18 @@ window.SnakeArena = window.SnakeArena || {};
     window.updateTagBadges = updateTagBadges;
     window.getDeviceProfile = getDeviceProfile;
     window.saveDeviceProfile = saveDeviceProfile;
+
+    // Optional query parameter for automated testing / live preview (?autostart=1)
+    if (new URLSearchParams(window.location.search).get("autostart") === "1") {
+        window.addEventListener("DOMContentLoaded", () => {
+            setTimeout(() => {
+                const inp = document.getElementById("overlayPlayerName");
+                if (inp) {
+                    inp.value = "Marvel";
+                    updateTagBadges("Marvel");
+                }
+                validateAndStartGame();
+            }, 600);
+        });
+    }
 })();

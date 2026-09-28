@@ -1,60 +1,89 @@
 /* ==========================================================================
    Snake Arena Design Tokens, Global CSS Variables & Base Resets
+   Modern Minimalist & Playful Engineering Theme (Clean, Soft & Polished)
    ========================================================================== */
 
-                :root {
-            /* Matte Industrial & High-Density Engineering Tokens */
-            --bg-canvas: #0a0c12;
-            --bg-chassis: #11141c;
-            --bg-panel: #151922;
-            --bg-panel-elevated: #1a202c;
-            --bg-inset: #0d1017;
-            
-            --border-chassis: rgba(255, 255, 255, 0.08);
-            --border-highlight: rgba(255, 255, 255, 0.16);
-            --border-accent: rgba(16, 185, 129, 0.35);
+:root {
+    /* Surfaces: Warm Porcelain & Clean Elevated Card Surfaces */
+    --bg-canvas: #f8fafc;
+    --bg-chassis: #ffffff;
+    --bg-panel: #ffffff;
+    --bg-panel-elevated: #ffffff;
+    --bg-inset: #f1f5f9;
+    --bg-pill: #e2e8f0;
 
-            /* Calibrated Semantic Accents */
-            --tactical-emerald: #10b981;
-            --cyber-cyan: #38bdf8;
-            --solar-amber: #f59e0b;
-            --crimson-hazard: #ef4444;
-            --arcane-purple: #8b5cf6;
+    /* Delicate Borders & Layered Shadows */
+    --border-chassis: rgba(15, 23, 42, 0.08);
+    --border-highlight: rgba(15, 23, 42, 0.12);
+    --border-subtle: rgba(15, 23, 42, 0.05);
+    --border-accent: rgba(5, 150, 105, 0.35);
 
-            --text-lead: #f8fafc;
-            --text-body: #94a3b8;
-            --text-dim: #64748b;
-            --text-code: #38bdf8;
+    --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+    --shadow-card: 0 2px 4px rgba(15, 23, 42, 0.02), 0 8px 24px -4px rgba(15, 23, 42, 0.06);
+    --shadow-popover: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
 
-            /* REST Method Badges */
-            --method-get: #38bdf8;
-            --method-post: #10b981;
-            --method-put: #f59e0b;
-            --method-patch: #8b5cf6;
-            --method-delete: #ef4444;
+    /* Text Hierarchy: Rich Deep Navy Slate & Warm Muted Inks */
+    --text-lead: #0f172a;
+    --text-body: #334155;
+    --text-dim: #64748b;
+    --text-muted: #94a3b8;
+    --text-code: #0284c7;
 
-            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-        }
+    /* Calibrated Fresh & Playful Signal Accents */
+    --tactical-emerald: #059669;
+    --tactical-emerald-bg: #ecfdf5;
+    --cyber-cyan: #0284c7;
+    --cyber-cyan-bg: #f0f9ff;
+    --solar-amber: #d97706;
+    --solar-amber-bg: #fffbeb;
+    --crimson-hazard: #e11d48;
+    --crimson-hazard-bg: #fff1f2;
+    --arcane-purple: #7c3aed;
+    --arcane-purple-bg: #f5f3ff;
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            touch-action: manipulation;
-        }
+    /* REST Method Badges: Soft Pastel Backgrounds with High-Contrast Inks */
+    --method-get: #0284c7;
+    --method-get-bg: #e0f2fe;
+    --method-post: #059669;
+    --method-post-bg: #d1fae5;
+    --method-put: #d97706;
+    --method-put-bg: #fef3c7;
+    --method-patch: #7c3aed;
+    --method-patch-bg: #ede9fe;
+    --method-delete: #e11d48;
+    --method-delete-bg: #ffe4e6;
 
-        body {
-            background-color: var(--bg-canvas);
-            background-image:
-                linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-            background-size: 32px 32px;
-            color: var(--text-lead);
-            font-family: var(--font-sans);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-        }
+    /* Snake Class Profiles */
+    --viper-color: #059669;
+    --viper-bg: #ecfdf5;
+    --python-color: #0284c7;
+    --python-bg: #f0f9ff;
+    --cobra-color: #d97706;
+    --cobra-bg: #fffbeb;
+
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    touch-action: manipulation;
+}
+
+body {
+    background-color: var(--bg-canvas);
+    background-image: radial-gradient(rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+    background-size: 24px 24px;
+    color: var(--text-body);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
 

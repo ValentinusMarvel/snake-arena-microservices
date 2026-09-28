@@ -31,20 +31,20 @@ window.SnakeArena = window.SnakeArena || {};
         const enclosureEl = document.getElementById("canvasEnclosure");
         if (enclosureEl) {
             if (isGameRunning && mySkillActive) {
-                enclosureEl.style.boxShadow = "0 12px 30px rgba(0, 0, 0, 0.5)";
+                enclosureEl.style.boxShadow = "0 8px 30px rgba(5, 150, 105, 0.25)";
                 enclosureEl.style.borderColor = myColor;
             } else {
-                enclosureEl.style.boxShadow = "0 12px 30px rgba(0, 0, 0, 0.4)";
-                enclosureEl.style.borderColor = "var(--border-muted)";
+                enclosureEl.style.boxShadow = "var(--shadow-md)";
+                enclosureEl.style.borderColor = "var(--border-highlight)";
             }
         }
 
-        // Clean Matte Slate Canvas
-        ctx.fillStyle = "#0a0d14";
+        // Clean Warm White Canvas
+        ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // Subtle Technical Coordinate Grid
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.028)";
+        ctx.strokeStyle = "rgba(15, 23, 42, 0.045)";
         ctx.lineWidth = 1;
         for (let i = 0; i <= gridSize; i++) {
             const p = i * tileSize;
@@ -59,8 +59,8 @@ window.SnakeArena = window.SnakeArena || {};
             ctx.stroke();
         }
 
-        // Perimeter Hazard Warning Lines
-        ctx.strokeStyle = "rgba(255, 51, 85, 0.22)";
+        // Perimeter Warning Lines (Soft Coral)
+        ctx.strokeStyle = "rgba(225, 29, 72, 0.35)";
         ctx.lineWidth = 2;
         ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
 
@@ -178,10 +178,10 @@ window.SnakeArena = window.SnakeArena || {};
             // A. SKILL FORCEFIELD / AURA
             if (isSkillOn) {
                 ctx.save();
-                const shieldColor = s.snakeType === "PYTHON" ? "#38bdf8" : 
-                                   (s.snakeType === "COBRA" ? "#f59e0b" : "#10b981");
-                const shieldRgba = s.snakeType === "PYTHON" ? "rgba(56, 189, 248, 0.15)" : 
-                                  (s.snakeType === "COBRA" ? "rgba(245, 158, 11, 0.15)" : "rgba(16, 185, 129, 0.15)");
+                const shieldColor = s.snakeType === "PYTHON" ? "#0284c7" : 
+                                   (s.snakeType === "COBRA" ? "#d97706" : "#059669");
+                const shieldRgba = s.snakeType === "PYTHON" ? "rgba(2, 132, 199, 0.15)" : 
+                                  (s.snakeType === "COBRA" ? "rgba(217, 119, 6, 0.15)" : "rgba(5, 150, 105, 0.15)");
 
                 // Trail Forcefield
                 segs.forEach(seg => {
@@ -193,7 +193,7 @@ window.SnakeArena = window.SnakeArena || {};
 
                 // Bubble Shield
                 ctx.strokeStyle = shieldColor;
-                ctx.lineWidth = 1.5;
+                ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.arc(headCx, headCy, tileSize * 1.15 * pulse, 0, Math.PI * 2);
                 ctx.stroke();
@@ -225,14 +225,14 @@ window.SnakeArena = window.SnakeArena || {};
                 ctx.fill();
 
                 // Inner Dorsal Core Highlight
-                ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
+                ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
                 ctx.beginPath();
                 ctx.arc(scx, scy, segRadius * 0.45, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.restore();
             }
 
-            // C. DRAW DIRECTION-AWARE HEAD & LUMINOUS OPTIC EYES
+            // C. DRAW DIRECTION-AWARE HEAD & PLAYFUL EXPRESSIVE EYES
             ctx.save();
             ctx.translate(headCx, headCy);
 
@@ -244,7 +244,7 @@ window.SnakeArena = window.SnakeArena || {};
 
             // Armored Head Shell (Pointing UP in local space)
             const hr = tileSize * 0.48;
-            ctx.fillStyle = isMe ? "#ffffff" : sColor;
+            ctx.fillStyle = sColor;
             ctx.beginPath();
             ctx.moveTo(0, -hr * 1.15); // Snout tip
             ctx.lineTo(hr * 0.95, hr * 0.7);
@@ -252,22 +252,41 @@ window.SnakeArena = window.SnakeArena || {};
             ctx.closePath();
             ctx.fill();
 
-            // Luminous Optic Eyes
+            // Head crown highlight for local player
+            if (isMe) {
+                ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+                ctx.beginPath();
+                ctx.arc(0, -hr * 0.3, hr * 0.38, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Playful Expressive Eyes
             const eyeX = hr * 0.42;
             const eyeY = -hr * 0.25;
-            const eyeR = hr * 0.24;
+            const eyeR = hr * 0.26;
 
             [-1, 1].forEach(side => {
                 const ex = side * eyeX;
 
-                ctx.fillStyle = isMe ? "#06090f" : "#ffffff";
+                // Outer white sclera
+                ctx.fillStyle = "#ffffff";
                 ctx.beginPath();
                 ctx.arc(ex, eyeY, eyeR, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.strokeStyle = "rgba(15, 23, 42, 0.2)";
+                ctx.lineWidth = 1;
+                ctx.stroke();
 
-                ctx.fillStyle = isMe ? "var(--tactical-emerald)" : "#000000";
+                // Dark pupil
+                ctx.fillStyle = "#0f172a";
                 ctx.beginPath();
-                ctx.arc(ex, eyeY - eyeR * 0.25, eyeR * 0.55, 0, Math.PI * 2);
+                ctx.arc(ex, eyeY - eyeR * 0.15, eyeR * 0.55, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Cute catchlight shine
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(ex + 1, eyeY - eyeR * 0.3, eyeR * 0.22, 0, Math.PI * 2);
                 ctx.fill();
             });
 
@@ -280,27 +299,27 @@ window.SnakeArena = window.SnakeArena || {};
             if (isSkillOn) {
                 const badgeText = s.snakeType === "PYTHON" ? "[PERISAI]" : 
                                  (s.snakeType === "COBRA" ? "[GOLD SENSE]" : "[AKSELERASI]");
-                const badgeColor = s.snakeType === "PYTHON" ? "#38bdf8" : 
-                                  (s.snakeType === "COBRA" ? "#f59e0b" : "#10b981");
+                const badgeColor = s.snakeType === "PYTHON" ? "#0284c7" : 
+                                  (s.snakeType === "COBRA" ? "#d97706" : "#059669");
                 ctx.font = "bold 9px 'JetBrains Mono', monospace";
                 const tw = ctx.measureText(badgeText).width;
                 const by = head.y * tileSize - 22;
 
-                ctx.fillStyle = "#11141c";
+                ctx.fillStyle = "#ffffff";
                 ctx.beginPath();
-                ctx.roundRect(headCx - tw / 2 - 6, by, tw + 12, 14, 3);
+                ctx.roundRect(headCx - tw / 2 - 6, by, tw + 12, 14, 4);
                 ctx.fill();
                 ctx.strokeStyle = badgeColor;
-                ctx.lineWidth = 1;
+                ctx.lineWidth = 1.5;
                 ctx.stroke();
 
                 ctx.fillStyle = badgeColor;
                 ctx.fillText(badgeText, headCx, by + 10);
             }
 
-            ctx.font = isMe ? "600 11px 'Inter', sans-serif" : "500 10px 'Inter', sans-serif";
-            ctx.fillStyle = isMe ? "#10b981" : "#94a3b8";
-            const label = isMe ? `${s.playerName} (YOU)` : s.playerName;
+            ctx.font = isMe ? "700 11px 'Plus Jakarta Sans', sans-serif" : "600 10px 'Plus Jakarta Sans', sans-serif";
+            ctx.fillStyle = isMe ? "#059669" : "#334155";
+            const label = isMe ? `${s.playerName} (ANDA)` : s.playerName;
             ctx.fillText(label, headCx, head.y * tileSize - (isSkillOn ? 25 : 6));
             ctx.restore();
         });
