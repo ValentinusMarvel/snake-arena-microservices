@@ -77,9 +77,16 @@ window.SnakeArena = window.SnakeArena || {};
     function setPlayerIdentity(id, name) {
         playerId = id;
         playerName = name;
-        sessionStorage.setItem(tabInstanceKey, id);
+        if (id) {
+            sessionStorage.setItem(tabInstanceKey, id);
+        } else {
+            sessionStorage.removeItem(tabInstanceKey);
+        }
         window.playerId = id;
         window.playerName = name;
+        if (window.updatePlayerIdBadge) {
+            window.updatePlayerIdBadge(id);
+        }
     }
 
     function setSnakeId(id) {

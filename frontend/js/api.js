@@ -158,6 +158,7 @@ window.SnakeArena = window.SnakeArena || {};
 
     function updatePlayerIdBadge(id) {
         registeredPlayerId = id;
+        window.registeredPlayerId = id;
         const badge = document.getElementById("registeredIdBadge");
         if (badge) {
             badge.innerText = id ? id : "Nomor ID";
@@ -223,17 +224,21 @@ window.SnakeArena = window.SnakeArena || {};
         nameLookupTimer = setTimeout(async () => {
             try {
                 let lookupName = clean;
+                let preferredId = null;
                 if (!lookupName.includes("#") && window.SnakeArena && window.SnakeArena.App && window.SnakeArena.App.getDeviceProfile) {
                     const devProfile = window.SnakeArena.App.getDeviceProfile(clean);
-                    if (devProfile && devProfile.tag) {
-                        lookupName = `${clean}#${devProfile.tag}`;
+                    if (devProfile) {
+                        if (devProfile.tag) lookupName = `${clean}#${devProfile.tag}`;
+                        if (devProfile.playerId) preferredId = devProfile.playerId;
                     }
                 }
                 const res = await fetch(`${PLAYER_SERVICE_URL}/api/v1/players`);
                 if (res.ok) {
                     const list = await res.json();
                     if (Array.isArray(list)) {
-                        const found = list.find(p => p.username && (p.username.toLowerCase() === lookupName.toLowerCase() || p.username.toLowerCase() === clean.toLowerCase()));
+                        const found = (preferredId ? list.find(p => p.id === preferredId) : null) ||
+                                      list.find(p => p.username && p.username.toLowerCase() === lookupName.toLowerCase()) ||
+                                      [...list].reverse().find(p => p.username && p.username.toLowerCase().startsWith(clean.toLowerCase() + "#"));
                         if (found && found.id) {
                             updatePlayerIdBadge(found.id);
                             if (window.SnakeArena && window.SnakeArena.App) {
@@ -341,6 +346,12 @@ window.SnakeArena = window.SnakeArena || {};
 
         if (res.success && res.data) {
             const savedUname = res.data.username || taggedName;
+            
+            // Selalu update badge dan state identitas pemain yang baru dibuat
+            updatePlayerIdBadge(res.data.id);
+            window.playerId = res.data.id;
+            window.playerName = savedUname;
+
             if (window.SnakeArena && window.SnakeArena.App) {
                 window.SnakeArena.App.setPlayerIdentity(res.data.id, savedUname);
                 if (window.SnakeArena.App.saveDeviceProfile && tag) {
@@ -349,10 +360,6 @@ window.SnakeArena = window.SnakeArena || {};
                 if (window.SnakeArena.App.updateTagBadges) {
                     window.SnakeArena.App.updateTagBadges(cleanBase);
                 }
-            } else {
-                updatePlayerIdBadge(res.data.id);
-                window.playerId = res.data.id;
-                window.playerName = savedUname;
             }
             if (inpSidebar) inpSidebar.value = cleanBase;
             if (inpOverlay) inpOverlay.value = cleanBase;
@@ -396,6 +403,10 @@ window.SnakeArena = window.SnakeArena || {};
 
         // Lobby Mode: Fetch Player Profile
         const targetId = registeredPlayerId || window.playerId;
+        if (!targetId) {
+            logApi("INFO", "/players/profile", 400, null, { error: "ID Pemain belum terdaftar. Silakan daftar akun (POST) terlebih dahulu." });
+            return;
+        }
         const endpoint = `${PLAYER_SERVICE_URL}/api/${currentVersion}/players/${targetId}`;
         const res = await makeApiCall("GET", endpoint, null, false, btn);
 
@@ -403,28 +414,26 @@ window.SnakeArena = window.SnakeArena || {};
             // If not found by ID, query player list to find match by username
             const listRes = await makeApiCall("GET", `${PLAYER_SERVICE_URL}/api/${currentVersion}/players`, null, true);
             if (listRes.success && Array.isArray(listRes.data) && listRes.data.length > 0) {
-                const nameMatch = listRes.data.find(p => p.username === window.playerName);
+                const nameMatch = [...listRes.data].reverse().find(p => p.username === window.playerName);
                 const fallbackPlayer = nameMatch || listRes.data[listRes.data.length - 1];
                 updatePlayerIdBadge(fallbackPlayer.id);
+                window.playerId = fallbackPlayer.id;
+                window.playerName = fallbackPlayer.username;
                 if (window.SnakeArena && window.SnakeArena.App) {
                     window.SnakeArena.App.setPlayerIdentity(fallbackPlayer.id, fallbackPlayer.username);
-                } else {
-                    window.playerId = fallbackPlayer.id;
-                    window.playerName = fallbackPlayer.username;
                 }
                 const inpS = document.getElementById("inputPlayerName");
                 const inpO = document.getElementById("overlayPlayerName");
-                if (inpS) inpS.value = fallbackPlayer.username;
-                if (inpO) inpO.value = fallbackPlayer.username;
+                if (inpS) inpS.value = fallbackPlayer.username.replace(/#\d+$/, "");
+                if (inpO) inpO.value = fallbackPlayer.username.replace(/#\d+$/, "");
                 return await makeApiCall("GET", `${PLAYER_SERVICE_URL}/api/${currentVersion}/players/${fallbackPlayer.id}`, null, false, btn);
             }
         } else if (res.success && res.data) {
             updatePlayerIdBadge(res.data.id);
+            window.playerId = res.data.id;
+            window.playerName = res.data.username;
             if (window.SnakeArena && window.SnakeArena.App) {
                 window.SnakeArena.App.setPlayerIdentity(res.data.id, res.data.username);
-            } else {
-                window.playerId = res.data.id;
-                window.playerName = res.data.username;
             }
         }
         return res;
@@ -514,6 +523,16 @@ window.SnakeArena = window.SnakeArena || {};
             window.selectedClass = nextClass;
             window.selectedColor = nextColor;
             updatePlayerIdBadge(res.data.id);
+            window.playerId = res.data.id;
+
+            if (window.SnakeArena && window.SnakeArena.App) {
+                window.SnakeArena.App.setPlayerIdentity(res.data.id, res.data.username);
+                const cleanBase = res.data.username.replace(/#\d+$/, "");
+                const tagMatch = res.data.username.match(/#(\d{4})$/);
+                if (window.SnakeArena.App.saveDeviceProfile && tagMatch) {
+                    window.SnakeArena.App.saveDeviceProfile(cleanBase, tagMatch[1], res.data.id);
+                }
+            }
 
             if (inpS) inpS.value = res.data.username;
             const inpO = document.getElementById("overlayPlayerName");
@@ -579,7 +598,8 @@ window.SnakeArena = window.SnakeArena || {};
         if (res.success && res.data) {
             window.highScore = res.data.highScore;
             logApi("INFO", `/players/${targetId}/stats`, 200, null, {
-                message: `Statistik pemain parsial berhasil diperbarui via PATCH! HighScore: ${res.data.highScore}`,
+                message: `Statistik pemain parsial berhasil diperbarui via PATCH! HighScore: ${res.data.highScore}, TotalMatches: ${res.data.totalMatches}`,
+                note: "matchCompleted: false (Skor parsial diperbarui tanpa menambah jumlah match. Saat pertandingan di arena selesai, engine otomatis mengirim matchCompleted: true).",
                 tier: res.data.playerTier || res.data.tier || undefined
             });
         }
@@ -604,15 +624,27 @@ window.SnakeArena = window.SnakeArena || {};
 
         // Lobby DELETE: Delete player profile
         const targetId = registeredPlayerId || window.playerId;
+        if (!targetId) {
+            logApi("INFO", "/players/delete", 400, null, { error: "ID Pemain belum terdaftar. Silakan daftar akun (POST) terlebih dahulu." });
+            return;
+        }
         const res = await makeApiCall("DELETE", `${PLAYER_SERVICE_URL}/api/${currentVersion}/players/${targetId}`, null, false, btn);
         if (res.success) {
             updatePlayerIdBadge(null);
+            window.playerId = null;
+            window.playerName = "";
+            if (window.SnakeArena && window.SnakeArena.App) {
+                window.SnakeArena.App.setPlayerIdentity(null, "");
+            }
             const inpS = document.getElementById("inputPlayerName");
             const inpO = document.getElementById("overlayPlayerName");
             if (inpS) inpS.value = "";
             if (inpO) inpO.value = "";
             const hudP = document.getElementById("hudPlayer");
             if (hudP) hudP.innerText = "(Belum Join)";
+            logApi("INFO", `/players/${targetId}/deleted`, 204, null, {
+                message: `Akun pemain ${targetId} berhasil dihapus dari sistem (DELETE). State akun direset.`
+            });
         }
         return res;
     }
