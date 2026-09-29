@@ -57,12 +57,16 @@ window.SnakeArena = window.SnakeArena || {};
 
         entry.innerHTML = `
             <div class="log-header">
-                <div style="display:flex; align-items:center; gap:6px;">
-                    <span class="method-tag ${tagClass}">${method}</span>
-                    ${latencyBadge}
+                <div class="log-header-meta">
+                    <div class="log-header-badges">
+                        <span class="method-tag ${tagClass}">${method}</span>
+                        ${latencyBadge}
+                    </div>
+                    <span class="log-status ${statusClass}">${status}</span>
                 </div>
-                <span class="log-endpoint">${endpoint}</span>
-                <span class="log-status ${statusClass}">${status}</span>
+                <div class="log-endpoint-wrap">
+                    <span class="log-endpoint">${endpoint}</span>
+                </div>
             </div>
             ${reqStr || resStr ? `<pre class="log-json">${reqStr}${resStr}</pre>` : ''}
         `;

@@ -234,6 +234,11 @@
     color: var(--method-delete); 
     border: 1px solid rgba(225, 29, 72, 0.25); 
 }
+.tag-info { 
+    background: var(--cyber-cyan-bg); 
+    color: var(--cyber-cyan); 
+    border: 1px solid rgba(2, 132, 199, 0.25); 
+}
 
 /* Version Switcher */
 .version-switcher {
@@ -488,20 +493,52 @@ kbd {
 
 .log-header {
     display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+
+.log-header-meta {
+    display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 8px;
+}
+
+.log-header-badges {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.log-endpoint-wrap {
+    display: flex;
+    align-items: center;
+    background: var(--bg-inset);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    border-radius: 6px;
+    padding: 4px 8px;
 }
 
 .log-endpoint {
     color: var(--text-lead);
     font-weight: 700;
+    font-size: 0.73rem;
+    font-family: var(--font-mono);
     word-break: break-all;
+    overflow-wrap: anywhere;
+    line-height: 1.4;
+    letter-spacing: -0.2px;
 }
 
 .log-status {
     font-weight: 800;
-    padding: 2px 7px;
+    font-size: 0.65rem;
+    padding: 2px 8px;
     border-radius: 9999px;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
 }
 
 .status-200, .status-201, .status-204 {
