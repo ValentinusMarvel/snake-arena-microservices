@@ -186,7 +186,7 @@ window.SnakeArena = window.SnakeArena || {};
                 className: "PYTHON",
                 passiveEffect: "THICK_BODY",
                 activeAbility: {
-                    name: "Apple Magnet",
+                    name: "Titan Forcefield",
                     cooldownSeconds: 7,
                     speedMultiplier: 1.3
                 }
@@ -196,7 +196,7 @@ window.SnakeArena = window.SnakeArena || {};
                 className: "COBRA",
                 passiveEffect: "GOLDEN_SENSE",
                 activeAbility: {
-                    name: "Poison Spit",
+                    name: "Apple Magnet",
                     cooldownSeconds: 6,
                     speedMultiplier: 1.5
                 }
@@ -506,15 +506,22 @@ window.SnakeArena = window.SnakeArena || {};
         const nextClass = classes[nextClsIdx];
         const nextColor = colors[nextClass];
 
-        const cleanInput = currentInput.replace(/#\d+$/, "").trim();
-        const cleanCurrent = (window.playerName || "").replace(/#\d+$/, "").replace(/_U\d+$/, "").trim();
+        const currentInputClean = currentInput.replace(/#\d+$/, "").trim();
+        const previousClean = (window.playerName || "").replace(/#\d+$/, "").trim();
+
+        // Ambil root name sebelum underscore pertama (contoh: "Pilot_421" -> "Pilot", "Hero_12" -> "Hero", "Sentinel" -> "Sentinel")
+        const inputRoot = currentInputClean.includes("_") ? currentInputClean.split("_")[0].trim() : currentInputClean;
+        const previousRoot = previousClean.includes("_") ? previousClean.split("_")[0].trim() : previousClean;
 
         let updatedName;
-        if (cleanInput && cleanInput.toLowerCase() !== cleanCurrent.toLowerCase()) {
-            updatedName = getSafeUsername(cleanInput);
+        if (inputRoot && inputRoot.toLowerCase() !== previousRoot.toLowerCase()) {
+            // Pengguna secara eksplisit mengetik nama root baru yang berbeda di input
+            updatedName = getSafeUsername(currentInputClean);
         } else {
-            const base = cleanCurrent || "Pilot";
-            updatedName = getSafeUsername(base, `_U${Math.floor(10 + Math.random() * 90)}`);
+            // Root sama: Acak angka di belakang underscore pertama (atau tambahkan underscore jika belum ada)
+            const root = previousRoot || inputRoot || "Pilot";
+            const newRandom = Math.floor(10 + Math.random() * 90);
+            updatedName = getSafeUsername(`${root}_${newRandom}`);
         }
 
         let payload;

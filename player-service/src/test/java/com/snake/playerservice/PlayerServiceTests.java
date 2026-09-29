@@ -91,7 +91,7 @@ class PlayerServiceTests {
     @Test
     @DisplayName("Test v2 POST - Berhasil membuat pemain dengan nested classProfile")
     void testCreatePlayerV2() throws Exception {
-        ClassProfileInput classProfile = new ClassProfileInput("COBRA", "GOLDEN_SENSE", new AbilityInput("Poison Spit", 6, 1.5));
+        ClassProfileInput classProfile = new ClassProfileInput("COBRA", "GOLDEN_SENSE", new AbilityInput("Apple Magnet", 6, 1.5));
         PlayerV2Input input = new PlayerV2Input("CobraKing", classProfile);
 
         mockMvc.perform(post("/api/v2/players")
@@ -100,7 +100,7 @@ class PlayerServiceTests {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", notNullValue()))
                 .andExpect(jsonPath("$.classProfile.className", is("COBRA")))
-                .andExpect(jsonPath("$.classProfile.activeAbility.name", is("Poison Spit")));
+                .andExpect(jsonPath("$.classProfile.activeAbility.name", is("Apple Magnet")));
     }
 
     @Test

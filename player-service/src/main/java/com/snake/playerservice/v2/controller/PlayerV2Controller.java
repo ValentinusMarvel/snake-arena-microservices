@@ -35,9 +35,9 @@ public class PlayerV2Controller {
         if ("VIPER".equalsIgnoreCase(snakeType)) {
             return new ClassProfileInput("VIPER", "POISON_TRAIL", new AbilityInput("Venom Dash", 5, 1.8));
         } else if ("PYTHON".equalsIgnoreCase(snakeType)) {
-            return new ClassProfileInput("PYTHON", "THICK_BODY", new AbilityInput("Apple Magnet", 7, 1.3));
+            return new ClassProfileInput("PYTHON", "THICK_BODY", new AbilityInput("Titan Forcefield", 7, 1.3));
         } else {
-            return new ClassProfileInput("COBRA", "GOLDEN_SENSE", new AbilityInput("Poison Spit", 6, 1.5));
+            return new ClassProfileInput("COBRA", "GOLDEN_SENSE", new AbilityInput("Apple Magnet", 6, 1.5));
         }
     }
 
