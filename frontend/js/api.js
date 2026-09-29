@@ -297,9 +297,14 @@ window.SnakeArena = window.SnakeArena || {};
                     window.SnakeArena.App.updateTagBadges(cleanBase);
                 }
                 await fetchArenaState();
+                const segs = arenaRes.data.segments || arenaRes.data.body || [];
+                const head = segs.length > 0 ? segs[0] : { x: 0, y: 0 };
                 logApi("INFO", "/arena/snake-synced", 200, null, {
-                    message: `Ular '${currentCallsign}' berhasil disinkronkan di arena tanpa mengubah posisi.`,
-                    snakeId: window.snakeId
+                    message: `Ular '${currentCallsign}' berhasil disinkronkan di arena. Sesi di-refresh tanpa mereset posisi atau skor.`,
+                    snakeId: window.snakeId,
+                    coordinates: `[${head.x}, ${head.y}]`,
+                    length: segs.length,
+                    score: arenaRes.data.score || 0
                 });
             }
             return arenaRes;
@@ -384,13 +389,15 @@ window.SnakeArena = window.SnakeArena || {};
                 const res = await makeApiCall("GET", `${ARENA_SERVICE_URL}/api/v1/arena/snakes/${targetSnakeId}`, null, false, btn);
                 if (res.success && res.data) {
                     const s = res.data;
+                    const segs = s.segments || s.body || [];
+                    const head = segs.length > 0 ? segs[0] : { x: 0, y: 0 };
                     logApi("INFO", `/arena/snakes/${targetSnakeId}/telemetry`, 200, null, {
                         snakeId: s.id,
                         callsign: s.playerName,
                         status: s.alive ? "ACTIVE_COMBAT" : "NEUTRALIZED",
-                        coordinates: `[${s.x}, ${s.y}]`,
+                        coordinates: `[${head.x}, ${head.y}]`,
                         heading: s.direction,
-                        length: s.body ? s.body.length : 0,
+                        length: segs.length,
                         score: s.score,
                         tacticalClass: s.snakeType
                     });
@@ -577,9 +584,10 @@ window.SnakeArena = window.SnakeArena || {};
                 const hudS = document.getElementById("hudScore");
                 if (hudS) hudS.innerText = window.score;
                 await fetchArenaState();
+                const eatenSegs = (res.data && (res.data.segments || res.data.body)) ? (res.data.segments || res.data.body) : [];
                 logApi("INFO", `/arena/snakes/${window.snakeId}/eat`, 200, null, {
                     message: `Apel '${targetAppleId}' berhasil dimakan via PATCH. Skor: ${window.score}`,
-                    bodyLength: res.data.body ? res.data.body.length : 0
+                    bodyLength: eatenSegs.length
                 });
             }
             return res;
