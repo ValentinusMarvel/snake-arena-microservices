@@ -111,11 +111,18 @@ public synchronized Snake joinArena(String playerId, String playerName, String s
         List<Point> segments;
         String dir;
         int score = 0;
+        boolean skillActive = false;
+        long skillActivatedAt = 0;
+        long skillCooldownUntil = 0;
+
         if (existingSnake != null && existingSnake.isAlive() && existingSnake.getSegments() != null && !existingSnake.getSegments().isEmpty()) {
-            // Pertahankan koordinat segmen, arah pergerakan, dan skor saat ini agar ular tidak terlempar ke lokasi acak baru saat menekan POST in-game
+            // Pertahankan koordinat segmen, arah pergerakan, skor, serta status cooldown skill agar tidak terjadi cooldown-reset exploit saat in-game POST
             segments = new ArrayList<>(existingSnake.getSegments());
             dir = existingSnake.getDirection();
             score = existingSnake.getScore();
+            skillActive = existingSnake.isSkillActive();
+            skillActivatedAt = existingSnake.getSkillActivatedAt();
+            skillCooldownUntil = existingSnake.getSkillCooldownUntil();
         } else {
             segments = new ArrayList<>();
             segments.add(new Point(startX, startY));
@@ -125,7 +132,9 @@ public synchronized Snake joinArena(String playerId, String playerName, String s
         }
 
         String actualColor = color != null && !color.isBlank() ? color : getDefaultColor(snakeType);
-        Snake snake = new Snake(snakeId, playerId, resolvedPlayerName, snakeType.toUpperCase(), actualColor, segments, dir, score, true, false);
+        Snake snake = new Snake(snakeId, playerId, resolvedPlayerName, snakeType.toUpperCase(), actualColor, segments, dir, score, true, skillActive);
+        snake.setSkillActivatedAt(skillActivatedAt);
+        snake.setSkillCooldownUntil(skillCooldownUntil);
         snakes.put(snakeId, snake);
         log.info("Snake spawned: {} ({}) for player {} at ({},{}) [retainedPosition={}]", resolvedPlayerName, snakeId, playerId, segments.get(0).x(), segments.get(0).y(), existingSnake != null);
         return snake;

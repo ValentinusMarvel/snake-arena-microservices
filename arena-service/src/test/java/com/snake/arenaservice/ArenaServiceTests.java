@@ -132,4 +132,39 @@ class ArenaServiceTests {
                 .andExpect(jsonPath("$.openapi", notNullValue()))
                 .andExpect(jsonPath("$.info.title", containsString("Snake Arena")));
     }
+
+    @Test
+    @DisplayName("Test In-Game POST Retains Skill Active & Cooldown (Anti-Exploit)")
+    void testPreserveSkillCooldownOnIngamePost() throws Exception {
+        JoinArenaInput joinInput = new JoinArenaInput("PL-303", "Hunter", "VIPER", "#00ff88");
+        String joinRes = mockMvc.perform(post("/api/v1/arena/snakes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(joinInput)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        String firstSnakeId = objectMapper.readTree(joinRes).get("id").asText();
+
+        // 1. Activate skill
+        mockMvc.perform(patch("/api/v1/arena/snakes/" + firstSnakeId + "/skill")
+                        .param("active", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.skillActive", is(true)));
+
+        // 2. Perform In-Game POST with the same playerId
+        String secondJoinRes = mockMvc.perform(post("/api/v1/arena/snakes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(joinInput)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.skillActive", is(true)))
+                .andReturn().getResponse().getContentAsString();
+
+        String secondSnakeId = objectMapper.readTree(secondJoinRes).get("id").asText();
+
+        // 3. Verify that the skill is still active on the new snake session
+        mockMvc.perform(get("/api/v1/arena/snakes/" + secondSnakeId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.skillActive", is(true)))
+                .andExpect(jsonPath("$.skillCooldownUntil", greaterThan(0L)));
+    }
 }
