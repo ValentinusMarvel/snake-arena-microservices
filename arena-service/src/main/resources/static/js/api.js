@@ -506,11 +506,14 @@ window.SnakeArena = window.SnakeArena || {};
         const nextClass = classes[nextClsIdx];
         const nextColor = colors[nextClass];
 
+        const cleanInput = currentInput.replace(/#\d+$/, "").trim();
+        const cleanCurrent = (window.playerName || "").replace(/#\d+$/, "").replace(/_U\d+$/, "").trim();
+
         let updatedName;
-        if (currentInput && currentInput !== window.playerName) {
-            updatedName = getSafeUsername(currentInput);
+        if (cleanInput && cleanInput.toLowerCase() !== cleanCurrent.toLowerCase()) {
+            updatedName = getSafeUsername(cleanInput);
         } else {
-            const base = (window.playerName || "Pilot").replace(/_U\d+$/, "");
+            const base = cleanCurrent || "Pilot";
             updatedName = getSafeUsername(base, `_U${Math.floor(10 + Math.random() * 90)}`);
         }
 
