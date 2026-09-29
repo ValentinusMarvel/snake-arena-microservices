@@ -1,0 +1,25 @@
+# Git & IDEs
+.git/
+.gitignore
+.agents/
+AGENTS.md
+.idea/
+.vscode/
+*.iml
+.settings/
+.project
+.classpath
+
+# Build artifacts & local dependencies
+**/target/
+**/build/
+**/node_modules/
+*.log
+
+# Documentation & Temporary Files
+docs/
+scratch/
+screen*.png
+*.bak
+Thumbs.db
+.DS_Store

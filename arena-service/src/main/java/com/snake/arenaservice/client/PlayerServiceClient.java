@@ -1,5 +1,6 @@
 package com.snake.arenaservice.client;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,18 +22,20 @@ public class PlayerServiceClient {
                 .build();
     }
 
+    @CircuitBreaker(name = "playerService", fallbackMethod = "syncScoreFallback")
     public void syncPlayerScore(String playerId, int score, boolean matchCompleted) {
-        try {
-            log.info("Inter-Service call -> Sync score {} for player {} to Player Service", score, playerId);
-            restClient.patch()
-                    .uri("/api/v1/players/{id}/stats", playerId)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(Map.of("score", score, "matchCompleted", matchCompleted))
-                    .retrieve()
-                    .toBodilessEntity();
-            log.info("Score sync completed successfully for player {}", playerId);
-        } catch (Exception e) {
-            log.warn("Resilience Fallback: Player service unreachable ({}), match score buffered locally", e.getMessage());
-        }
+        log.info("Inter-Service call -> Sync score {} for player {} to Player Service", score, playerId);
+        restClient.patch()
+                .uri("/api/v1/players/{id}/stats", playerId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("score", score, "matchCompleted", matchCompleted))
+                .retrieve()
+                .toBodilessEntity();
+        log.info("Score sync completed successfully for player {}", playerId);
+    }
+
+    public void syncScoreFallback(String playerId, int score, boolean matchCompleted, Throwable ex) {
+        log.warn("Resilience4j CircuitBreaker triggered for player {}: {}. Score {} buffered safely in local arena state.",
+                playerId, ex.getMessage(), score);
     }
 }

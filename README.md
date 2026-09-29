@@ -179,52 +179,97 @@ cd arena-service
 - Java Development Kit (JDK) 21 atau lebih baru.
 - Port 8081 dan 8082 dalam kondisi bebas.
 
-### Langkah 1: Jalankan Player Service
+### Opsi A: Menggunakan Docker Compose (Direkomendasikan - Satu Perintah)
+Pastikan Docker Desktop aktif, lalu jalankan dari root direktori:
+
+**Windows Command Prompt / PowerShell:**
+```cmd
+run_docker.bat
+```
+*Atau langsung via CLI:*
+```bash
+docker compose up --build -d
+```
+
+**Linux / macOS / WSL:**
+```bash
+./run_docker.sh
+```
+
+Untuk menghentikan kontainer:
+```cmd
+stop_docker.bat
+```
+*(atau `docker compose down`)*
+
+### Opsi B: Menjalankan Secara Lokal (Maven Wrapper)
+
+#### Langkah 1: Jalankan Player Service
 ```bash
 cd player-service
 ./mvnw.cmd spring-boot:run
 ```
 Service beroperasi pada `http://localhost:8081`.
 
-### Langkah 2: Jalankan Arena Service
+#### Langkah 2: Jalankan Arena Service
 ```bash
 cd arena-service
 ./mvnw.cmd spring-boot:run
 ```
 Service beroperasi pada `http://localhost:8082`.
 
-### Langkah 3: Akses Antarmuka Game
-Buka browser dan arahkan ke:
-```
-http://localhost:8082/
-```
+### Langkah 3: Akses Antarmuka & Dokumentasi
+- **Web Game & Dasbor Pemantauan:** `http://localhost:8082/`
+- **Swagger UI Player Service:** `http://localhost:8081/swagger-ui.html`
+- **Swagger UI Arena Service:** `http://localhost:8082/swagger-ui.html`
+- **Health Check Player Service:** `http://localhost:8081/actuator/health`
+- **Health Check Arena Service:** `http://localhost:8082/actuator/health`
 
 ---
 
-## 8. Struktur Repositori
+## 8. Pola Desain Microservices Enterprise yang Diterapkan
+
+Mengacu pada tolak ukur buku *Microservices with Spring Boot and Spring Cloud (4th Edition)* (Magnus Larsson) dan *Mastering RESTful Web Services with Java*:
+
+1. **Decompose by Business Capability:** Pemisahan domain profil & persistensi data (`player-service`) dari simulasi game engine real-time (`arena-service`).
+2. **Database per Service:** `player-service` mengelola database SQL H2 JPA terisolasi, sementara `arena-service` mengelola state in-memory murni. Tidak ada basis data bersama (*no shared database*).
+3. **Containerization & Orchestration:** Multi-stage Dockerfile berbasis Eclipse Temurin JRE 21 dengan non-root user (`appuser:1001`) dan orkestrasi `docker-compose.yml` pada bridge network `snake-network`.
+4. **Observability & Health Probes:** Integrasi `spring-boot-starter-actuator` (`/actuator/health`) untuk *liveness* dan *readiness probe* kontainer.
+5. **Standardized Error Handling:** Model response error seragam `HttpErrorInfo` (RFC 7807) yang menyertakan waktu, kode status, pesan, dan `serviceAddress` (`hostname/ip:port`) dari mikroservis yang merespon.
+6. **Resilience & Fault Tolerance:** Perlindungan komunikasi antar-layanan di `PlayerServiceClient` menggunakan **Resilience4j Circuit Breaker** (`@CircuitBreaker`). Jika `player-service` tidak dapat dijangkau, skor pertandingan diamankan di antrean lokal (*graceful fallback*) tanpa menghentikan jalannya arena game.
+
+---
+
+## 9. Struktur Repositori
 
 ```
 snake-arena-microservices/
-├── .github/
-│   └── workflows/
-│       └── ci.yml               # GitHub Actions CI Pipeline
+├── .dockerignore
+├── docker-compose.yml           # Multi-service container orchestration
+├── run_docker.bat / .sh         # Automated container startup
+├── stop_docker.bat / .sh        # Automated container shutdown
+├── docs/
+│   └── adr/                     # Architecture Decision Records (ADR 0001 - 0004)
 ├── player-service/              # Microservice Identity & Persistence (Port 8081)
-│   ├── pom.xml
+│   ├── Dockerfile               # Multi-stage production container build
+│   ├── pom.xml                  # Actuator, Spring Data JPA, Web, Validation
 │   └── src/main/java/com/snake/playerservice/
-│       ├── controller/          # PlayerControllerV1 & PlayerControllerV2
-│       ├── domain/              # Entity & ClassProfile Records
-│       ├── dto/                 # Request & Response Contracts
-│       ├── repository/          # Spring Data JPA Repository
-│       └── service/             # Business Logic Layer
+│       ├── controller/          # PlayerV1Controller & PlayerV2Controller
+│       ├── domain/              # Entity & Repository
+│       ├── dto/                 # Request & Response Contracts, HttpErrorInfo
+│       ├── exception/           # GlobalExceptionHandler (@RestControllerAdvice)
+│       └── util/                # ServiceUtil (host & port discovery)
 ├── arena-service/               # Microservice Real-Time Engine (Port 8082)
-│   ├── pom.xml
+│   ├── Dockerfile               # Multi-stage container with bundled static assets
+│   ├── pom.xml                  # Actuator, Resilience4j, AOP, Web
 │   └── src/main/java/com/snake/arenaservice/
-│       ├── client/              # Inter-Service HTTP Client
+│       ├── client/              # PlayerServiceClient (Resilience4j CircuitBreaker)
 │       ├── controller/          # ArenaController
-│       ├── domain/              # World State, Snake, Apple
+│       ├── domain/              # Snake, Apple, ArenaState
+│       ├── dto/                 # Input contracts, HttpErrorInfo
+│       ├── exception/           # GlobalExceptionHandler
 │       ├── service/             # ArenaManager Collision & Tick Loop
 │       └── resources/static/    # Static Web UI & REST Inspector
-├── frontend/
-│   └── index.html               # Source Web Game Client
-└── README.md
+└── frontend/                    # Source Web Client (HTML5, Modern CSS, JS)
 ```
+

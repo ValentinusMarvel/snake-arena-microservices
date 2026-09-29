@@ -1,0 +1,46 @@
+services:
+  player-service:
+    build:
+      context: ./player-service
+      dockerfile: Dockerfile
+    container_name: player-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SERVER_PORT=8081
+      - SPRING_PROFILES_ACTIVE=docker
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8081/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - snake-network
+
+  arena-service:
+    build:
+      context: ./arena-service
+      dockerfile: Dockerfile
+    container_name: arena-service
+    ports:
+      - "8082:8082"
+    environment:
+      - SERVER_PORT=8082
+      - PLAYER_SERVICE_URL=http://player-service:8081
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      player-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8082/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - snake-network
+
+networks:
+  snake-network:
+    driver: bridge
