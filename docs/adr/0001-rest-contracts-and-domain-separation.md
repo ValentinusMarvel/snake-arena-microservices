@@ -20,7 +20,7 @@ Diperlukan pemisahan tanggung jawab yang ketat (*separation of concerns*) serta 
 ### A. Kontrak REST `player-service` (Port 8081)
 1. **v1 vs v2 Versioning Strategy**:
    - Endpoint **v1** (`/api/v1/players`) menggunakan struktur DTO flat sederhana: `username` dan `snakeType` (`VIPER`, `PYTHON`, `COBRA`).
-   - Endpoint **v2** (`/api/v2/players`) mengadopsi struktur nested `classProfile` (`passiveEffect`, `activeAbility`) dan secara otomatis menghitung `playerTier` (BRONZE, SILVER, GOLD, MASTER).
+   - Endpoint **v2** (`/api/v2/players`) mengadopsi struktur nested `classProfile` (`passiveEffect`, `activeAbility`) dan secara otomatis menghitung `playerTier` (`Bronze`, `Silver`, `Gold`, `Master`).
    - Skema v2 menolak (*breaking change*) payload flat v1 dengan HTTP 400 Bad Request untuk menjamin integritas DTO v2.
 
 2. **Operasi RESTful**:
