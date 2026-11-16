@@ -2,6 +2,7 @@ package com.snake.playerservice.v2.controller;
 
 import com.snake.playerservice.domain.PlayerEntity;
 import com.snake.playerservice.domain.PlayerRepository;
+import com.snake.playerservice.dto.HttpErrorInfo;
 import com.snake.playerservice.exception.EntityNotFoundException;
 import com.snake.playerservice.v1.dto.PlayerStatsUpdateInput;
 import com.snake.playerservice.v2.dto.AbilityInput;
@@ -9,10 +10,13 @@ import com.snake.playerservice.v2.dto.ClassProfileInput;
 import com.snake.playerservice.v2.dto.PlayerV2Input;
 import com.snake.playerservice.v2.dto.PlayerV2Output;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +25,7 @@ import java.util.List;
 import java.util.Random;
 
 @RestController
-@RequestMapping("/api/v2/players")
+@RequestMapping(value = "/api/v2/players", produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "v2-players", description = "API Profil Pemain Versi 2 (Modern RPG - Breaking Changes Contract)")
 public class PlayerV2Controller {
 
@@ -39,6 +43,12 @@ public class PlayerV2Controller {
         } else {
             return new ClassProfileInput("COBRA", "GOLDEN_SENSE", new AbilityInput("Apple Magnet", 6, 1.5));
         }
+    }
+
+    private int calculateSpeed(String snakeType) {
+        if ("VIPER".equalsIgnoreCase(snakeType)) return 7;
+        if ("PYTHON".equalsIgnoreCase(snakeType)) return 5;
+        return 6;
     }
 
     private String calculateTier(int highScore) {
@@ -81,14 +91,15 @@ public class PlayerV2Controller {
     @PostMapping
     @Operation(summary = "Mendaftar player baru v2 (Breaking Change: wajib classProfile)", responses = {
             @ApiResponse(responseCode = "201", description = "Pemain v2 berhasil dibuat"),
-            @ApiResponse(responseCode = "400", description = "Payload v1 ditolak atau input tidak valid")
+            @ApiResponse(responseCode = "400", description = "Payload v1 ditolak atau input tidak valid",
+                    content = @Content(schema = @Schema(implementation = HttpErrorInfo.class)))
     })
     public ResponseEntity<PlayerV2Output> createPlayerV2(@Valid @RequestBody PlayerV2Input input) {
         String resolvedUsername = resolveUsernameWithTag(input.username().trim());
 
         String id = "PL-" + (System.currentTimeMillis() % 100000);
         String snakeType = input.classProfile().className().toUpperCase();
-        PlayerEntity entity = new PlayerEntity(id, resolvedUsername, snakeType, 6, 0, 0, LocalDateTime.now());
+        PlayerEntity entity = new PlayerEntity(id, resolvedUsername, snakeType, calculateSpeed(snakeType), 0, 0, LocalDateTime.now());
         PlayerEntity saved = repository.save(entity);
         return ResponseEntity.status(HttpStatus.CREATED).body(toOutputV2(saved));
     }
@@ -105,7 +116,8 @@ public class PlayerV2Controller {
     @GetMapping("/{id}")
     @Operation(summary = "Mengambil detail pemain v2 berdasarkan ID", responses = {
             @ApiResponse(responseCode = "200", description = "Pemain v2 ditemukan"),
-            @ApiResponse(responseCode = "404", description = "Pemain tidak ditemukan")
+            @ApiResponse(responseCode = "404", description = "Pemain tidak ditemukan",
+                    content = @Content(schema = @Schema(implementation = HttpErrorInfo.class)))
     })
     public ResponseEntity<PlayerV2Output> getPlayerByIdV2(@PathVariable String id) {
         PlayerEntity entity = repository.findById(id)
@@ -116,18 +128,24 @@ public class PlayerV2Controller {
     @PutMapping("/{id}")
     @Operation(summary = "Mengubah data pemain v2 seutuhnya", responses = {
             @ApiResponse(responseCode = "200", description = "Pemain berhasil diperbarui"),
-            @ApiResponse(responseCode = "404", description = "Pemain tidak ditemukan")
+            @ApiResponse(responseCode = "400", description = "Input tidak valid atau username sudah digunakan",
+                    content = @Content(schema = @Schema(implementation = HttpErrorInfo.class))),
+            @ApiResponse(responseCode = "404", description = "Pemain tidak ditemukan",
+                    content = @Content(schema = @Schema(implementation = HttpErrorInfo.class)))
     })
     public ResponseEntity<PlayerV2Output> updatePlayerV2(@PathVariable String id, @Valid @RequestBody PlayerV2Input input) {
         PlayerEntity entity = repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Pemain dengan ID '" + id + "' tidak ditemukan"));
-        repository.findByUsername(input.username()).ifPresent(existing -> {
+        String username = input.username().trim();
+        repository.findByUsername(username).ifPresent(existing -> {
             if (!existing.getId().equals(id)) {
-                throw new IllegalArgumentException("Username '" + input.username() + "' sudah digunakan oleh pemain lain");
+                throw new IllegalArgumentException("Username '" + username + "' sudah digunakan oleh pemain lain");
             }
         });
-        entity.setUsername(input.username());
-        entity.setSnakeType(input.classProfile().className().toUpperCase());
+        String snakeType = input.classProfile().className().toUpperCase();
+        entity.setUsername(username);
+        entity.setSnakeType(snakeType);
+        entity.setSpeed(calculateSpeed(snakeType));
         PlayerEntity updated = repository.save(entity);
         return ResponseEntity.ok(toOutputV2(updated));
     }
@@ -135,7 +153,10 @@ public class PlayerV2Controller {
     @PatchMapping("/{id}/stats")
     @Operation(summary = "Modifikasi parsial skor dan jumlah match v2 (v2 PATCH)", responses = {
             @ApiResponse(responseCode = "200", description = "Skor berhasil diperbarui"),
-            @ApiResponse(responseCode = "404", description = "Pemain tidak ditemukan")
+            @ApiResponse(responseCode = "400", description = "Skor negatif atau input tidak valid",
+                    content = @Content(schema = @Schema(implementation = HttpErrorInfo.class))),
+            @ApiResponse(responseCode = "404", description = "Pemain tidak ditemukan",
+                    content = @Content(schema = @Schema(implementation = HttpErrorInfo.class)))
     })
     public ResponseEntity<PlayerV2Output> updateStatsV2(@PathVariable String id, @Valid @RequestBody PlayerStatsUpdateInput input) {
         PlayerEntity entity = repository.findById(id)
@@ -153,7 +174,8 @@ public class PlayerV2Controller {
     @DeleteMapping("/{id}")
     @Operation(summary = "Menghapus akun pemain v2", responses = {
             @ApiResponse(responseCode = "204", description = "Pemain berhasil dihapus"),
-            @ApiResponse(responseCode = "404", description = "Pemain tidak ditemukan")
+            @ApiResponse(responseCode = "404", description = "Pemain tidak ditemukan",
+                    content = @Content(schema = @Schema(implementation = HttpErrorInfo.class)))
     })
     public ResponseEntity<Void> deletePlayerV2(@PathVariable String id) {
         if (!repository.existsById(id)) {
