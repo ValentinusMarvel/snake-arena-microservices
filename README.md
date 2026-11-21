@@ -255,12 +255,31 @@ cd arena-service
 ```
 Service beroperasi pada `http://localhost:8082`.
 
-### Langkah 3: Akses Antarmuka & Layanan
+### Langkah 3: Akses Antarmuka & Layanan (Localhost)
 - **Web Game & Dasbor Pemantauan:** `http://localhost:8082/`
 - **Swagger UI Player Service:** `http://localhost:8081/swagger-ui/index.html`
 - **Swagger UI Arena Service:** `http://localhost:8082/swagger-ui/index.html`
 - **Health Check Player Service:** `http://localhost:8081/actuator/health`
 - **Health Check Arena Service:** `http://localhost:8082/actuator/health`
+
+### Opsi C: Akses Demonstrasi Publik (API Gateway & Cloudflare Tunnel)
+
+Bagi penguji yang ingin mendemonstrasikan sistem ke internet publik atau bermain multipemain lintas perangkat tanpa konfigurasi router atau IP publik:
+
+1. **API Gateway (Nginx Reverse Proxy Port 8080):**
+   Sistem menyediakan gerbang tunggal (*single port entrypoint*) pada port `8080` yang memetakan rute:
+   - `/api/v1/players` -> Player Service (`localhost:8081`)
+   - `/` dan `/api/v1/arena` -> Arena Service (`localhost:8082`)
+
+2. **Ekspos Publik dengan Cloudflare Quick Tunnel (100% Gratis Tanpa Akun):**
+   Jalankan Cloudflared Quick Tunnel yang mengarah ke port API Gateway:
+   ```bash
+   cloudflared tunnel --url http://localhost:8080
+   ```
+   Sistem akan menghasilkan URL publik HTTPS resmi (misalnya: `https://xxxx.trycloudflare.com`).
+
+3. **Adaptive Origin Detection:**
+   Klien web frontend (`frontend/js/api.js`) telah dilengkapi deteksi *origin* otomatis. Saat diakses via domain tunnel publik, frontend secara dinamis mengarahkan panggilan REST API ke domain gateway yang sama tanpa kendala CORS maupun *mixed-content*.
 
 ---
 
