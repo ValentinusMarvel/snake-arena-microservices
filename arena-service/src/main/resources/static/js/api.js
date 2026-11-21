@@ -14,13 +14,15 @@ window.SnakeArena = window.SnakeArena || {};
 
 (function() {
     const currentHost = window.location.hostname || "localhost";
-    const PLAYER_SERVICE_URL = `http://${currentHost}:8081`;
-    const ARENA_SERVICE_URL = `http://${currentHost}:8082`;
+    const isDirectPort = window.location.port === "8082" || window.location.port === "8081";
+    const originUrl = window.location.origin || `${window.location.protocol}//${window.location.host}`;
+    const PLAYER_SERVICE_URL = isDirectPort ? `http://${currentHost}:8081` : originUrl;
+    const ARENA_SERVICE_URL = isDirectPort ? `http://${currentHost}:8082` : originUrl;
 
     const linkPlayer = document.getElementById("linkSwaggerPlayer");
-    if (linkPlayer) linkPlayer.href = `${PLAYER_SERVICE_URL}/swagger-ui.html`;
+    if (linkPlayer) linkPlayer.href = isDirectPort ? `${PLAYER_SERVICE_URL}/swagger-ui.html` : `${originUrl}/swagger-ui/index.html`;
     const linkArena = document.getElementById("linkSwaggerArena");
-    if (linkArena) linkArena.href = `${ARENA_SERVICE_URL}/swagger-ui.html`;
+    if (linkArena) linkArena.href = isDirectPort ? `${ARENA_SERVICE_URL}/swagger-ui.html` : `${originUrl}/swagger-ui/index.html`;
 
     let currentVersion = "v1";
     let registeredPlayerId = null;
@@ -109,7 +111,7 @@ window.SnakeArena = window.SnakeArena || {};
             }
 
             if (!silent) {
-                const cleanEndpoint = url.replace(/^http:\/\/[^/]+/, "");
+                const cleanEndpoint = url.replace(/^https?:\/\/[^/]+/, "");
                 logApi(method, cleanEndpoint, response.status, body, data, duration);
             }
 
@@ -125,7 +127,7 @@ window.SnakeArena = window.SnakeArena || {};
         } catch (err) {
             const duration = Math.round(performance.now() - startTime);
             if (!silent) {
-                const cleanEndpoint = url.replace(/^http:\/\/[^/]+/, "");
+                const cleanEndpoint = url.replace(/^https?:\/\/[^/]+/, "");
                 logApi(method, cleanEndpoint, 500, body, { error: err.message }, duration);
             }
             if (triggerBtn && triggerBtn.classList) {
