@@ -1,0 +1,264 @@
+openapi: 3.0.3
+info:
+  title: Snake Arena - Player Service API
+  version: 1.0.0
+  description: >
+    Layanan Manajemen Identitas Pemain dan Profil Serpent Versi 1.0 (Legacy Flat Structure).
+    Mendukung pendaftaran pemain, pembacaan data profil, pembaruan penuh (PUT), modifikasi statistik (PATCH), dan penghapusan akun (DELETE).
+  contact:
+    name: Tim Pengembang Snake Arena (ABL FILKOM UB)
+servers:
+  - url: http://localhost:8081
+    description: Lingkungan Lokal Player Service
+paths:
+  /api/v1/players:
+    post:
+      summary: Registrasi Pemain Baru (v1 POST)
+      description: >
+        Mendaftarkan akun pemain baru dengan struktur flat snakeType.
+        Sistem membuat ID unik berformat PL-XXXXX dan nomor tag acak 4-digit otomatis jika nama sudah terdaftar.
+      operationId: createPlayerV1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerV1Input'
+      responses:
+        '201':
+          description: Pemain baru berhasil didaftarkan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerV1Output'
+        '400':
+          description: Validasi input gagal atau nama tidak valid
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+    get:
+      summary: Mengambil Semua Daftar Pemain (v1 GET)
+      description: Mengambil seluruh entitas pemain yang tersimpan di dalam basis data in-memory H2.
+      operationId: getAllPlayersV1
+      responses:
+        '200':
+          description: Daftar pemain berhasil diambil
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PlayerV1Output'
+  /api/v1/players/{id}:
+    get:
+      summary: Mengambil Detail Pemain Berdasarkan ID (v1 GET)
+      description: Mengambil informasi profil, tipe serpent, kecepatan dasar, dan statistik skor pemain berdasarkan ID entitas.
+      operationId: getPlayerByIdV1
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID unik entitas pemain (contoh PL-101 atau PL-52819)
+          schema:
+            type: string
+            example: PL-101
+      responses:
+        '200':
+          description: Profil pemain ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerV1Output'
+        '404':
+          description: Pemain dengan ID tersebut tidak ditemukan
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+    put:
+      summary: Memperbarui Data Pemain Menyeluruh (v1 PUT)
+      description: >
+        Mengganti seluruh data atribut profil pemain (username dan snakeType).
+        Jika username baru bertabrakan dengan akun lain, permintaan ditolak dengan kode status 400.
+      operationId: updatePlayerV1
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID unik pemain yang akan diperbarui
+          schema:
+            type: string
+            example: PL-101
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerV1Input'
+      responses:
+        '200':
+          description: Data pemain berhasil diperbarui seutuhnya
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerV1Output'
+        '400':
+          description: Username baru sudah digunakan oleh pemain lain
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Pemain dengan ID tersebut tidak ditemukan
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+    delete:
+      summary: Menghapus Akun Pemain (v1 DELETE)
+      description: Menghapus permanen rekaman entitas akun pemain dari basis data in-memory H2.
+      operationId: deletePlayerV1
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID unik pemain yang akan dihapus
+          schema:
+            type: string
+            example: PL-101
+      responses:
+        '204':
+          description: Akun pemain berhasil dihapus permanen
+        '404':
+          description: Pemain dengan ID tersebut tidak ditemukan
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+  /api/v1/players/{id}/stats:
+    patch:
+      summary: Memperbarui Statistik Skor dan Match (v1 PATCH)
+      description: >
+        Memodifikasi parsial akumulasi statistik pemain. Jika skor baru melampaui rekor lama, nilai highScore diperbarui.
+        Jika matchCompleted bernilai true, jumlah total pertandingan bertambah satu.
+      operationId: updatePlayerStatsV1
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID unik entitas pemain
+          schema:
+            type: string
+            example: PL-101
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerStatsUpdateInput'
+      responses:
+        '200':
+          description: Statistik pemain berhasil dimodifikasi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerV1Output'
+        '400':
+          description: Nilai skor negatif atau format permintaan tidak valid
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Pemain dengan ID tersebut tidak ditemukan
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+components:
+  schemas:
+    PlayerV1Input:
+      type: object
+      required:
+        - username
+        - snakeType
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+          description: Nama panggilan pemain (3-30 karakter)
+          example: PlayerOne
+        snakeType:
+          type: string
+          description: Tipe serpent yang dipilih (VIPER, PYTHON, COBRA)
+          enum: [VIPER, PYTHON, COBRA]
+          example: VIPER
+    PlayerStatsUpdateInput:
+      type: object
+      required:
+        - score
+        - matchCompleted
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          description: Skor akhir yang diraih dalam pertandingan
+          example: 250
+        matchCompleted:
+          type: boolean
+          description: Penanda apakah sesi pertandingan selesai
+          example: true
+    PlayerV1Output:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identifikasi unik pemain
+          example: PL-101
+        username:
+          type: string
+          description: Nama pemain dengan penanda tag unik
+          example: PlayerOne#1024
+        snakeType:
+          type: string
+          description: Tipe serpent
+          example: VIPER
+        speed:
+          type: integer
+          description: Kecepatan komputasi dasar serpent
+          example: 7
+        highScore:
+          type: integer
+          description: Rekor skor tertinggi pemain
+          example: 250
+        totalMatches:
+          type: integer
+          description: Total pertandingan yang pernah diikuti
+          example: 4
+        createdAt:
+          type: string
+          format: date-time
+          description: Waktu pendaftaran akun
+          example: '2026-09-20T16:00:00'
+    ProblemDetail:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+          example: about:blank
+        title:
+          type: string
+          example: Bad Request
+        status:
+          type: integer
+          example: 400
+        detail:
+          type: string
+          example: Username harus antara 3 - 30 karakter
+        instance:
+          type: string
+          format: uri
+          example: /api/v1/players
