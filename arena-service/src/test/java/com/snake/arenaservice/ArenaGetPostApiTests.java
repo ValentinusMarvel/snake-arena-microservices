@@ -3,6 +3,7 @@ package com.snake.arenaservice;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.snake.arenaservice.client.PlayerServiceClient;
+import com.snake.arenaservice.service.ArenaManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +38,8 @@ class ArenaGetPostApiTests {
     private ObjectMapper objectMapper;
     @MockBean
     private PlayerServiceClient playerServiceClient;
+    @Autowired
+    private ArenaManager arenaManager;
     private static String joinPayload(String playerId, String name, String type, String color) {
         String colorPart = color == null ? "" : ",\"color\":\"" + color + "\"";
         return String.format("{\"playerId\":\"%s\",\"playerName\":\"%s\",\"snakeType\":\"%s\"%s}", playerId, name, type, colorPart);
@@ -108,33 +111,36 @@ class ArenaGetPostApiTests {
     @DisplayName("POST /api/v1/arena/snakes - 400 Bad Request ketika kapasitas 16 pemain telah penuh")
     void postJoinRejectedWhenArenaIsFull() throws Exception {
         List<String> joined = new ArrayList<>();
-        try {
-            boolean rejected = false;
-            // Jumlah penghuni awal tidak tetap karena bot dapat gugur secara permanen akibat tabrakan,
-            // sehingga yang diuji adalah invarian kapasitas: arena menolak POST begitu penuh, tidak pernah melebihi 16.
-            for (int i = 0; i < 20 && !rejected; i++) {
-                MvcResult result = mockMvc.perform(post(SNAKES).contentType(MediaType.APPLICATION_JSON)
-                                .content(joinPayload("PL-FULL-" + i, "Filler" + i, "VIPER", null)))
-                        .andReturn();
-                int httpStatus = result.getResponse().getStatus();
-                if (httpStatus == 201) {
-                    joined.add(objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText());
-                } else {
-                    rejected = true;
-                    assertEquals(400, httpStatus);
-                    assertTrue(result.getResponse().getContentAsString().contains("Arena penuh"));
+        // Mengunci monitor ArenaManager sementara agar scheduler tick (120 ms) tidak mengeliminasi
+        // ular secara acak di antara pengisian kapasitas dan pembacaan state.
+        synchronized (arenaManager) {
+            try {
+                boolean rejected = false;
+                // Jumlah penghuni awal tidak tetap karena bot dapat gugur secara permanen akibat tabrakan,
+                // sehingga yang diuji adalah invarian kapasitas: arena menolak POST begitu penuh, tidak pernah melebihi 16.
+                for (int i = 0; i < 20 && !rejected; i++) {
+                    MvcResult result = mockMvc.perform(post(SNAKES).contentType(MediaType.APPLICATION_JSON)
+                                    .content(joinPayload("PL-FULL-" + i, "Filler" + i, "VIPER", null)))
+                            .andReturn();
+                    int httpStatus = result.getResponse().getStatus();
+                    if (httpStatus == 201) {
+                        joined.add(objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText());
+                    } else {
+                        rejected = true;
+                        assertEquals(400, httpStatus);
+                        assertTrue(result.getResponse().getContentAsString().contains("Arena penuh"));
+                    }
                 }
+                assertTrue(rejected, "Arena seharusnya menolak pemain setelah kapasitas 16 tercapai");
+                mockMvc.perform(get(STATE))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.maxPlayers", is(16)))
+                        .andExpect(jsonPath("$.activePlayers", allOf(greaterThanOrEqualTo(15), lessThanOrEqualTo(16))));
+            } finally {
+                joined.forEach(id -> {
+                    try { leave(id); } catch (Exception ignored) { }
+                });
             }
-            assertTrue(rejected, "Arena seharusnya menolak pemain setelah kapasitas 16 tercapai");
-            // Toleransi 1 slot: game loop (120 ms) dapat mengeliminasi satu ular tepat setelah penolakan.
-            mockMvc.perform(get(STATE))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.maxPlayers", is(16)))
-                    .andExpect(jsonPath("$.activePlayers", allOf(greaterThanOrEqualTo(15), lessThanOrEqualTo(16))));
-        } finally {
-            joined.forEach(id -> {
-                try { leave(id); } catch (Exception ignored) { }
-            });
         }
     }
     // ------------------------------------------------------------------- GET
