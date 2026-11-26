@@ -1,418 +1,411 @@
-openapi: 3.0.3
+openapi: 3.0.1
 info:
-  title: Snake Arena - Arena Service API
-  version: 1.0.0
-  description: >
-    Layanan Manajemen Sesi Arena Pertandingan Real-Time Versi 1.0.
-    Mendukung registrasi/spawn serpent, snapshot state arena komprehensif, telemetri ular, modifikasi arah/posisi/skill/loadout, konsumsi apel, dan eliminasi ular dengan sinkronisasi skor antarlayanan.
+  title: Snake Arena - Gameplay & Session Service API
+  description: |
+    Layanan Arena Gameplay Session, Makanan (Apel), Tabrakan, Leaderboard, dan Inter-service Communication.
+
+    **Tim Pengembang:**
+    - Valentinus Marvel (245150201111027)
+    - Muhammad Raditya Arsyad (245150207111043)
+    - Muhamad Fahmi Siddiq Aqsha (245150200111030)
+    - Dafid Rosydan Hanif (245150200111029)
+
+    **Mata Kuliah:** Arsitektur Berbasis Layanan (ABL)
   contact:
-    name: Tim Pengembang Snake Arena (ABL FILKOM UB)
+    name: Tim Pengembang ABL
+  version: 1.0.0
 servers:
-  - url: http://localhost:8082
-    description: Lingkungan Lokal Arena Service
+- url: http://localhost:8082
+  description: Generated server url
+tags:
+- name: arena
+  description: API Arena Pertandingan Ular (Gameplay Session)
 paths:
-  /api/v1/arena/snakes:
-    post:
-      summary: Bergabung ke Arena Pertandingan (v1 POST)
-      description: >
-        Menginisiasi dan melakukan spawn entitas ular baru ke dalam arena pertandingan dengan posisi acak aman dan warna kustom.
-      operationId: joinArena
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/JoinArenaInput'
-      responses:
-        '201':
-          description: Ular berhasil di-spawn ke dalam arena
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Snake'
-        '400':
-          description: Kapasitas arena penuh (maksimal 16 pemain) atau data input tidak valid
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-  /api/v1/arena/state:
-    get:
-      summary: Mengambil Snapshot Kondisi Arena Terkini (v1 GET)
-      description: >
-        Mengambil seluruh telemetri arena secara komprehensif, mencakup tick waktu server,
-        koordinat semua ular aktif, posisi apel, dan jumlah pemain aktif.
-      operationId: getArenaState
-      responses:
-        '200':
-          description: Snapshot arena berhasil diambil
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ArenaState'
-  /api/v1/arena/snakes/{id}:
-    get:
-      summary: Mengambil Kondisi Ular Berdasarkan ID (v1 GET)
-      description: Mengambil data koordinat kepala dan badan, status hidup (alive), skor sesi berjalan, serta arah gerak ular tertentu di arena.
-      operationId: getSnakeById
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID unik ular pada sesi arena
-          schema:
-            type: string
-            example: SNK-8821
-      responses:
-        '200':
-          description: Data ular ditemukan
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Snake'
-        '404':
-          description: Ular dengan ID tersebut tidak ditemukan di dalam arena
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-    delete:
-      summary: Eliminasi Ular dan Sinkronisasi Skor (v1 DELETE)
-      description: >
-        Mengeluarkan ular dari arena pertandingan dan memicu pemanggilan REST antarlayanan ke player-service
-        untuk menyinkronkan perolehan skor akhir ke basis data pemain.
-      operationId: eliminateSnake
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID unik ular yang tereliminasi
-          schema:
-            type: string
-            example: SNK-8821
-      responses:
-        '204':
-          description: Ular berhasil dikeluarkan dan skor tersinkronisasi
-        '404':
-          description: Ular tidak ditemukan di dalam arena
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
   /api/v1/arena/snakes/{id}/loadout:
     put:
-      summary: Mengganti Loadout dan Skin Ular di Arena (v1 PUT)
-      description: Mengganti kelas serpent atau warna tubuh ular secara menyeluruh saat aktif bermain di arena.
+      tags:
+      - arena
+      summary: Mengganti loadout / skin ular di arena (PUT)
       operationId: updateLoadout
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID unik ular di arena
-          schema:
-            type: string
-            example: SNK-8821
-      requestBody:
+      - name: id
+        in: path
         required: true
+        schema:
+          type: string
+      requestBody:
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/LoadoutUpdateInput'
+        required: true
       responses:
-        '200':
-          description: Loadout serpent berhasil diperbarui
+        "200":
+          description: Loadout berhasil diubah
           content:
-            application/json:
+            '*/*':
               schema:
                 $ref: '#/components/schemas/Snake'
-        '400':
-          description: Parameter loadout tidak valid
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-        '404':
-          description: Ular tidak ditemukan di dalam arena
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-  /api/v1/arena/snakes/{id}/direction:
-    patch:
-      summary: Mengubah Arah Pergerakan Ular Real-Time (v1 PATCH)
-      description: Mengubah arah vektor gerak kepala ular secara real-time pada siklus game loop 250ms.
-      operationId: changeDirection
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID unik ular
-          schema:
-            type: string
-            example: SNK-8821
-        - name: dir
-          in: query
-          required: true
-          description: Arah baru pergerakan serpent
-          schema:
-            type: string
-            enum: [UP, DOWN, LEFT, RIGHT]
-            example: RIGHT
-      responses:
-        '200':
-          description: Arah serpent berhasil diubah
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Snake'
-        '404':
+        "404":
           description: Ular tidak ditemukan
           content:
-            application/problem+json:
+            '*/*':
               schema:
-                $ref: '#/components/schemas/ProblemDetail'
+                $ref: '#/components/schemas/Snake'
+  /api/v1/arena/snakes:
+    post:
+      tags:
+      - arena
+      summary: Bergabung ke arena dengan ular baru (POST)
+      operationId: joinArena
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JoinArenaInput'
+        required: true
+      responses:
+        "201":
+          description: Ular berhasil masuk ke arena
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Snake'
+        "400":
+          description: Data input tidak valid / Arena penuh
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Snake'
+  /api/v1/arena/snakes/{id}/leave:
+    post:
+      tags:
+      - arena
+      summary: Meninggalkan arena pertandingan (mendukung navigator.sendBeacon) (POST)
+      operationId: leaveArenaPost
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+  /api/v1/arena/snakes/{id}/skill:
+    patch:
+      tags:
+      - arena
+      summary: Mengaktifkan/mematikan skill kelas ular (PATCH)
+      operationId: toggleSkill
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: active
+        in: query
+        required: true
+        schema:
+          type: boolean
+      responses:
+        "200":
+          description: Status skill diperbarui
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Snake'
   /api/v1/arena/snakes/{id}/position:
     patch:
-      summary: Sinkronisasi Posisi Segmen Ular (v1 PATCH)
-      description: Sinkronisasi manual susunan koordinat segmen tubuh ular untuk koreksi latensi client-server.
+      tags:
+      - arena
+      summary: Sinkronisasi posisi segmen ular secara manual (PATCH)
       operationId: updatePosition
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID unik ular
-          schema:
-            type: string
-            example: SNK-8821
-      requestBody:
+      - name: id
+        in: path
         required: true
+        schema:
+          type: string
+      requestBody:
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/UpdatePositionInput'
+        required: true
       responses:
-        '200':
-          description: Posisi koordinat segmen berhasil disinkronkan
+        "200":
+          description: Posisi ular berhasil diperbarui
           content:
-            application/json:
+            '*/*':
               schema:
                 $ref: '#/components/schemas/Snake'
-        '404':
+        "404":
           description: Ular tidak ditemukan
           content:
-            application/problem+json:
+            '*/*':
               schema:
-                $ref: '#/components/schemas/ProblemDetail'
+                $ref: '#/components/schemas/Snake'
+  /api/v1/arena/snakes/{id}/heartbeat:
+    patch:
+      tags:
+      - arena
+      summary: Mengirim sinyal heartbeat dari client agar ular tidak terputus (PATCH)
+      operationId: heartbeat
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Snake'
   /api/v1/arena/snakes/{id}/eat:
     patch:
-      summary: Mengkonsumsi Apel di Arena (v1 PATCH)
-      description: Memvalidasi pengambilan apel di grid arena, menambah panjang segmen tubuh, dan meningkatkan skor sesi.
+      tags:
+      - arena
+      summary: Mengkonsumsi apel di arena (PATCH)
       operationId: eatApple
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID unik ular
-          schema:
-            type: string
-            example: SNK-8821
-      requestBody:
+      - name: id
+        in: path
         required: true
+        schema:
+          type: string
+      requestBody:
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/EatAppleInput'
+        required: true
       responses:
-        '200':
-          description: Apel berhasil dikonsumsi dan status ular diperbarui
+        "200":
+          description: "Apel dimakan, skor dan panjang bertambah"
           content:
-            application/json:
+            '*/*':
               schema:
                 $ref: '#/components/schemas/Snake'
-        '404':
+        "404":
           description: Ular tidak ditemukan
           content:
-            application/problem+json:
+            '*/*':
               schema:
-                $ref: '#/components/schemas/ProblemDetail'
-  /api/v1/arena/snakes/{id}/skill:
+                $ref: '#/components/schemas/Snake'
+  /api/v1/arena/snakes/{id}/direction:
     patch:
-      summary: Mengaktifkan atau Mematikan Skill Kelas (v1 PATCH)
-      description: Mengaktifkan atau menonaktifkan skill aktif kelas serpent (contoh Venom Dash) selama pertandingan.
-      operationId: toggleSkill
+      tags:
+      - arena
+      summary: Mengubah arah pergerakan ular secara real-time (PATCH)
+      operationId: changeDirection
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID unik ular
-          schema:
-            type: string
-            example: SNK-8821
-        - name: active
-          in: query
-          required: true
-          description: Status pengaktifan skill
-          schema:
-            type: boolean
-            example: true
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: dir
+        in: query
+        required: true
+        schema:
+          type: string
       responses:
-        '200':
-          description: Status skill ular berhasil diperbarui
+        "200":
+          description: Arah ular berhasil diubah
           content:
-            application/json:
+            '*/*':
               schema:
                 $ref: '#/components/schemas/Snake'
-        '404':
+        "404":
           description: Ular tidak ditemukan
           content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetail'
-  /api/v1/arena/snakes/{id}/heartbeat:
-    patch:
-      summary: Mengirim Sinyal Heartbeat Koneksi (v1 PATCH)
-      description: Menjaga sesi koneksi pemain tetap aktif di arena agar tidak terputus karena batas inaktivitas.
-      operationId: heartbeat
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID unik ular
-          schema:
-            type: string
-            example: SNK-8821
-      responses:
-        '200':
-          description: Sinyal heartbeat berhasil dicatat server
-          content:
-            application/json:
+            '*/*':
               schema:
                 $ref: '#/components/schemas/Snake'
-        '404':
-          description: Ular tidak ditemukan
+  /api/v1/arena/state:
+    get:
+      tags:
+      - arena
+      summary: Mengambil kondisi arena snapshot terkini (GET)
+      operationId: getArenaState
+      responses:
+        "200":
+          description: State arena berhasil diambil
           content:
-            application/problem+json:
+            '*/*':
               schema:
-                $ref: '#/components/schemas/ProblemDetail'
+                $ref: '#/components/schemas/ArenaState'
+  /api/v1/arena/snakes/{id}:
+    get:
+      tags:
+      - arena
+      summary: Mengambil detail ular di arena berdasarkan ID (GET)
+      operationId: getSnakeById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Data ular ditemukan
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Snake'
+        "404":
+          description: Ular tidak ada di arena
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Snake'
+    delete:
+      tags:
+      - arena
+      summary: Ular tereliminasi / keluar dari arena (DELETE) -> Memicu sinkronisasi
+        skor ke Player Service
+      operationId: eliminateSnake
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: Ular berhasil keluar dan skor tersinkronisasi
+        "404":
+          description: Ular tidak ditemukan
 components:
   schemas:
-    JoinArenaInput:
-      type: object
-      required:
-        - playerId
-        - playerName
-        - snakeType
-        - color
-      properties:
-        playerId:
-          type: string
-          description: ID pemain yang terdaftar dari player-service
-          example: PL-101
-        playerName:
-          type: string
-          description: Nama tampilan pemain di arena
-          example: PlayerOne#1024
-        snakeType:
-          type: string
-          enum: [VIPER, PYTHON, COBRA]
-          example: VIPER
-        color:
-          type: string
-          description: Kode warna hex untuk rendering serpent
-          example: '#00ffcc'
     LoadoutUpdateInput:
-      type: object
       required:
-        - snakeType
+      - snakeType
+      type: object
       properties:
         snakeType:
           type: string
-          enum: [VIPER, PYTHON, COBRA]
-          description: Kelas serpent baru
           example: COBRA
         color:
           type: string
-          description: Kode warna heksadesimal baru
           example: '#ffd700'
-    EatAppleInput:
+    Point:
       type: object
-      required:
-        - appleId
       properties:
-        appleId:
-          type: string
-          description: ID unik apel yang dimakan
-          example: APL-1
-    UpdatePositionInput:
-      type: object
-      required:
-        - segments
-        - direction
-      properties:
-        segments:
-          type: array
-          items:
-            $ref: '#/components/schemas/Position'
-        direction:
-          type: string
-          enum: [UP, DOWN, LEFT, RIGHT]
-          example: RIGHT
+        x:
+          type: integer
+          format: int32
+        "y":
+          type: integer
+          format: int32
     Snake:
       type: object
       properties:
         id:
           type: string
-          example: SNK-8821
+        playerId:
+          type: string
+        playerName:
+          type: string
+        snakeType:
+          type: string
+        color:
+          type: string
+        segments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Point'
+        direction:
+          type: string
+        score:
+          type: integer
+          format: int32
+        alive:
+          type: boolean
+        skillActive:
+          type: boolean
+        skillActivatedAt:
+          type: integer
+          format: int64
+        skillCooldownUntil:
+          type: integer
+          format: int64
+        lastHeartbeatTime:
+          type: integer
+          format: int64
+    JoinArenaInput:
+      required:
+      - playerId
+      - playerName
+      - snakeType
+      type: object
+      properties:
         playerId:
           type: string
           example: PL-101
         playerName:
           type: string
-          example: PlayerOne#1024
+          example: PlayerOne
         snakeType:
           type: string
           example: VIPER
         color:
           type: string
-          example: '#00ffcc'
-        alive:
-          type: boolean
-          example: true
-        score:
-          type: integer
-          example: 30
-        direction:
-          type: string
-          enum: [UP, DOWN, LEFT, RIGHT]
-          example: RIGHT
+          example: '#00ff88'
+    UpdatePositionInput:
+      type: object
+      properties:
         segments:
           type: array
           items:
-            $ref: '#/components/schemas/Position'
-    Position:
+            $ref: '#/components/schemas/Point'
+        direction:
+          type: string
+    EatAppleInput:
+      required:
+      - appleId
       type: object
       properties:
+        appleId:
+          type: string
+          example: APL-1
+    Apple:
+      type: object
+      properties:
+        id:
+          type: string
         x:
           type: integer
-          example: 12
-        y:
+          format: int32
+        "y":
           type: integer
-          example: 8
+          format: int32
+        type:
+          type: string
+        points:
+          type: integer
+          format: int32
     ArenaState:
       type: object
       properties:
-        worldTick:
+        gridWidth:
           type: integer
-          example: 1420
-        activePlayerCount:
+          format: int32
+        gridHeight:
           type: integer
-          example: 4
-        arenaWidth:
+          format: int32
+        maxPlayers:
           type: integer
-          example: 40
-        arenaHeight:
+          format: int32
+        activePlayers:
           type: integer
-          example: 30
+          format: int32
         snakes:
           type: array
           items:
@@ -421,42 +414,19 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Apple'
-    Apple:
+        leaderboard:
+          type: array
+          items:
+            $ref: '#/components/schemas/LeaderboardEntry'
+    LeaderboardEntry:
       type: object
       properties:
-        id:
+        snakeId:
           type: string
-          example: APL-3
-        x:
+        playerName:
+          type: string
+        snakeType:
+          type: string
+        score:
           type: integer
-          example: 25
-        y:
-          type: integer
-          example: 15
-        type:
-          type: string
-          enum: [NORMAL, GOLDEN]
-          example: GOLDEN
-        points:
-          type: integer
-          example: 30
-    ProblemDetail:
-      type: object
-      properties:
-        type:
-          type: string
-          format: uri
-          example: about:blank
-        title:
-          type: string
-          example: Bad Request
-        status:
-          type: integer
-          example: 400
-        detail:
-          type: string
-          example: Arena penuh (maksimal 16 pemain)
-        instance:
-          type: string
-          format: uri
-          example: /api/v1/arena/snakes
+          format: int32

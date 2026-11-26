@@ -4,7 +4,7 @@
 [![Java 21 LTS](https://img.shields.io/badge/Java-21%20LTS-orange?logo=openjdk)](https://adoptium.net/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.5-brightgreen?logo=springboot)](https://spring.io/projects/spring-boot)
 [![Docker](https://img.shields.io/badge/Docker-Multi--Stage%20Build-blue?logo=docker)](https://www.docker.com/)
-[![JUnit 5](https://img.shields.io/badge/Tests-48%20Passed-success?logo=junit5)](https://junit.org/junit5/)
+[![JUnit 5](https://img.shields.io/badge/Tests-80%20Passed-success?logo=junit5)](https://junit.org/junit5/)
 [![OpenAPI 3.0](https://img.shields.io/badge/OpenAPI-3.0%20Compliant-teal?logo=swagger)](https://swagger.io/specification/)
 [![Architecture](https://img.shields.io/badge/Architecture-RESTful%20Microservices-informational)](https://microservices.io/)
 
@@ -176,26 +176,27 @@ Tiga kelas serpent dirancang dengan karakteristik taktikal yang berbeda:
 Spesifikasi antarmuka terintegrasi secara otomatis menggunakan Springdoc OpenAPI:
 
 - **Player Service Swagger:** `http://localhost:8081/swagger-ui/index.html` (atau `http://localhost:8081/swagger-ui.html`)
-  - Menyediakan selektor dokumen untuk beralih antara definisi kontrak `v1-api` dan `v2-api`.
+  - Menyediakan selektor definisi dokumen untuk beralih antara kontrak **`v1-legacy-api`** dan **`v2-modern-api`**.
 - **Arena Service Swagger:** `http://localhost:8082/swagger-ui/index.html` (atau `http://localhost:8082/swagger-ui.html`)
   - Menyediakan eksplorasi langsung untuk endpoint simulasi arena dan status server.
-- **Spesifikasi OpenAPI Resmi:** Berkas spesifikasi mandiri tersedia di direktori `docs/` (`openapi-v1-player-service.yaml` dan `openapi-v1-arena-service.yaml`).
+- **Spesifikasi OpenAPI Resmi & Koleksi Postman:** Berkas spesifikasi mandiri tersedia di direktori `docs/` (`openapi-v1-player-service.yaml`, `openapi-v2-player-service.yaml`, dan `openapi-v1-arena-service.yaml`) serta koleksi siap impor di `docs/postman/Snake-Arena-Microservices.postman_collection.json`.
 
 ---
 
 ## 6. Prosedur Pengujian Otomatis (Automated Test Suite)
 
-Proyek dilengkapi dengan pengujian unit dan integrasi berbasis JUnit 5, MockMvc, dan Resilience4j Test Verification (**Total 48 Pengujian Lulus 100%**):
+Proyek dilengkapi dengan pengujian unit dan integrasi berbasis JUnit 5, MockMvc, dan Resilience4j Test Verification (**Total 80 Pengujian Lulus 100%**):
 
-### Menjalankan Test Player Service (20 Tests):
+### Menjalankan Test Player Service (52 Tests):
 ```bash
 cd player-service
 ./mvnw clean test
 ```
 *Cakupan Pengujian:*
-- `PlayerV1GetPostApiTests`: Pengujian endpoint GET dan POST v1 (BAB 5).
-- `PlayerV1PutPatchDeleteApiTests`: Pengujian pembaruan profil PUT, patch skor PATCH, eliminasi DELETE, dan validasi RFC 7807 (BAB 6).
-- `PlayerV2ApiTests`: Validasi ketat DTO v2, kalkulasi speed dinamis, penolakan flat payload v1, dan tiering RPG.
+- `PlayerServiceTests` (5 Tests): Verifikasi pemuatan konteks Spring Boot, pembuatan pemain, dan resolusi discriminator tag `#XXXX`.
+- `PlayerV1GetPostApiTests` (13 Tests): Pengujian endpoint GET dan POST v1 serta validasi input.
+- `PlayerV1PutPatchDeleteApiTests` (12 Tests): Pengujian pembaruan profil PUT, patch skor PATCH, eliminasi DELETE, dan validasi RFC 7807 / RFC 9457.
+- `PlayerV2ApiTests` (22 Tests): Validasi ketat nested DTO v2, kalkulasi speed dinamis per kelas, penolakan flat payload v1 (`400 Bad Request`), dan pemeringkatan tier RPG.
 
 ### Menjalankan Test Arena Service (28 Tests):
 ```bash
@@ -203,9 +204,10 @@ cd arena-service
 ./mvnw clean test
 ```
 *Cakupan Pengujian:*
-- `ArenaGetPostApiTests`: Pengujian spawn ular dan pengambilan kondisi arena (BAB 5).
-- `ArenaPutPatchDeleteApiTests`: Pengujian update loadout skin, pergerakan arah real-time, konsumsi apel, aktivasi skill cooldown, eliminasi ular, dan sinkronisasi skor (BAB 6).
-- `PlayerServiceClientTest`: Verifikasi ketahanan Resilience4j Circuit Breaker saat `player-service` mengalami downtime.
+- `ArenaGetPostApiTests` (9 Tests): Pengujian spawn ular, batas kapasitas 16 pemain terproteksi sinkronisasi, dan pengambilan state arena.
+- `ArenaPutPatchDeleteApiTests` (13 Tests): Pengujian update loadout skin, pergerakan arah real-time, konsumsi apel, aktivasi skill cooldown, eliminasi ular, dan sinkronisasi skor.
+- `ArenaServiceTests` (5 Tests): Pengujian logika domain game loop in-memory dan manajemen state serpent.
+- `PlayerServiceClientTest` (1 Test): Verifikasi ketahanan Resilience4j Circuit Breaker saat `player-service` mengalami downtime.
 
 ---
 
@@ -307,8 +309,11 @@ snake-arena-microservices/
 ├── stop_docker.bat / .sh        # Skrip otomatisasi penghentian kontainer
 ├── docs/
 │   ├── adr/                     # Architecture Decision Records (ADR 0001 - 0004)
-│   ├── openapi-v1-player-service.yaml  # Spesifikasi OpenAPI Player Service
-│   └── openapi-v1-arena-service.yaml   # Spesifikasi OpenAPI Arena Service
+│   ├── postman/                 # Koleksi Postman siap impor untuk demo API
+│   │   └── Snake-Arena-Microservices.postman_collection.json
+│   ├── openapi-v1-player-service.yaml  # Spesifikasi OpenAPI Player Service (v1-legacy-api)
+│   ├── openapi-v2-player-service.yaml  # Spesifikasi OpenAPI Player Service (v2-modern-api)
+│   └── openapi-v1-arena-service.yaml   # Spesifikasi OpenAPI Arena Service (v1)
 ├── player-service/              # Microservice Identitas & Persistensi (Port 8081)
 │   ├── Dockerfile               # Multi-stage production container build
 │   ├── pom.xml                  # Actuator, Spring Data JPA, Web, Validation

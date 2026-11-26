@@ -1,0 +1,298 @@
+openapi: 3.0.1
+info:
+  title: Snake Arena - Player Service API
+  description: |
+    Layanan Manajemen Profil Pemain dan Kelas Ular (Snake Classes).
+
+    **Tim Pengembang:**
+    - Valentinus Marvel (245150201111027)
+    - Muhammad Raditya Arsyad (245150207111043)
+    - Muhamad Fahmi Siddiq Aqsha (245150200111030)
+    - Dafid Rosydan Hanif (245150200111029)
+
+    **Mata Kuliah:** Arsitektur Berbasis Layanan (ABL)
+
+    ### Fitur Versioning (Breaking Changes):
+    - **v1 (Legacy API)**: Menggunakan struktur data flat untuk snakeType dan speed.
+    - **v2 (Modern RPG)**: Menghapus snakeType dan speed, menggantikannya dengan nested object `classProfile` dengan skill cooldown & active modifiers.
+  contact:
+    name: Tim Pengembang ABL
+  version: 1.0.0 / 2.0.0
+servers:
+- url: http://localhost:8081
+  description: Generated server url
+tags:
+- name: v2-players
+  description: API Profil Pemain Versi 2 (Modern RPG - Breaking Changes Contract)
+paths:
+  /api/v2/players/{id}:
+    get:
+      tags:
+      - v2-players
+      summary: Mengambil detail pemain v2 berdasarkan ID
+      operationId: getPlayerByIdV2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Pemain v2 ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerV2Output'
+        "404":
+          description: Pemain tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpErrorInfo'
+    put:
+      tags:
+      - v2-players
+      summary: Mengubah data pemain v2 seutuhnya
+      operationId: updatePlayerV2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerV2Input'
+        required: true
+      responses:
+        "200":
+          description: Pemain berhasil diperbarui
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerV2Output'
+        "400":
+          description: Input tidak valid atau username sudah digunakan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpErrorInfo'
+        "404":
+          description: Pemain tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpErrorInfo'
+    delete:
+      tags:
+      - v2-players
+      summary: Menghapus akun pemain v2
+      operationId: deletePlayerV2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: Pemain berhasil dihapus
+        "404":
+          description: Pemain tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpErrorInfo'
+  /api/v2/players:
+    get:
+      tags:
+      - v2-players
+      summary: Mengambil seluruh pemain format v2
+      operationId: getAllPlayersV2
+      responses:
+        "200":
+          description: Daftar pemain v2 berhasil diambil
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PlayerV2Output'
+    post:
+      tags:
+      - v2-players
+      summary: "Mendaftar player baru v2 (Breaking Change: wajib classProfile)"
+      operationId: createPlayerV2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerV2Input'
+        required: true
+      responses:
+        "201":
+          description: Pemain v2 berhasil dibuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerV2Output'
+        "400":
+          description: Payload v1 ditolak atau input tidak valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpErrorInfo'
+  /api/v2/players/{id}/stats:
+    patch:
+      tags:
+      - v2-players
+      summary: Modifikasi parsial skor dan jumlah match v2 (v2 PATCH)
+      operationId: updateStatsV2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerStatsUpdateInput'
+        required: true
+      responses:
+        "200":
+          description: Skor berhasil diperbarui
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerV2Output'
+        "400":
+          description: Skor negatif atau input tidak valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpErrorInfo'
+        "404":
+          description: Pemain tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpErrorInfo'
+components:
+  schemas:
+    HttpErrorInfo:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+        message:
+          type: string
+        serviceAddress:
+          type: string
+        invalidFields:
+          type: object
+          additionalProperties:
+            type: string
+        title:
+          type: string
+        detail:
+          type: string
+        status:
+          type: integer
+          format: int32
+        error:
+          type: string
+    AbilityInput:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          example: Venom Dash
+        cooldownSeconds:
+          type: integer
+          format: int32
+          example: 5
+        speedMultiplier:
+          type: number
+          format: double
+          example: 1.8
+    ClassProfileInput:
+      required:
+      - activeAbility
+      - className
+      - passiveEffect
+      type: object
+      properties:
+        className:
+          pattern: VIPER|PYTHON|COBRA
+          type: string
+          example: VIPER
+          enum:
+          - VIPER
+          - PYTHON
+          - COBRA
+        passiveEffect:
+          type: string
+          example: POISON_TRAIL
+        activeAbility:
+          $ref: '#/components/schemas/AbilityInput'
+    PlayerV2Input:
+      required:
+      - classProfile
+      - username
+      type: object
+      properties:
+        username:
+          maxLength: 30
+          minLength: 3
+          type: string
+          example: PlayerOne
+        classProfile:
+          $ref: '#/components/schemas/ClassProfileInput'
+    PlayerV2Output:
+      type: object
+      properties:
+        id:
+          type: string
+          example: PL-101
+        username:
+          type: string
+          example: PlayerOne
+        classProfile:
+          $ref: '#/components/schemas/ClassProfileInput'
+        highScore:
+          type: integer
+          format: int32
+          example: 150
+        totalMatches:
+          type: integer
+          format: int32
+          example: 3
+        playerTier:
+          type: string
+          example: Gold
+        createdAt:
+          type: string
+          example: 2026-09-20T16:00:00
+    PlayerStatsUpdateInput:
+      type: object
+      properties:
+        score:
+          minimum: 0
+          type: integer
+          description: Skor akhir yang diraih dalam pertandingan
+          format: int32
+          example: 120
+        matchCompleted:
+          type: boolean
+          description: Apakah pertandingan selesai
+          example: true

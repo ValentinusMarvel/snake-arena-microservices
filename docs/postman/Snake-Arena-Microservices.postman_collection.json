@@ -1,0 +1,737 @@
+{
+  "info": {
+    "_postman_id": "a7b8c9d0-1122-4455-8899-snakearena2026",
+    "name": "Snake Arena: Clash of Serpents (ABL Microservices)",
+    "description": "Koleksi Postman siap pakai untuk mendemonstrasikan seluruh kontrak REST API v1.0, transisi breaking change v2.0, komunikasi antar-layanan + Resilience4j Circuit Breaker, dan healthcheck Spring Boot Actuator.\n\nUrutan Demo Cepat (Collection Runner atau klik urut):\n1. Healthcheck Player (:8081) & Arena (:8082)\n2. Player v1 CRUD (POST, GET, PUT, PATCH)\n3. Player v2 Breaking Change Negative Test (400 Bad Request) & v2 CRUD + Cross-Version Read\n4. Arena Session Flow (Join, State 30x30, Loadout, Direction, Eat, Skill, Heartbeat, Delete -> Score Sync)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "player_url", "value": "http://localhost:8081", "type": "string" },
+    { "key": "arena_url", "value": "http://localhost:8082", "type": "string" },
+    { "key": "player_id_v1", "value": "", "type": "string" },
+    { "key": "player_id_v2", "value": "", "type": "string" },
+    { "key": "demo_player_name", "value": "ViperDemo", "type": "string" },
+    { "key": "snake_id", "value": "", "type": "string" },
+    { "key": "apple_id", "value": "APL-1", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "01 - Observabilitas & Health Probes",
+      "item": [
+        {
+          "name": "1.1 Player Service Healthcheck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test(\"Player Service status is UP\", () => pm.expect(res.status).to.eql(\"UP\"));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{player_url}}/actuator/health"
+          }
+        },
+        {
+          "name": "1.2 Arena Service Healthcheck (CircuitBreaker)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test(\"Arena Service status is UP\", () => pm.expect(res.status).to.eql(\"UP\"));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{arena_url}}/actuator/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Player Service API v1 (Legacy Flat)",
+      "item": [
+        {
+          "name": "2.1 POST Create Player v1 (201 Created)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201 Created\", () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Valid v1 flat fields (snakeType & speed)\", () => {",
+                  "    pm.expect(json.id).to.match(/^PL-/);",
+                  "    pm.expect(json.snakeType).to.eql(\"VIPER\");",
+                  "    pm.expect(json.speed).to.eql(7);",
+                  "    pm.collectionVariables.set(\"player_id_v1\", json.id);",
+                  "    pm.collectionVariables.set(\"demo_player_name\", json.username);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"ViperDemo_{{$randomInt}}\",\n  \"snakeType\": \"VIPER\"\n}"
+            },
+            "url": "{{player_url}}/api/v1/players"
+          }
+        },
+        {
+          "name": "2.2 GET All Players v1 (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Response is array\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{player_url}}/api/v1/players"
+          }
+        },
+        {
+          "name": "2.3 GET Player by ID v1 (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"ID matches created player v1\", () => pm.expect(json.id).to.eql(pm.collectionVariables.get(\"player_id_v1\")));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{player_url}}/api/v1/players/{{player_id_v1}}"
+          }
+        },
+        {
+          "name": "2.4 PUT Replace Player v1 (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Type updated to COBRA with speed 6\", () => {",
+                  "    pm.expect(json.snakeType).to.eql(\"COBRA\");",
+                  "    pm.expect(json.speed).to.eql(6);",
+                  "    pm.collectionVariables.set(\"demo_player_name\", json.username);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"CobraUpd_{{$randomInt}}\",\n  \"snakeType\": \"COBRA\"\n}"
+            },
+            "url": "{{player_url}}/api/v1/players/{{player_id_v1}}"
+          }
+        },
+        {
+          "name": "2.5 PATCH Player Stats v1 (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"HighScore & totalMatches updated\", () => {",
+                  "    pm.expect(json.highScore).to.be.at.least(120);",
+                  "    pm.expect(json.totalMatches).to.be.at.least(1);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"score\": 120,\n  \"matchCompleted\": true\n}"
+            },
+            "url": "{{player_url}}/api/v1/players/{{player_id_v1}}/stats"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Player Service API v2 (Breaking Change & Modern RPG)",
+      "item": [
+        {
+          "name": "3.1 NEGATIVE TEST: Kirim Payload v1 Flat ke v2 (Expect 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Breaking change enforced: 400 Bad Request\", () => pm.response.to.have.status(400));",
+                  "const err = pm.response.json();",
+                  "pm.test(\"Error follows HttpErrorInfo schema with serviceAddress\", () => {",
+                  "    pm.expect(err.status).to.eql(400);",
+                  "    pm.expect(err.serviceAddress).to.be.a(\"string\");",
+                  "    pm.expect(err.invalidFields).to.have.property(\"classProfile\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"LegacyClient\",\n  \"snakeType\": \"VIPER\"\n}"
+            },
+            "url": "{{player_url}}/api/v2/players"
+          }
+        },
+        {
+          "name": "3.2 NEGATIVE TEST: className Tidak Valid DRAGON (Expect 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Unknown class rejected with 400 Bad Request\", () => pm.response.to.have.status(400));",
+                  "const err = pm.response.json();",
+                  "pm.test(\"invalidFields specifies classProfile.className\", () => {",
+                  "    pm.expect(err.invalidFields).to.have.property(\"classProfile.className\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"InvalidClassUser\",\n  \"classProfile\": {\n    \"className\": \"DRAGON\",\n    \"passiveEffect\": \"FIRE\",\n    \"activeAbility\": {\n      \"name\": \"Flame Breath\",\n      \"cooldownSeconds\": 5,\n      \"speedMultiplier\": 1.5\n    }\n  }\n}"
+            },
+            "url": "{{player_url}}/api/v2/players"
+          }
+        },
+        {
+          "name": "3.3 POST Create Player v2 Nested ClassProfile (201 Created)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201 Created\", () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"v2 response returns nested classProfile & Bronze tier without flat snakeType\", () => {",
+                  "    pm.expect(json.id).to.match(/^PL-/);",
+                  "    pm.expect(json.classProfile.className).to.eql(\"VIPER\");",
+                  "    pm.expect(json.playerTier).to.eql(\"Bronze\");",
+                  "    pm.expect(json.snakeType).to.be.undefined;",
+                  "    pm.collectionVariables.set(\"player_id_v2\", json.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"ViperRPG_{{$randomInt}}\",\n  \"classProfile\": {\n    \"className\": \"VIPER\",\n    \"passiveEffect\": \"POISON_TRAIL\",\n    \"activeAbility\": {\n      \"name\": \"Venom Dash\",\n      \"cooldownSeconds\": 5,\n      \"speedMultiplier\": 1.8\n    }\n  }\n}"
+            },
+            "url": "{{player_url}}/api/v2/players"
+          }
+        },
+        {
+          "name": "3.4 Cross-Version Check: Baca Player v2 via Endpoint v1 (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Shared DB interoperability: 200 OK via v1\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"v1 view resolves dynamic speed=7 for VIPER\", () => {",
+                  "    pm.expect(json.snakeType).to.eql(\"VIPER\");",
+                  "    pm.expect(json.speed).to.eql(7);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{player_url}}/api/v1/players/{{player_id_v2}}"
+          }
+        },
+        {
+          "name": "3.5 GET All Players v2 (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Response is array\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{player_url}}/api/v2/players"
+          }
+        },
+        {
+          "name": "3.6 GET Player by ID v2 (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"ID matches v2 player\", () => pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get(\"player_id_v2\")));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{player_url}}/api/v2/players/{{player_id_v2}}"
+          }
+        },
+        {
+          "name": "3.7 PUT Replace Player v2 -> PYTHON Class (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Updated to canonical PYTHON profile\", () => {",
+                  "    pm.expect(json.classProfile.className).to.eql(\"PYTHON\");",
+                  "    pm.expect(json.classProfile.activeAbility.name).to.eql(\"Titan Forcefield\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"PythonRPG_{{$randomInt}}\",\n  \"classProfile\": {\n    \"className\": \"PYTHON\",\n    \"passiveEffect\": \"THICK_BODY\",\n    \"activeAbility\": {\n      \"name\": \"Titan Forcefield\",\n      \"cooldownSeconds\": 7,\n      \"speedMultiplier\": 1.3\n    }\n  }\n}"
+            },
+            "url": "{{player_url}}/api/v2/players/{{player_id_v2}}"
+          }
+        },
+        {
+          "name": "3.8 PATCH Stats v2 -> Auto Upgrade Tier ke Gold (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"playerTier upgraded to Gold when highScore >= 150\", () => {",
+                  "    pm.expect(json.highScore).to.be.at.least(200);",
+                  "    pm.expect(json.playerTier).to.eql(\"Gold\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"score\": 200,\n  \"matchCompleted\": true\n}"
+            },
+            "url": "{{player_url}}/api/v2/players/{{player_id_v2}}/stats"
+          }
+        },
+        {
+          "name": "3.9 DELETE Player v2 (204 No Content)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204 No Content\", () => pm.response.to.have.status(204));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{player_url}}/api/v2/players/{{player_id_v2}}"
+          }
+        },
+        {
+          "name": "3.10 Verify Deleted Player v2 Returns 404 HttpErrorInfo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404 Not Found\", () => pm.response.to.have.status(404));",
+                  "const err = pm.response.json();",
+                  "pm.test(\"404 follows HttpErrorInfo contract\", () => pm.expect(err.status).to.eql(404));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{player_url}}/api/v2/players/{{player_id_v2}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Arena Service & Inter-Service Score Sync",
+      "description": "Catatan Demo Manual: Arena memiliki watchdog timeout 7 detik jika tidak menerima heartbeat. Jalankan folder ini berurutan lewat Runner atau klik berurutan dalam < 7 detik per langkah (atau klik PATCH heartbeat untuk memperpanjang sesi).",
+      "item": [
+        {
+          "name": "4.1 POST Join Arena (Spawn Snake - 201 Created)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Snake spawned with 201 Created\", () => pm.response.to.have.status(201));",
+                  "const snake = pm.response.json();",
+                  "pm.test(\"Valid snake ID stored\", () => {",
+                  "    pm.expect(snake.id).to.match(/^SNK-/);",
+                  "    pm.collectionVariables.set(\"snake_id\", snake.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"{{player_id_v1}}\",\n  \"playerName\": \"{{demo_player_name}}\",\n  \"snakeType\": \"COBRA\",\n  \"color\": \"#ffd700\"\n}"
+            },
+            "url": "{{arena_url}}/api/v1/arena/snakes"
+          }
+        },
+        {
+          "name": "4.2 GET Arena State Snapshot 30x30 (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const state = pm.response.json();",
+                  "pm.test(\"Grid dimensions are 30x30 with active apples\", () => {",
+                  "    pm.expect(state.gridWidth).to.eql(30);",
+                  "    pm.expect(state.gridHeight).to.eql(30);",
+                  "    pm.expect(state.maxPlayers).to.eql(16);",
+                  "    if (state.apples && state.apples.length > 0) {",
+                  "        pm.collectionVariables.set(\"apple_id\", state.apples[0].id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{arena_url}}/api/v1/arena/state"
+          }
+        },
+        {
+          "name": "4.3 GET Snake Telemetry by ID (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const snake = pm.response.json();",
+                  "pm.test(\"Snake is alive\", () => pm.expect(snake.alive).to.eql(true));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{arena_url}}/api/v1/arena/snakes/{{snake_id}}"
+          }
+        },
+        {
+          "name": "4.4 PUT Update In-Game Loadout (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const snake = pm.response.json();",
+                  "pm.test(\"Loadout changed to PYTHON\", () => pm.expect(snake.snakeType).to.eql(\"PYTHON\"));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"snakeType\": \"PYTHON\",\n  \"color\": \"#00d4ff\"\n}"
+            },
+            "url": "{{arena_url}}/api/v1/arena/snakes/{{snake_id}}/loadout"
+          }
+        },
+        {
+          "name": "4.5 PATCH Change Direction LEFT (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Direction updated to LEFT\", () => pm.expect(pm.response.json().direction).to.eql(\"LEFT\"));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{arena_url}}/api/v1/arena/snakes/{{snake_id}}/direction?dir=LEFT",
+              "host": ["{{arena_url}}"],
+              "path": ["api", "v1", "arena", "snakes", "{{snake_id}}", "direction"],
+              "query": [{ "key": "dir", "value": "LEFT" }]
+            }
+          }
+        },
+        {
+          "name": "4.6 PATCH Eat Apple (Grow & Add Score)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const snake = pm.response.json();",
+                  "pm.test(\"Snake score increased after eating apple\", () => pm.expect(snake.score).to.be.above(0));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appleId\": \"{{apple_id}}\"\n}"
+            },
+            "url": "{{arena_url}}/api/v1/arena/snakes/{{snake_id}}/eat"
+          }
+        },
+        {
+          "name": "4.7 PATCH Activate Tactical Skill (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Skill is active\", () => pm.expect(pm.response.json().skillActive).to.eql(true));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{arena_url}}/api/v1/arena/snakes/{{snake_id}}/skill?active=true",
+              "host": ["{{arena_url}}"],
+              "path": ["api", "v1", "arena", "snakes", "{{snake_id}}", "skill"],
+              "query": [{ "key": "active", "value": "true" }]
+            }
+          }
+        },
+        {
+          "name": "4.8 PATCH Heartbeat Keepalive (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{arena_url}}/api/v1/arena/snakes/{{snake_id}}/heartbeat"
+          }
+        },
+        {
+          "name": "4.9 DELETE Leave Arena -> Trigger Score Sync (204 No Content)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Eliminated with 204 No Content\", () => pm.response.to.have.status(204));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{arena_url}}/api/v1/arena/snakes/{{snake_id}}"
+          }
+        },
+        {
+          "name": "4.10 Verify Inter-Service Score Sync in Player Service (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Total matches incremented via Arena -> Player PATCH sync\", () => {",
+                  "    pm.expect(json.totalMatches).to.be.at.least(2);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{player_url}}/api/v1/players/{{player_id_v1}}"
+          }
+        },
+        {
+          "name": "4.11 DELETE Cleanup Player v1 (204 No Content)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Cleanup succeeded with 204 No Content\", () => pm.response.to.have.status(204));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{player_url}}/api/v1/players/{{player_id_v1}}"
+          }
+        }
+      ]
+    }
+  ]
+}
