@@ -745,8 +745,8 @@ window.SnakeArena = window.SnakeArena || {};
             setTimeout(() => {
                 const inp = document.getElementById("overlayPlayerName");
                 if (inp) {
-                    inp.value = "Marvel";
-                    updateTagBadges("Marvel");
+                    inp.value = "Player";
+                    updateTagBadges("Player");
                 }
                 validateAndStartGame();
             }, 600);

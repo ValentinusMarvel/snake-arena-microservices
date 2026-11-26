@@ -18,7 +18,7 @@ Pada antarmuka klien game:
 ## 2. Keputusan yang Disepakati
 
 ### A. Keybinds Skill Masukan Keyboard
-Di dalam event listener `keydown` [app.js](file:///c:/Users/anang/Downloads/ABL/frontend/js/app.js):
+Di dalam event listener `keydown` [app.js](../../frontend/js/app.js):
 - Tombol `" "`, `"e"`, `"E"`, `"f"`, dan `"F"` diarahkan secara langsung memanggil `triggerSkill()`.
 - Pemanggilan memicu animasi visual glow/partikel pada canvas dan mengirim request `PATCH /api/v1/arena/snakes/{id}/skill?active=true` ke backend.
 
@@ -35,7 +35,7 @@ Di dalam event listener `keydown` [app.js](file:///c:/Users/anang/Downloads/ABL/
 ### D. Papan Peringkat (Live Leaderboard)
 - Selector container diselaraskan pada ID `leaderboardContainer`.
 - Data diurutkan secara menurun (*descending*) berdasarkan skor.
-- Menampilkan lencana peringkat podium (`🥇`, `🥈`, `🥉`) dan penanda khusus `(ANDA)` pada ular lokal.
+- Menampilkan lencana peringkat podium (`#1`, `#2`, `#3`) dan penanda khusus `(ANDA)` pada ular lokal.
 
 ---
 
